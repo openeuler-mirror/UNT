@@ -1,0 +1,29 @@
+basic_dir := ${basicPath}
+basic_inc := $(basic_dir)include
+basic_lib := $(basic_dir)lib/libbasictypes.a
+regex_lib := $(basic_dir)lib/libKHSEL_ops.a
+
+CXX := g++
+CXXFLAGS := -o3 -std=c++17 -fPIC -I$(basic_inc)
+LDFLAGS := -shared
+
+SRC_DIR := $(CURDIR)
+OUTPUT_DIR := $(SRC_DIR)/../../output/${sha256}
+
+export SRC_DIR OUTPUT_DIR CXX CXXFLAGS LDFLAGS basic_lib regex_lib
+
+SUBDIRS := $(shell find . -mindepth 2 -name Makefile -exec dirname {} \; | sort | uniq)
+
+.PHONY: all clean
+
+all:
+	@for dir in $(SUBDIRS); do \
+		echo "Building in $$dir"; \
+		$(MAKE) -C $$dir || exit 1; \
+	done
+
+clean:
+	@for dir in $(SUBDIRS); do \
+		echo "Cleaning $$dir"; \
+		$(MAKE) -C $$dir clean || exit 1; \
+	done
