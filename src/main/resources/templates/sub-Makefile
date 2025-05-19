@@ -1,0 +1,18 @@
+lib_name := ${soFileName}
+CURRENT_DIR := $(notdir $(shell pwd))
+SRCS := $(wildcard $(SRC_DIR)/*.cpp) $(wildcard ./*.cpp)
+OBJS := $(SRCS:.cpp=.o)
+TARGET := $(OUTPUT_DIR)/$(lib_name).so
+
+all: $(TARGET)
+$(TARGET):$(OBJS) $(basic_lib) $(regex_lib)
+	@mkdir -p $(@D)
+	$(CXX) $(LDFLAGS) -o $@ $^
+	@echo "Built $@"
+%.o: %.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+clean: 
+	rm -f $(TARGET) $(OBJS)
+
+.PHONY: all clean
