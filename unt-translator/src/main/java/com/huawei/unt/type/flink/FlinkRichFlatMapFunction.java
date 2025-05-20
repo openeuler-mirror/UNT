@@ -31,7 +31,7 @@ public class FlinkRichFlatMapFunction implements UDFType {
     @Override
     public String getCppFileString(String className) {
         return "#include \"../" + className + ".h\"\n\n"
-                + "extern \"C\" std::unique_ptr<RichFlatMapFunction> NewInstance(nlohmann::json jsonObj) {\n"
+                + "extern \"C\" std::unique_ptr<RichFlatMapFunction<Object>> NewInstance(nlohmann::json jsonObj) {\n"
                 + "    return std::make_unique<" + className + ">(jsonObj);\n"
                 + "}";
     }

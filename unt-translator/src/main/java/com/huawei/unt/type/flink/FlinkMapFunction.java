@@ -28,7 +28,7 @@ public class FlinkMapFunction implements UDFType {
     @Override
     public String getCppFileString(String className) {
         return "#include \"../" + className + ".h\"\n\n"
-                + "extern \"C\" std::unique_ptr<MapFunction> NewInstance(nlohmann::json jsonObj) {\n"
+                + "extern \"C\" std::unique_ptr<MapFunction<Object>> NewInstance(nlohmann::json jsonObj) {\n"
                 + "    return std::make_unique<" + className + ">(jsonObj);\n"
                 + "}";
     }

@@ -13,7 +13,7 @@ public class Optimizers {
     public static List<Optimizer> OPTIMIZERS = ImmutableList.of(
             new StmtGraphAnalyzer(),
             new BranchStmtLabeler(),
-            new ReduceTupleOptimizer(),
+//            new ReduceTupleOptimizer(),
             new NewRefOptimizer(),
 //            new RemoveLogger(),
             new RemoveTrap(),

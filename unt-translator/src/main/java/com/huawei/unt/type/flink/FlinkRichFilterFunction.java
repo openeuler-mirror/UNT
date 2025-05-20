@@ -30,7 +30,7 @@ public class FlinkRichFilterFunction implements UDFType {
     @Override
     public String getCppFileString(String className) {
         return "#include \"../" + className + ".h\"" + NEW_LINE + NEW_LINE
-                + "extern \"C\" std::unique_ptr<FilterFunction> NewInstance(nlohmann::json jsonObj) {" + NEW_LINE
+                + "extern \"C\" std::unique_ptr<FilterFunction<Object>> NewInstance(nlohmann::json jsonObj) {" + NEW_LINE
                 + "    return std::make_unique<" + className + ">(jsonObj);" + NEW_LINE
                 + "}";
     }

@@ -25,8 +25,8 @@ import java.util.Map;
 import java.util.Set;
 
 public class RefAnalyzer {
-    private static  Map<String, Integer> refMap = TranslatorContext.LIB_INTERFACE_REF;
-    private static  Map<String, Set<String>>  subclassMap = TranslatorContext.SUBCLASS_MAP;
+    private static Map<String, Integer> refMap = TranslatorContext.LIB_INTERFACE_REF;
+    private static Map<String, Set<String>> subclassMap = TranslatorContext.SUBCLASS_MAP;
     private static Set<JavaSootMethod> abstractMethods = new HashSet<>();
 
     public static void analyse(Collection<JavaClass> javaClasses) {
@@ -43,7 +43,6 @@ public class RefAnalyzer {
     private static void analyse(JavaSootMethod method) {
         String signature = method.getSignature().toString();
         Type returnType = method.getReturnType();
-        System.out.println(method.getSignature().toString());
         if (! method.hasBody()) {
             abstractMethods.add(method);
         } else if (returnType instanceof VoidType

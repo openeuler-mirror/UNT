@@ -328,10 +328,10 @@ public class TranslatorUtils {
     }
 
     private static final String ARRAY_TYPE = "Array";
-    private static final String ARRAY_HEAD = "basictypes/functions/javautils/Arrays.h";
+    private static final String ARRAY_HEAD = "basictypes/Arrays.h";
     private static final String JSON_HEAD = "nlohmann/json.hpp";
-    private static final String CLASSCONSTANT_HEAD = "basictypes/functions/types/ClassConstant.h";
-    private static final String STRINGCONSTANT_HEAD = "basictypes/functions/types/StringConstant.h";
+    private static final String CLASSCONSTANT_HEAD = "basictypes/ClassConstant.h";
+    private static final String STRINGCONSTANT_HEAD = "basictypes/StringConstant.h";
 
     public static String formatFunctionType(Type type) {
         if (type instanceof VoidType) {

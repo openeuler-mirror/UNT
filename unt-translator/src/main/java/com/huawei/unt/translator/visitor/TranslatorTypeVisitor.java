@@ -1,15 +1,18 @@
 package com.huawei.unt.translator.visitor;
 
+import com.huawei.unt.translator.TranslatorContext;
 import com.huawei.unt.translator.TranslatorException;
 import com.huawei.unt.translator.TranslatorUtils;
 import sootup.core.jimple.visitor.AbstractTypeVisitor;
+import sootup.core.types.ArrayType;
 import sootup.core.types.ClassType;
+import sootup.core.types.PrimitiveType;
 import sootup.core.types.Type;
 
 import javax.annotation.Nonnull;
 
 public class TranslatorTypeVisitor extends AbstractTypeVisitor {
-    protected final StringBuilder typeBuilder = new StringBuilder();
+    private final StringBuilder typeBuilder = new StringBuilder();
 
     private static final TranslatorTypeVisitor INSTANCE = new TranslatorTypeVisitor();
 
@@ -17,6 +20,7 @@ public class TranslatorTypeVisitor extends AbstractTypeVisitor {
         type.accept(INSTANCE);
         String typeString = INSTANCE.toCode();
         INSTANCE.clear();
+
         return typeString;
     }
 
@@ -62,7 +66,7 @@ public class TranslatorTypeVisitor extends AbstractTypeVisitor {
 
     @Override
     public void caseArrayType() {
-        typeBuilder.append("Array *");
+        typeBuilder.append("Array");
 //        throw new DependencyException("Array type need special handle now.");
     }
 
@@ -91,11 +95,11 @@ public class TranslatorTypeVisitor extends AbstractTypeVisitor {
         throw new TranslatorException("Has unsupported type");
     }
 
-    public void clear() {
+    private void clear() {
         typeBuilder.delete(0, typeBuilder.length());
     }
 
-    public String toCode() {
+    private String toCode() {
         return typeBuilder.toString();
     }
 

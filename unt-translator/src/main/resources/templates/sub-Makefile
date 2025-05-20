@@ -5,7 +5,7 @@ OBJS := $(SRCS:.cpp=.o)
 TARGET := $(OUTPUT_DIR)/$(lib_name).so
 
 all: $(TARGET)
-$(TARGET):$(OBJS) $(basic_lib) $(regex_lib)
+$(TARGET):$(OBJS) $(json_lib) $(third_lib) $(function_lib) $(basic_lib) $(regex_lib)
 	@mkdir -p $(@D)
 	$(CXX) $(LDFLAGS) -o $@ $^
 	@echo "Built $@"
