@@ -44,20 +44,28 @@ public class TranslatorContext {
     public static final String OLD_VAR_ASSIGN = TAB + "old%1$S = %1$s;" + NEW_LINE;;
     public static final String OLD_VAR_PUT = TAB + "if (old%1$S != nullptr){" + NEW_LINE +
             TAB + TAB + "old%1$S->putRefCount();" + NEW_LINE +
-            TAB + "}" + NEW_LINE;;
-
+            TAB + "}" + NEW_LINE;
+    // todo
+    public static int  ARRAY_LIB_TYPE = 0;
+    public static int TUNELEVEL;
+    public static boolean ISMEMTUNE;
+    public static boolean ISHWACCTUNE;
+    public static boolean ISREGEXACC;
+    public static String COMPILEOPTION;
+    public static Map<String, Set<String>> SUPERCLASS_MAP = new HashMap<>();
+    public static Map<String, Set<String>> SUBCLASS_MAP = new HashMap<>();
+    public static Map<String, Set<String>> MISSING_INTERFACES = new HashMap<>();
     public static Map<String, String> UDF_MAP;
     public static Map<String, String> CLASS_MAP;
     public static Map<String, String> INCLUDE_MAP;
     public static Map<String, String> FUNCTION_MAP;
-    public static Map<String, Set<String>> SUPERCLASS_MAP;
-    public static Map<String, Set<String>> SUBCLASS_MAP;
     public static Map<String, Integer> LIB_INTERFACE_REF;
     public static Set<String> FILTER_PACKAGES;
     public static Set<String> IGNORED_CLASSES;
     public static Set<String> IGNORED_METHODS;
     public static Set<String> PRIMARY_TYPES;
     public static Set<String> STD_STRING_METHODS;
+    public static Set<String> GENERIC_FUNCTION;
 
     // todo: make it configurable
     public static final int MAX_CLASS_DEPTH = 100;
@@ -66,6 +74,15 @@ public class TranslatorContext {
 
     public static void init(String configDir) {
         // make it log info
+        GENERIC_FUNCTION = new HashSet<>();
+        GENERIC_FUNCTION.add("FilterFunction");
+        GENERIC_FUNCTION.add("RichParallelSourceFunction");
+        GENERIC_FUNCTION.add("FlatMapFunction");
+        GENERIC_FUNCTION.add("RichFlatMapFunction");
+        GENERIC_FUNCTION.add("MapFunction");
+        GENERIC_FUNCTION.add("ReduceFunction");
+        GENERIC_FUNCTION.add("KeySelect");
+
         LOGGER.info("Init TranslatorContext");
 
         String udfConfigDir = (configDir.endsWith(File.separator) ? configDir : configDir + File.separator)
@@ -84,13 +101,58 @@ public class TranslatorContext {
         } catch (IOException e) {
             throw new TranslatorException("Load udf_config files failed: " + e.getMessage());
         }
+
         if (!UDF_MAP.containsKey("base.dir")){
-            throw new TranslatorException("base.dir is nt set");
+            throw new TranslatorException("base.dir is not set");
         }
+        if (!UDF_MAP.containsKey("tune_level")){
+            LOGGER.info("tune_level is not configured, use default tune_level 0");
+            TUNELEVEL = 0;
+        }else {
+            int tuneLevel = Integer.valueOf(UDF_MAP.get("tune_level"));
+            if (tuneLevel > 4 || tuneLevel < 0){
+                LOGGER.info("tune_level is incorrectly configured, use default tune_level 0");
+                TUNELEVEL = 0;
+            }else {
+                LOGGER.info("using tune_level " + tuneLevel);
+                TUNELEVEL = tuneLevel;
+            }
+        }
+        if ((TUNELEVEL & 2) != 0){
+            ISMEMTUNE = true;
+            LOGGER.info("Enabling Memory Optimization");
+        }else {
+            ISMEMTUNE = false;
+            LOGGER.info("Use the default memory policy.");
+        }
+
+        if ((TUNELEVEL & 1) != 0){
+            ISHWACCTUNE = true;
+            LOGGER.info("Enabling Hardware Acceleration Optimization");
+        }else {
+            ISHWACCTUNE = false;
+            LOGGER.info("Disabling Hardware Acceleration Optimization.");
+        }
+
+        if (ISHWACCTUNE && UDF_MAP.getOrDefault("regex_lib_type","0").equals("1")){
+            ISREGEXACC = true;
+            LOGGER.info("Enabling Regex acc.");
+        }else {
+            ISREGEXACC = false;
+            LOGGER.info("Disabling Regex acc.");
+        }
+
+        if (!UDF_MAP.containsKey("compile_option")||UDF_MAP.get("compile_option").equals("")){
+            COMPILEOPTION = "-o3 -std=c++17 -fPIC";
+            LOGGER.info("use default compile_option: -o3 -std=c++17 -fPIC");
+        }else {
+            COMPILEOPTION = UDF_MAP.get("compile_option");
+            LOGGER.info("use compile_option: " + COMPILEOPTION);
+        }
+
         configDir = UDF_MAP.get("base.dir").endsWith(File.separator)?UDF_MAP.get("base.dir") : UDF_MAP.get("base.dir") + File.separator;
 
         LOGGER.info("load conf base");
-
 
         String classProfile = configDir + "conf" + File.separator + "class.properties";
         String functionProfile = configDir + "conf" + File.separator + "function.properties";
@@ -114,6 +176,7 @@ public class TranslatorContext {
 
         try {
             classProperties.load(Files.newInputStream(Paths.get(classProfile)));
+
             functionProperties.load((Files.newInputStream(Paths.get(functionProfile))));
             includeProperties.load((Files.newInputStream(Paths.get(includeProfile))));
 
@@ -178,10 +241,6 @@ public class TranslatorContext {
             LOGGER.info("load [{}] = [{}]", key, includeProperties.getProperty((String) key));
             INCLUDE_MAP.put((String) key, includeProperties.getProperty((String) key));
         }
-
-        // todo: location
-        SUPERCLASS_MAP = new HashMap<>();
-        SUBCLASS_MAP = new HashMap<>();
 
         LOGGER.info("load package filter config:");
         FILTER_PACKAGES = filterPackages;

@@ -1,7 +1,10 @@
 basic_dir := ${basicPath}
 basic_inc := $(basic_dir)include
 basic_lib := $(basic_dir)lib/libbasictypes.a
-regex_lib := $(basic_dir)lib/libKHSEL_ops.a
+function_lib := $(basic_dir)lib/libbasicfunctions.a
+third_lib := $(basic_dir)lib/libthirdlibrary.a
+json_lib := $(basic_dir)lib/libkaccgson.a
+regex_lib := /usr/local/ksl/lib/libKHSEL_ops.a
 
 CXX := g++
 CXXFLAGS := -o3 -std=c++17 -fPIC -I$(basic_inc)
@@ -10,7 +13,7 @@ LDFLAGS := -shared
 SRC_DIR := $(CURDIR)
 OUTPUT_DIR := $(SRC_DIR)/../../output/${sha256}
 
-export SRC_DIR OUTPUT_DIR CXX CXXFLAGS LDFLAGS basic_lib regex_lib
+export SRC_DIR OUTPUT_DIR CXX CXXFLAGS LDFLAGS basic_lib function_lib third_lib json_lib regex_lib
 
 SUBDIRS := $(shell find . -mindepth 2 -name Makefile -exec dirname {} \; | sort | uniq)
 

@@ -19,7 +19,7 @@ if [ ! -d "$cppDir" ]; then
   mkdir "$cppDir"
 fi
 
-java -Dlog4j.configurationFile="${baseDir}/conf/log4j2.xml" -cp "${baseDir}/lib/*" com.huawei.unt.UNTMain "${jarPath}" "${engineType}" "${baseDir}"
+python locked_exec.py java -Dlog4j.configurationFile="\"${baseDir}/conf/log4j2.xml\"" -cp "\"${baseDir}/lib/*\"" com.huawei.unt.UNTMain "${jarPath}" "${engineType}" "${baseDir}"
 
 export C_INCLUDE_PATH=${cppDir}/include:$C_INCLUDE_PATH
 export CPLUS_INCLUDE_PATH=${cppDir}/include:$CPLUS_INCLUDE_PATH

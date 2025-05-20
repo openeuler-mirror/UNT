@@ -12,12 +12,7 @@ import sootup.core.types.PrimitiveType;
 import sootup.java.core.JavaSootField;
 import sootup.java.core.JavaSootMethod;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.StringJoiner;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.huawei.unt.translator.TranslatorContext.NEW_LINE;
@@ -92,7 +87,8 @@ public class JavaClassTranslator {
         StringJoiner joiner = new StringJoiner(", ");
         for (ClassType superClassType : superClasses) {
             if (!TranslatorContext.IGNORED_CLASSES.contains(superClassType.getFullyQualifiedName())) {
-                joiner.add("public " + TranslatorUtils.formatType(superClassType));
+                String formatType = TranslatorUtils.formatType(superClassType);
+                joiner.add("public " + formatType + (TranslatorContext.GENERIC_FUNCTION.contains(formatType) ? "<Object>" : ""));
             }
         }
 
@@ -411,7 +407,7 @@ public class JavaClassTranslator {
                         .append(TranslatorUtils.formatParamType(sootField.getType()))
                         .append(className)
                         .append("::")
-                        .append(sootField.getName())
+                        .append(TranslatorUtils.formatFieldName(sootField.getName()))
                         .append(" = nullptr;")
                         .append(NEW_LINE);
             }

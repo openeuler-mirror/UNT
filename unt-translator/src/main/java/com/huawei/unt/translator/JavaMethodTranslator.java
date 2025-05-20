@@ -101,6 +101,7 @@ public class JavaMethodTranslator {
                     valueVisitor.clear();
                 }
 
+
                 StringBuilder beforeCodes = new StringBuilder();
                 StringBuilder afterCodes = new StringBuilder();
 
@@ -298,12 +299,12 @@ public class JavaMethodTranslator {
                             ((JInvokeStmt) stmt).getInvokeExpr().get().getMethodSignature().getName())) {
                 MethodSignature signature = ((JInvokeStmt) stmt).getInvokeExpr().get().getMethodSignature();
 
-                Type type = ((JInvokeStmt) stmt).getInvokeExpr().get().getType();
+                ClassType declClassType = ((JInvokeStmt) stmt).getInvokeExpr().get().getMethodSignature().getDeclClassType();
                 List<Immediate> args = ((JInvokeStmt) stmt).getInvokeExpr().get().getArgs();
 
                 if (signature.getParameterCount() > 0) {
-                    initBuilder.append(" : ").append(TranslatorUtils.formatType(type)).append("(")
-                            .append(TranslatorUtils.paramsToString(signature, args, methodContext)).append(")");
+                    initBuilder.append(" : ").append(TranslatorUtils.formatType(declClassType))
+                            .append(TranslatorUtils.paramsToString(signature, args, methodContext));
                 }
             }
         }

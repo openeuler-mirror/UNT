@@ -41,6 +41,7 @@ public class UNTMain {
         String basePath = args[2];
         String jarPathHash = TranslatorUtils.getJarHashPath(jarPath);
 
+        LOGGER.info(String.format("translate logs for jar %s start", jarPathHash));
 
         EngineType engine = TranslatorUtils.getEngineType(engineType);
 
@@ -120,11 +121,32 @@ public class UNTMain {
 
         }
 
+            String shaFile = basePath + File.separator + SHA256;
+
+            try (FileWriter fileWriter = new FileWriter(shaFile, false)) {
+                fileWriter.write(jarPathHash);
+            } catch (IOException e) {
+                throw new UNTException("Can't create or write file, " + e);
+            }
+
+            if (!TranslatorContext.MISSING_INTERFACES.isEmpty()) {
+                StringBuilder errMessage = new StringBuilder();
+                errMessage.append("the following methods is missing, auto compilation is terminated!\n");
+                for (String className : TranslatorContext.MISSING_INTERFACES.keySet()) {
+                    errMessage.append(className).append(": \n");
+                    for (String method : TranslatorContext.MISSING_INTERFACES.get(className)) {
+                        errMessage.append(TranslatorContext.TAB).append(method).append(TranslatorContext.NEW_LINE);
+                    }
+                }
+                LOGGER.error(errMessage.toString());
+                //todo 
+//                throw new TranslatorException(errMessage.toString());
+            }
+
         String outputDir = basePath + File.separator + "output";
         String compileShell = cppDir + File.separator + "compile_translated_udf.sh";
         String udfProperties = outputDir + File.separator + jarPathHash + File.separator + "udf.properties";
         String outPath = outputDir + File.separator + jarPathHash + File.separator;
-        String shaFile = basePath + File.separator + SHA256;
 
         try (FileWriter fileWriter = new FileWriter(shaFile, false)) {
             fileWriter.write(jarPathHash);
@@ -132,99 +154,119 @@ public class UNTMain {
             throw new UNTException("Can't create or write file, " + e);
         }
 
-        try{
-            ProcessBuilder processBuilder = new ProcessBuilder("mkdir", "-p", outPath);
-            Process process = processBuilder.start();
-            int exitCode = process.waitFor();
-            if (exitCode == 0){
-                LOGGER.info("content create success");
-            }else {
-                LOGGER.error("content create failed");
+            try {
+                ProcessBuilder processBuilder = new ProcessBuilder("mkdir", "-p", outPath);
+                Process process = processBuilder.start();
+                int exitCode = process.waitFor();
+                if (exitCode == 0) {
+                    LOGGER.info("content create success");
+                } else {
+                    LOGGER.error("content create failed");
+                }
+            } catch (IOException | InterruptedException e) {
+                throw new TranslatorException("can not create outPath");
             }
-        }catch (IOException | InterruptedException e){
-            throw new TranslatorException("can not create outPath");
-        }
 
-        String baseDir = TranslatorContext.UDF_MAP.get("base.dir");
-        baseDir = baseDir.endsWith(File.separator) ? baseDir : baseDir +File.separator;
-        String templates = basePath + File.separator + "templates";
-        String mainMakefile = cppDir + File.separator + "Makefile";
+            String baseDir = TranslatorContext.UDF_MAP.get("base.dir");
+            baseDir = baseDir.endsWith(File.separator) ? baseDir : baseDir + File.separator;
+            String templates = basePath + File.separator + "templates";
+            String mainMakefile = cppDir + File.separator + "Makefile";
 
         String mainMakefileTemplate;
         String subMakefileTemplate;
         try {
             mainMakefileTemplate = new String(Files.readAllBytes(Paths.get(templates, "main-Makefile")));
             subMakefileTemplate = new String(Files.readAllBytes(Paths.get(templates, "sub-Makefile")));
+            //makefile
+            if (TranslatorContext.ISREGEXACC){
+                if (!TranslatorContext.UDF_MAP.containsKey("regex_lib_path")){
+                    LOGGER.warn("regex lib path not exist, use default path: /usr/local/ksl/lib/libKHSEL_ops.a");
+                }else {
+                    String regexLibPath = TranslatorContext.UDF_MAP.get("regex_lib_path");
+                    File file = new File(regexLibPath);
+                    if (file.exists() && !file.isDirectory()){
+                        mainMakefileTemplate = mainMakefileTemplate.replace("regex_lib := /usr/local/ksl/lib/libKHSEL_ops.a", "regex_lib := " +  regexLibPath);
+                    }else {
+                        LOGGER.warn("regex lib path not exist, use default path: /usr/local/ksl/lib/libKHSEL_ops.a");
+                    }
+                }
+            }else {
+                mainMakefileTemplate = mainMakefileTemplate.replace("regex_lib := /usr/local/ksl/lib/libKHSEL_ops.a", "");
+                mainMakefileTemplate = mainMakefileTemplate.replace("regex_lib", "");
+                subMakefileTemplate = subMakefileTemplate.replace("$(regex_lib)", "");
+            }
+            //MakeFile
+            mainMakefileTemplate = mainMakefileTemplate.replace("CXXFLAGS := -o3 -std=c++17 -fPIC", "CXXFLAGS := " + TranslatorContext.COMPILEOPTION);
         } catch (IOException e) {
             throw new TranslatorException("load Makefile templates failed: " + e.getMessage());
         }
 
-        try (FileWriter mainMakefileWriter = new FileWriter(mainMakefile, false)){
-            Map<String, String> mainProperties = new HashMap<>();
-            mainProperties.put("basicPath", baseDir);
-            mainProperties.put("sha256", jarPathHash);
-            String mainMakefileContent = mainMakefileTemplate;
-            for (Map.Entry<String, String> property : mainProperties.entrySet()) {
-                mainMakefileContent = mainMakefileContent.replace("${" + property.getKey() + "}", property.getValue());
+            try (FileWriter mainMakefileWriter = new FileWriter(mainMakefile, false)) {
+                Map<String, String> mainProperties = new HashMap<>();
+                mainProperties.put("basicPath", baseDir);
+                mainProperties.put("sha256", jarPathHash);
+                String mainMakefileContent = mainMakefileTemplate;
+                for (Map.Entry<String, String> property : mainProperties.entrySet()) {
+                    mainMakefileContent = mainMakefileContent.replace("${" + property.getKey() + "}", property.getValue());
+                }
+                mainMakefileWriter.write(mainMakefileContent);
+            } catch (IOException e) {
+                throw new TranslatorException("generate main makefile failed: " + e.getMessage());
             }
-            mainMakefileWriter.write(mainMakefileContent);
-        } catch (IOException e) {
-            throw new TranslatorException("generate main makefile failed: " + e.getMessage());
-        }
 
-        try (FileWriter compileShellWriter = new FileWriter(compileShell, false);
-             FileWriter udfPropertiesWriter = new FileWriter(udfProperties, false)) {
-        for (UDFType udfType : classesUdfMap.keySet()) {
-            List<JavaClass> classes = classesUdfMap.get(udfType);
-            for (int i = 0; i < classes.size(); i++) {
-                String formatClassName = TranslatorUtils.formatClassName(classes.get(i).getClassName());
-                //todo change cpp file
-                String nativeDir = cppDir + File.separator + formatClassName;
-                String udfCppFile = nativeDir + File.separator + formatClassName + "_native.cpp";
+            try (FileWriter compileShellWriter = new FileWriter(compileShell, false);
+                 FileWriter udfPropertiesWriter = new FileWriter(udfProperties, false)) {
+                for (UDFType udfType : classesUdfMap.keySet()) {
+                    List<JavaClass> classes = classesUdfMap.get(udfType);
+                    for (int i = 0; i < classes.size(); i++) {
+                        String formatClassName = TranslatorUtils.formatClassName(classes.get(i).getClassName());
+                        //todo change cpp file
+                        String nativeDir = cppDir + File.separator + formatClassName;
+                        String udfCppFile = nativeDir + File.separator + formatClassName + "_native.cpp";
 
-                File nativeDirFile = new File(nativeDir);
-                if (nativeDirFile.exists() && !nativeDirFile.isDirectory()) {
-                    throw new UNTException("native dictionary need an dictionary");
-                }
-                if (!nativeDirFile.exists()) {
-                    boolean mkdir = nativeDirFile.mkdirs();
-                    if (!mkdir) {
-                        throw new UNTException("Create native dictionary failed");
-                    }
-                }
+                        File nativeDirFile = new File(nativeDir);
+                        if (nativeDirFile.exists() && !nativeDirFile.isDirectory()) {
+                            throw new UNTException("native dictionary need an dictionary");
+                        }
+                        if (!nativeDirFile.exists()) {
+                            boolean mkdir = nativeDirFile.mkdirs();
+                            if (!mkdir) {
+                                throw new UNTException("Create native dictionary failed");
+                            }
+                        }
 
-                try (FileWriter cppFileWriter = new FileWriter(udfCppFile, false)) {
-                    cppFileWriter.write(udfType.getCppFileString(formatClassName));
-                } catch (IOException e) {
-                    throw new TranslatorException("Can not create file, " + e.getMessage());
-                }
+                        try (FileWriter cppFileWriter = new FileWriter(udfCppFile, false)) {
+                            cppFileWriter.write(udfType.getCppFileString(formatClassName));
+                        } catch (IOException e) {
+                            throw new TranslatorException("Can not create file, " + e.getMessage());
+                        }
 
-                String subMakefile = nativeDir + File.separator + "Makefile";
-                String soFileName = udfType.getSoPrefix() + i;
-                String subMakefileContent = subMakefileTemplate.replace("${soFileName}", soFileName);
-                try (FileWriter subMakefileWriter = new FileWriter(subMakefile, false)) {
-                    subMakefileWriter.write(subMakefileContent);
-                } catch (IOException e) {
-                    throw new TranslatorException("generate makefile for " + formatClassName + " failed: " + e.getMessage());
-                }
+                        String subMakefile = nativeDir + File.separator + "Makefile";
+                        String soFileName = udfType.getSoPrefix() + i;
+                        String subMakefileContent = subMakefileTemplate.replace("${soFileName}", soFileName);
+                        try (FileWriter subMakefileWriter = new FileWriter(subMakefile, false)) {
+                            subMakefileWriter.write(subMakefileContent);
+                        } catch (IOException e) {
+                            throw new TranslatorException("generate makefile for " + formatClassName + " failed: " + e.getMessage());
+                        }
 
-                String includePathBasic = (baseDir.endsWith(File.separator) ? baseDir : baseDir + File.separator) + "include";
+                        String includePathBasic = (baseDir.endsWith(File.separator) ? baseDir : baseDir + File.separator) + "include";
 //                    String includePathFunction = (baseDir.endsWith(File.separator) ? baseDir : baseDir + File.separator) +
 //                            "include" + File.separator + "basictypes" + File.separator + "functions";
-                String basicLib = (baseDir.endsWith(File.separator) ? baseDir : baseDir + File.separator)
-                        + "lib" + File.separator + "libbasictypes.a";
+                        String basicLib = (baseDir.endsWith(File.separator) ? baseDir : baseDir + File.separator)
+                                + "lib" + File.separator + "libbasictypes.a";
 
-                String regexLib = (baseDir.endsWith(File.separator) ? baseDir : baseDir + File.separator)
-                        + "lib" + File.separator + "libKHSEL_ops.a";
+                        String regexLib = (baseDir.endsWith(File.separator) ? baseDir : baseDir + File.separator)
+                                + "lib" + File.separator + "libKHSEL_ops.a";
 
-                String compileCommand = "g++ -O3 -std=c++17 " + "-I" + includePathBasic +
-                        " -shared -fPIC " + udfCppFile;
+                        String compileCommand = "g++ -O3 -std=c++17 " + "-I" + includePathBasic +
+                                " -shared -fPIC " + udfCppFile;
 
                 for (String allCppFile : allCppFiles) {
                     compileCommand = compileCommand + " " + allCppFile;
                 }
                 compileCommand += " " + basicLib + " " + regexLib + " -o "
-                        + outputDir + File.separator + jarPathHash + File.separator + soFileName + TranslatorContext.NEW_LINE;
+                        + outputDir + File.separator + jarPathHash + File.separator + soFileName + ".so" + TranslatorContext.NEW_LINE;
 
                 String propertyLine = classes.get(i).getClassName() + "=" + soFileName + ".so" + TranslatorContext.NEW_LINE;
                 compileShellWriter.write(compileCommand);

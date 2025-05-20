@@ -28,12 +28,10 @@ import sootup.core.jimple.common.stmt.JReturnStmt;
 import sootup.core.jimple.common.stmt.JReturnVoidStmt;
 import sootup.core.jimple.common.stmt.Stmt;
 import sootup.core.signatures.MethodSignature;
-import sootup.core.signatures.PackageName;
 import sootup.core.types.ClassType;
 import sootup.core.types.PrimitiveType;
 import sootup.core.types.Type;
 import sootup.core.types.VoidType;
-import sootup.java.core.types.JavaClassType;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -49,7 +47,6 @@ public class MemoryReleaseOptimizer implements Optimizer {
     private final static Logger LOGGER = LoggerFactory.getLogger(MemoryReleaseOptimizer.class);
     public final static Integer BEFORE = 0;
     public final static Integer AFTER = 1;
-    private final static JavaClassType ITERATOR = new JavaClassType("Iterator", new PackageName("java.util"));
 
     private final Map<String, Integer> refMap;
     private List<Stmt> stmts;
@@ -286,13 +283,15 @@ public class MemoryReleaseOptimizer implements Optimizer {
         Stmt stmt = stmts.get(i);
         LValue leftOp = ((JAssignStmt) stmt).getLeftOp();
 
+        Value value = ((JAssignStmt) stmt).getRightOp();
+        int ref = getRef(value);
         if (!(leftOp.getType() instanceof PrimitiveType)) {
-            Value value = ((JAssignStmt) stmt).getRightOp();
-            int ref = getRef(value);
             if (leftOp instanceof Local) {
                 localAssignStmtHandle(i, (Local) leftOp, value, ref);
-            } else {
-                refAssignStmtHandle(i, leftOp, value, ref);
+            } else if (leftOp instanceof JFieldRef){
+                fieldRefAssignStmtHandle(i, leftOp, value, ref);
+            } else if (leftOp instanceof JArrayRef) {
+                arrRefAssignStmtHandle(i, leftOp, value, ref);
             }
         }
     }
@@ -310,15 +309,14 @@ public class MemoryReleaseOptimizer implements Optimizer {
         updateLocalMap(local, value, ref);
     }
 
-    private void refAssignStmtHandle(int i, LValue leftOp, Value value, int ref) {
+    private void fieldRefAssignStmtHandle(int i, LValue leftOp, Value value, int ref) {
 
         if (!isStaticInit && !isInit) {
             Map<LValue, Integer> vars = unknownFree.getOrDefault(i, new HashMap<>());
             vars.put(leftOp, BEFORE);
             unknownFree.put(i, vars);
         }
-        // todo: check array ref
-        if (ref == 0 && !(leftOp instanceof JArrayRef)) {
+        if (ref == 0) {
             if (value instanceof Local && locals.containsKey(value) && locals.get(value) == 1) {
                 locals.put((Local) value, 0);
             } else if (value instanceof JCastExpr) {
@@ -331,7 +329,12 @@ public class MemoryReleaseOptimizer implements Optimizer {
                 vars.put(leftOp, AFTER);
                 getRef.put(i, vars);
             }
-        } else if (ref == 1 && leftOp instanceof JArrayRef) {
+        }
+    }
+
+    // deal with arr[0] = new ...  arr->append
+    private void arrRefAssignStmtHandle(int i, LValue leftOp, Value value, int ref) {
+        if (ref == 1 && leftOp instanceof JArrayRef) {
             Map<LValue, Integer> vars = unknownFree.getOrDefault(i, new HashMap<>());
             vars.put(leftOp, AFTER);
             unknownFree.put(i, vars);
@@ -386,7 +389,6 @@ public class MemoryReleaseOptimizer implements Optimizer {
         // loop start from i, break to loops.get(i)
         List<Integer> continueStmts = new ArrayList<>();
         Set<Local> blockLocals = new HashSet<>();
-        Set<LValue> blockRefs = new HashSet<>();
 
         int breakTarget = loops.get(i);
         for (int j = i; j < breakTarget; j++) {
@@ -407,7 +409,7 @@ public class MemoryReleaseOptimizer implements Optimizer {
                     continueStmts.add(j);
                 }
             } else if (stmt instanceof JAssignStmt) {
-                loopAssignStmtHandle(j, blockLocals, blockRefs);
+                loopAssignStmtHandle(j, blockLocals);
             } else if (stmt instanceof JInvokeStmt) {
                 invokeStmtHandle(j);
             } else if (stmt instanceof JReturnStmt) {
@@ -417,17 +419,10 @@ public class MemoryReleaseOptimizer implements Optimizer {
             }
         }
 
-        // todo: merge continue and break handle?
         for (Integer end : continueStmts) {
             freeHandle(end, blockLocals, BEFORE, true);
-            Set<LValue> refs = makeNullSet.getOrDefault(end, new HashSet<>());
-            refs.addAll(blockRefs);
-            makeNullSet.put(end, refs);
         }
         freeHandle(breakTarget, blockLocals, BEFORE, true);
-        Set<LValue> refs = makeNullSet.getOrDefault(breakTarget, new HashSet<>());
-        refs.addAll(blockRefs);
-        makeNullSet.put(breakTarget, refs);
 
         for (Local local : blockLocals) {
             locals.put(local, 0);
@@ -436,13 +431,13 @@ public class MemoryReleaseOptimizer implements Optimizer {
         return breakTarget - 1;
     }
 
-    private void loopAssignStmtHandle(int j, Set<Local> blockLocals, Set<LValue> blockRefs) {
+    private void loopAssignStmtHandle(int j, Set<Local> blockLocals) {
         Stmt stmt = stmts.get(j);
         LValue leftOp = ((JAssignStmt) stmt).getLeftOp();
 
+        Value value = ((JAssignStmt) stmt).getRightOp();
+        int ref = getRef(value);
         if (! (leftOp.getType() instanceof PrimitiveType)) {
-            Value value = ((JAssignStmt) stmt).getRightOp();
-            int ref = getRef(value);
             if (leftOp instanceof Local) {
                 if (localAssign.containsKey(leftOp)) {
                     reassignHelper(j, ref);
@@ -453,8 +448,10 @@ public class MemoryReleaseOptimizer implements Optimizer {
                     assignLocation.add(j);
                     localAssign.put((Local) leftOp, assignLocation);
                 }
-            } else if (! (leftOp instanceof JArrayRef)){
-                blockRefs.add(leftOp);
+            } else if (leftOp instanceof JFieldRef){
+                fieldRefAssignStmtHandle(j, leftOp, value, ref);
+            } else if (leftOp instanceof JArrayRef){
+                arrRefAssignStmtHandle(j, leftOp, value, ref);
             }
         }
     }
@@ -463,16 +460,17 @@ public class MemoryReleaseOptimizer implements Optimizer {
         Stmt stmt = stmts.get(i);
         if (stmt instanceof JInvokeStmt) {
             Optional<AbstractInvokeExpr> expr = ((JInvokeStmt) stmt).getInvokeExpr();
-            if (expr.isPresent() && returnObj(expr.get()) && getRef(expr.get()) == 1) {
+//            if (expr.isPresent() && returnObj(expr.get()) && getRef(expr.get()) == 1) {
+            if (expr.isPresent() && getRef(expr.get()) == 1) {
                 ignoredReturnValues.add(i);
             }
         }
     }
 
-    private boolean returnObj(AbstractInvokeExpr expr) {
-        Type type = expr.getType();
-        return ! (type instanceof PrimitiveType || type instanceof VoidType);
-    }
+//    private boolean returnObj(AbstractInvokeExpr expr) {
+//        Type type = expr.getType();
+//        return ! (type instanceof PrimitiveType || type instanceof VoidType);
+//    }
 
     private void returnStmtHandle(int i) {
         if (finalReturn != -1) {
@@ -540,6 +538,7 @@ public class MemoryReleaseOptimizer implements Optimizer {
     }
 
     private int getRef(Value value) {
+        // todo: check new
         if (isNewExpr(value) || value instanceof StringConstant || isToString(value)) {
             return 1;
         } else if (value instanceof AbstractInvokeExpr) {
@@ -560,10 +559,18 @@ public class MemoryReleaseOptimizer implements Optimizer {
                     return refTmp;
                 }
             }
+            putMissingInterfaces(methodSignature);
+            LOGGER.warn(String.format(
+                    "the ref of method %s not found in refMap, use default 0 as ref count", methodSignature));
         }
-        LOGGER.warn(String.format(
-                "the ref of method %s not found in refMap, use default 0 as ref count", methodSignature));
         return 0;
+    }
+
+    private void putMissingInterfaces(MethodSignature methodSignature) {
+        String className = methodSignature.getDeclClassType().getFullyQualifiedName();
+        Set<String> missingMethods = TranslatorContext.MISSING_INTERFACES.getOrDefault(className, new HashSet<>());
+        missingMethods.add(methodSignature.getSubSignature().toString());
+        TranslatorContext.MISSING_INTERFACES.put(methodSignature.getDeclClassType().getFullyQualifiedName(), missingMethods);
     }
 
     private final LinkedList<String> superClassQueue = new LinkedList<>();

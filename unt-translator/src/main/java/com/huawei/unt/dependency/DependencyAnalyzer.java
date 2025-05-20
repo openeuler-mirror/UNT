@@ -91,19 +91,13 @@ public class DependencyAnalyzer {
             JavaClass javaClass = addJsonConstructorQueue.poll();
             boolean hasObjectField = false;
 
+            HashSet<ClassType> needToJsonConstruct = new HashSet<>();
+
             Set<ClassType> supperClasses = javaClass.getSupperClasses().stream()
                     .filter(c -> !TranslatorContext.CLASS_MAP.containsKey(c.getFullyQualifiedName()))
                     .collect(Collectors.toSet());
 
-            for (ClassType supperClass : supperClasses) {
-                try{
-                    JavaClass supperJavaClass = allClasses.get(supperClass);
-                    addJsonConstructorMap.put(JavaIdentifierFactory.getInstance().getClassType(supperClass.getClassName()), supperJavaClass);
-                    addJsonConstructorQueue.add(supperJavaClass);
-                }catch (Exception e){
-                    LOGGER.error("supperClass {} not found in allNeedTransClasses ", supperClass.getClassName());
-                }
-            }
+            needToJsonConstruct.addAll(supperClasses);
 
             Set<JavaSootField> fields = javaClass.getFields();
             for (JavaSootField field : fields) {
@@ -117,15 +111,24 @@ public class DependencyAnalyzer {
                     if (TranslatorContext.CLASS_MAP.containsKey(fieldClassType.getFullyQualifiedName())){
                         continue;
                     }
-                    try{
-                        JavaClass fieldJavaClass = allClasses.get(fieldClassType);
-                        addJsonConstructorMap.put(JavaIdentifierFactory.getInstance().getClassType(fieldJavaClass.getClassName()), fieldJavaClass);
-                        addJsonConstructorQueue.add(fieldJavaClass);
-                    }catch (Exception e){
-                        LOGGER.error("fieldClassType {} not found in allNeedTransClasses ", fieldClassType.getClassName());
-                    }
+                    needToJsonConstruct.add(fieldClassType);
                 }
             }
+
+            Set<ClassType> newJsonConstruct = needToJsonConstruct.stream()
+                    .filter(c -> !addJsonConstructorMap.containsKey(c))
+                    .collect(Collectors.toSet());
+
+            for (ClassType classType : newJsonConstruct) {
+                try{
+                    JavaClass newJsonjavaClass = allClasses.get(classType);
+                    addJsonConstructorMap.put(JavaIdentifierFactory.getInstance().getClassType(newJsonjavaClass.getClassName()), newJsonjavaClass);
+                    addJsonConstructorQueue.add(newJsonjavaClass);
+                }catch (Exception e){
+                    LOGGER.error("fieldClassType {} not found in allNeedTransClasses ", classType.getClassName());
+                }
+            }
+
             if (hasObjectField){
                 javaClass.setHasObjectField();
             }

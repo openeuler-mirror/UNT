@@ -1,6 +1,7 @@
 package com.huawei.unt.translator.visitor;
 
 import com.huawei.unt.optimizer.stmts.OptimizedValue;
+import com.huawei.unt.translator.TranslatorContext;
 import com.huawei.unt.translator.TranslatorException;
 import com.huawei.unt.translator.TranslatorUtils;
 import com.huawei.unt.model.MethodContext;
@@ -60,6 +61,7 @@ import sootup.core.jimple.common.ref.JThisRef;
 import sootup.core.jimple.common.ref.Ref;
 import sootup.core.jimple.visitor.AbstractValueVisitor;
 import sootup.core.types.PrimitiveType;
+import sootup.core.types.Type;
 
 import javax.annotation.Nonnull;
 
@@ -455,8 +457,13 @@ public class TranslatorValueVisitor extends AbstractValueVisitor {
 
         valueBuilder.append(base);
         valueBuilder.append("->");
-        valueBuilder.append(expr.getMethodSignature().getName())
-                .append(TranslatorUtils.paramsToString(expr.getMethodSignature(), expr.getArgs(), methodContext));
+        valueBuilder.append(expr.getMethodSignature().getName());
+        if (TranslatorContext.ISREGEXACC&&
+                expr.getMethodSignature().toString().equals("<java.lang.String: java.lang.String replaceAll(java.lang.String,java.lang.String)>")){
+            valueBuilder.append("_tune");
+        }
+
+        valueBuilder.append(TranslatorUtils.paramsToString(expr.getMethodSignature(), expr.getArgs(), methodContext));
     }
 
     @Override
@@ -484,7 +491,10 @@ public class TranslatorValueVisitor extends AbstractValueVisitor {
     public void caseStaticInvokeExpr(@Nonnull JStaticInvokeExpr expr) {
         String staticFunction = TranslatorTypeVisitor.getTypeString(expr.getMethodSignature().getDeclClassType())
                 + "::" + expr.getMethodSignature().getName();
-
+        if (TranslatorContext.ISMEMTUNE &&
+                staticFunction.equals("Long::valueOf")){
+            staticFunction = staticFunction + "_tune";
+        }
         valueBuilder.append(TranslatorUtils.formatFunctionName(staticFunction))
                 .append(TranslatorUtils.paramsToString(expr.getMethodSignature(), expr.getArgs(), methodContext));
     }
@@ -517,7 +527,6 @@ public class TranslatorValueVisitor extends AbstractValueVisitor {
         super.casePhiExpr(expr);
     }
 
-    // todo: check translated Array type
     @Override
     public void caseNewArrayExpr(@Nonnull JNewArrayExpr expr) {
         TranslatorValueVisitor visitor = new TranslatorValueVisitor(methodContext);
@@ -528,7 +537,7 @@ public class TranslatorValueVisitor extends AbstractValueVisitor {
 
     @Override
     public void caseNewMultiArrayExpr(@Nonnull JNewMultiArrayExpr expr) {
-        // todo : fill it
+        //todo: fill multiArr
         throw new TranslatorException("NewMultiArrayExpr is not supported now.");
     }
 

@@ -31,7 +31,7 @@ public class FlinkRichParallelSourceFunction implements UDFType {
     public String getCppFileString(String className) {
 
         return "#include \"../" + className + ".h\"\n\n"
-                + "extern \"C\" std::unique_ptr<RichParallelSourceFunction> NewInstance(nlohmann::json jsonObj) {\n"
+                + "extern \"C\" std::unique_ptr<RichParallelSourceFunction<Object>> NewInstance(nlohmann::json jsonObj) {\n"
                 + "    return std::make_unique<" + className + ">(jsonObj);\n"
                 + "}";
     }

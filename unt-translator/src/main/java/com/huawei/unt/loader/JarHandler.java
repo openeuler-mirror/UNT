@@ -52,14 +52,6 @@ public class JarHandler {
         this.javaView = view;
     }
 
-    // use for unit test
-    public JarHandler(JavaView javaView) {
-        this.typeHierarchy = javaView.getTypeHierarchy();
-        for (JavaSootClass javaSootClass : javaView.getClasses().collect(Collectors.toList())) {
-            allJavaClass.put(javaSootClass.getName(), javaSootClass);
-        }
-        this.javaView = javaView;
-    }
 
     public boolean isSubClass(String className, ClassType superClassType) {
         JavaClassType classType = JavaIdentifierFactory.getInstance().getClassType(className);
