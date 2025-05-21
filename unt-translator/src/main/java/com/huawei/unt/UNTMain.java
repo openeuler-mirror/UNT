@@ -140,7 +140,7 @@ public class UNTMain {
                 }
                 LOGGER.error(errMessage.toString());
                 //todo 
-                throw new TranslatorException(errMessage.toString());
+//                throw new TranslatorException(errMessage.toString());
             }
 
         String outputDir = basePath + File.separator + "output";
@@ -167,7 +167,7 @@ public class UNTMain {
                 throw new TranslatorException("can not create outPath");
             }
 
-            String baseDir = TranslatorContext.UDF_MAP.get("base.dir");
+            String baseDir = TranslatorContext.UDF_MAP.get("basic_lib_path");
             baseDir = baseDir.endsWith(File.separator) ? baseDir : baseDir + File.separator;
             String templates = basePath + File.separator + "templates";
             String mainMakefile = cppDir + File.separator + "Makefile";

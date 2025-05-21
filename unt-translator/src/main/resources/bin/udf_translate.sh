@@ -89,14 +89,14 @@ result=$(awk -F= -v key="${tune_level}" '
 )
 
 if [ "$result" == "4" ]; then
-    export CPLUS_INCLUDE_PATH=/usr/local/ksl/include:/ai4c-udf/json/include:$CPLUS_INCLUDE_PATH
+    export CPLUS_INCLUDE_PATH=/usr/local/ksl/include:$CPLUS_INCLUDE_PATH
 
-    export C_INCLUDE_PATH=/usr/local/ksl/include:/ai4c-udf/json/include:$C_INCLUDE_PATH
+    export C_INCLUDE_PATH=/usr/local/ksl/include:$C_INCLUDE_PATH
 
     export LD_LIBRARY_PATH=/usr/local/ksl/lib:$LD_LIBRARY_PATH
     if which ai4c-udf > /dev/null 2>&1; then
         log "ai4c-udf start"
-        ai4c-udf --input_dir="${cppDir}" --output_dir="${outputDir}" --debug=true  --c_include_dir="${C_INCLUDE_PATH}" --cxx_include_dir="${CPLUS_INCLUDE_PATH}" --ld_library_path="${LD_LIBRARY_PATH}"
+        ai4c-udf --input_dir="${cppDir}" --output_dir="${outputDir}" --c_include_dir="${C_INCLUDE_PATH}" --cxx_include_dir="${CPLUS_INCLUDE_PATH}" --ld_library_path="${LD_LIBRARY_PATH}"
         return_code=$?
         if [ $return_code -eq 0 ]; then
             log "ai4compiler success"
