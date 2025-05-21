@@ -76,7 +76,6 @@ public class TranslatorUtils {
         TranslatorValueVisitor valueVisitor = new TranslatorValueVisitor(methodContext);
         StringJoiner joiner = new StringJoiner(", ");
 
-        // todo: deal with string constant packing, check if need remove it
         boolean needPackingString = !TranslatorContext.STD_STRING_METHODS
                 .contains(signature.toString());
 
@@ -345,8 +344,7 @@ public class TranslatorUtils {
         String typeString = formatType(type);
 
         return type instanceof PrimitiveType ||
-                type instanceof VoidType ||
-                TranslatorContext.PRIMARY_TYPES.contains(typeString);
+                type instanceof VoidType;
     }
 
     public static String formatParamType(Type type) {

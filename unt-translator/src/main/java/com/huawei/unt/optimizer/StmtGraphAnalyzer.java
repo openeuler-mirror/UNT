@@ -41,7 +41,6 @@ public class StmtGraphAnalyzer implements Optimizer {
         methodContext.setBeforeLocals(beforeLocals);
         methodContext.setAfterLocals(afterLocals);
 
-        // todo : analyzeTryCatch
 //        BriefStmtPrinter stmtPrinter = new BriefStmtPrinter();
 //        stmtPrinter.buildTraps(graph);
 //        Iterable<Trap> traps = stmtPrinter.getTraps();

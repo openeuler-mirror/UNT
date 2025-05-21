@@ -11,7 +11,6 @@ import sootup.core.types.ClassType;
 
 import java.util.Set;
 
-// todo: remove log temp. further will remove this optimizer and add log handler
 public class RemoveLogger implements Optimizer {
     private static final Set<String> LOG_NAMES = ImmutableSet.of("Logger", "LoggerFactory");
 

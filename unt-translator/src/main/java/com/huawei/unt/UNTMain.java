@@ -31,7 +31,6 @@ public class UNTMain {
     private static final String SHA256 = "SHA256";
 
     public static void main(String[] args) {
-        // todo: add param check
         // arg0: jarPath
         // arg1: engineType
         // arg2: outputBasePath
@@ -139,7 +138,6 @@ public class UNTMain {
                     }
                 }
                 LOGGER.error(errMessage.toString());
-                //todo 
                 throw new TranslatorException(errMessage.toString());
             }
 
@@ -167,7 +165,7 @@ public class UNTMain {
                 throw new TranslatorException("can not create outPath");
             }
 
-            String baseDir = TranslatorContext.UDF_MAP.get("base.dir");
+            String baseDir = TranslatorContext.UDF_MAP.get("basic_lib_path");
             baseDir = baseDir.endsWith(File.separator) ? baseDir : baseDir + File.separator;
             String templates = basePath + File.separator + "templates";
             String mainMakefile = cppDir + File.separator + "Makefile";
@@ -220,7 +218,6 @@ public class UNTMain {
                     List<JavaClass> classes = classesUdfMap.get(udfType);
                     for (int i = 0; i < classes.size(); i++) {
                         String formatClassName = TranslatorUtils.formatClassName(classes.get(i).getClassName());
-                        //todo change cpp file
                         String nativeDir = cppDir + File.separator + formatClassName;
                         String udfCppFile = nativeDir + File.separator + formatClassName + "_native.cpp";
 

@@ -11,7 +11,6 @@ import sootup.core.util.printer.BriefStmtPrinter;
 import java.util.ArrayList;
 import java.util.List;
 
-// todo: delete trap code now. further will remove this optimizer and add trap handler
 public class RemoveTrap implements Optimizer{
     @Override
     public boolean fetch(MethodContext methodContext) {

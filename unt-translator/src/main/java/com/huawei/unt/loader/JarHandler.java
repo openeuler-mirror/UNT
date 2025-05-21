@@ -52,14 +52,6 @@ public class JarHandler {
         this.javaView = view;
     }
 
-    public JarHandler(JavaView view) {
-        this.typeHierarchy = view.getTypeHierarchy();
-        for (JavaSootClass javaSootClass : view.getClasses().collect(Collectors.toList())) {
-            allJavaClass.put(javaSootClass.getName(), javaSootClass);
-        }
-        this.javaView = view;
-    }
-
 
     public boolean isSubClass(String className, ClassType superClassType) {
         JavaClassType classType = JavaIdentifierFactory.getInstance().getClassType(className);

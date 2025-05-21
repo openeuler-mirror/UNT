@@ -70,7 +70,6 @@ public class TranslatorStmtVisitor extends AbstractStmtVisitor {
             methodContext.removeLocal(stmt.getLeftOp());
 //            methodContext.setThisLocal(stmt.getLeftOp());
         } else if (stmt.getRightOp() instanceof JCaughtExceptionRef) {
-            // todo: skip it temp
         } else {
             defaultCaseStmt(stmt);
         }
@@ -109,7 +108,6 @@ public class TranslatorStmtVisitor extends AbstractStmtVisitor {
         stmtBuilder.append("return;").append(NEW_LINE);
     }
 
-    // todo:
     @Override
     public void caseGotoStmt(@Nonnull JGotoStmt stmt) {
         printTab();
@@ -154,7 +152,6 @@ public class TranslatorStmtVisitor extends AbstractStmtVisitor {
         stmtBuilder.append(valueVisitor.toCode()).append("->mutex.unlock();").append(NEW_LINE);
     }
 
-    // todo:
     @Override
     public void caseSwitchStmt(@Nonnull JSwitchStmt stmt) {
         TranslatorValueVisitor valueVisitor = new TranslatorValueVisitor(methodContext);

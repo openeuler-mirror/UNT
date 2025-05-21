@@ -17,7 +17,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-// todo: fill it
 public class NewRefOptimizer implements Optimizer {
     @Override
     public boolean fetch(MethodContext methodContext) {
