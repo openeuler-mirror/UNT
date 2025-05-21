@@ -116,6 +116,27 @@ echo "Start compile translated UDFs..."
 make -j
 compile_return_code=$?
 
+
+udfPropertiesFile="${outputDir}/udf.properties"
+
+declare -A so_files
+while IFS= read -r -d '' file; do
+    so_files["$(basename "$file")"]=1
+done < <(find "$outputDir" -maxdepth 1 -type f -name "*.so" -print0 2>/dev/null)
+
+tmpFile=$(mktemp) || exit 1
+
+while IFS= read -r line || [[ -n "$line" ]]; do
+    filename=$(echo "$line" | cut -d= -f2- | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+    
+    if [[ -n "$filename" && "${so_files["$filename"]}" ]]; then
+        echo "$line" >> "$tmpFile"
+    fi
+done < "$udfPropertiesFile"
+
+mv "$tmpFile" "$udfPropertiesFile"
+
+
 if [ $compile_return_code -eq 0 ]; then
     log "Translate UDFS success"
     exit 0;

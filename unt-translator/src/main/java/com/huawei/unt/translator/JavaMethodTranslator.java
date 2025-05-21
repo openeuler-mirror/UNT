@@ -214,7 +214,6 @@ public class JavaMethodTranslator {
 
         methodString += headAndParams;
 
-        //todo static
         Set<ClassType> staticClasses = methodContext.getStaticClasses();
         StringBuilder staticInit = new StringBuilder();
         for (ClassType staticClass : staticClasses) {

@@ -133,14 +133,12 @@ public class TranslatorValueVisitor extends AbstractValueVisitor {
 //        valueBuilder.append(constant.getValue().replaceAll("/", "."));
     }
 
-    // todo: Reflection API MethodHandle
     @Override
     public void caseMethodHandle(@Nonnull MethodHandle v) {
         throw new TranslatorException("MethodHandle is not supported yet");
 //        super.caseMethodHandle(v);
     }
 
-    // todo: Reflection API MethodType
     @Override
     public void caseMethodType(@Nonnull MethodType v) {
         throw new TranslatorException("MethodType is not supported yet");
@@ -179,7 +177,6 @@ public class TranslatorValueVisitor extends AbstractValueVisitor {
                 .append(TranslatorUtils.formatFieldName(ref.getFieldSignature().getName()));
     }
 
-    // todo: check exception caught alias;
     @Override
     public void caseCaughtExceptionRef(@Nonnull JCaughtExceptionRef ref) {
         valueBuilder.append("*ex");
@@ -446,7 +443,6 @@ public class TranslatorValueVisitor extends AbstractValueVisitor {
         String base = valueVisitor.toCode();
         valueVisitor.clear();
 
-        // todo: deal with String::lastIndexOf(int), remove it futher
         if (expr.getMethodSignature().toString().equals("<java.lang.String: int lastIndexOf(int)>")) {
             valueBuilder.append(base);
             valueBuilder.append("->lastIndexOf(std::string {(char) ");
@@ -499,7 +495,6 @@ public class TranslatorValueVisitor extends AbstractValueVisitor {
                 .append(TranslatorUtils.paramsToString(expr.getMethodSignature(), expr.getArgs(), methodContext));
     }
 
-    // todo: fill it
     @Override
     public void caseDynamicInvokeExpr(@Nonnull JDynamicInvokeExpr expr) {
         throw new TranslatorException("DynamicInvokeExpr is not supported yet");
@@ -521,7 +516,6 @@ public class TranslatorValueVisitor extends AbstractValueVisitor {
         valueBuilder.append(operand).append(valueVisitor.toCode());
     }
 
-    // todo: SSA function is only in IR, check need to be translated or not
     @Override
     public void casePhiExpr(JPhiExpr expr) {
         super.casePhiExpr(expr);
@@ -537,7 +531,6 @@ public class TranslatorValueVisitor extends AbstractValueVisitor {
 
     @Override
     public void caseNewMultiArrayExpr(@Nonnull JNewMultiArrayExpr expr) {
-        //todo: fill multiArr
         throw new TranslatorException("NewMultiArrayExpr is not supported now.");
     }
 

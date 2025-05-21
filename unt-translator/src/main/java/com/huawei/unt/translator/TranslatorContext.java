@@ -45,7 +45,6 @@ public class TranslatorContext {
     public static final String OLD_VAR_PUT = TAB + "if (old%1$S != nullptr){" + NEW_LINE +
             TAB + TAB + "old%1$S->putRefCount();" + NEW_LINE +
             TAB + "}" + NEW_LINE;
-    // todo
     public static int  ARRAY_LIB_TYPE = 0;
     public static int TUNELEVEL;
     public static boolean ISMEMTUNE;
@@ -63,11 +62,9 @@ public class TranslatorContext {
     public static Set<String> FILTER_PACKAGES;
     public static Set<String> IGNORED_CLASSES;
     public static Set<String> IGNORED_METHODS;
-    public static Set<String> PRIMARY_TYPES;
     public static Set<String> STD_STRING_METHODS;
     public static Set<String> GENERIC_FUNCTION;
 
-    // todo: make it configurable
     public static final int MAX_CLASS_DEPTH = 100;
     public static final int MAX_CLASS_COUNT = 100;
     public static final int MAX_FUNCTION_SIZE = 1000;
@@ -149,7 +146,6 @@ public class TranslatorContext {
         String dependIncludeProfile = configDir + "conf" + File.separator + "depend_include.properties";
         String ignorePackageProfile = configDir + "conf" + File.separator + "ignoredPackage.config";
         String ignoreClassProfile = configDir + "conf" + File.separator + "ignoredClasses.config";
-        String externPrimaryTypesProfile = configDir + "conf" + File.separator + "externPrimaryTypes.config";
         String ignoredMethodsProfile = configDir + "conf" + File.separator + "ignoredMethods.config";
         String stdStringMethodsProfile = configDir + "conf" + File.separator + "stdStringMethods.config";
         String dependInterfaceInfo = configDir + "conf" + File.separator + "depend_interface.config";
@@ -160,7 +156,6 @@ public class TranslatorContext {
         Properties includeProperties = new Properties();
         Set<String> filterPackages = new HashSet<>();
         Set<String> ignoreClasses = new HashSet<>();
-        Set<String> externPrimaryTypes = new HashSet<>();
         Set<String> ignoredMethods = new HashSet<>();
         Set<String> stdStringMethods = new HashSet<>();
         Map<String, Integer> dependInterfaces = new HashMap<>();
@@ -173,7 +168,6 @@ public class TranslatorContext {
 
             BufferedReader ignoredPackageReader = Files.newBufferedReader(Paths.get(ignorePackageProfile));
             BufferedReader ignoredClassReader = Files.newBufferedReader(Paths.get(ignoreClassProfile));
-            BufferedReader externPrimaryTypesReader = Files.newBufferedReader(Paths.get(externPrimaryTypesProfile));
             BufferedReader ignoredMethodReader = Files.newBufferedReader(Paths.get(ignoredMethodsProfile));
             BufferedReader stdStringMethodReader = Files.newBufferedReader(Paths.get(stdStringMethodsProfile));
             BufferedReader dependInterfacesReader = Files.newBufferedReader(Paths.get(dependInterfaceInfo));
@@ -188,11 +182,6 @@ public class TranslatorContext {
             String ignoredClass;
             while ((ignoredClass = ignoredClassReader.readLine()) != null) {
                 ignoreClasses.add(ignoredClass.trim());
-            }
-
-            String externPrimaryType;
-            while ((externPrimaryType = externPrimaryTypesReader.readLine()) != null) {
-                externPrimaryTypes.add(externPrimaryType.trim());
             }
 
             String ignoredMethod;
@@ -251,12 +240,6 @@ public class TranslatorContext {
         IGNORED_CLASSES = ignoreClasses;
         for (String c : ignoreClasses) {
             LOGGER.info(c);
-        }
-
-        LOGGER.info("load extern primary type:");
-        PRIMARY_TYPES = externPrimaryTypes;
-        for (String e : externPrimaryTypes) {
-            LOGGER.info(e);
         }
 
         LOGGER.info("load ignored method:");

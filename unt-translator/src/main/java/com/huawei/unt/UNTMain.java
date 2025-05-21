@@ -31,7 +31,6 @@ public class UNTMain {
     private static final String SHA256 = "SHA256";
 
     public static void main(String[] args) {
-        // todo: add param check
         // arg0: jarPath
         // arg1: engineType
         // arg2: outputBasePath
@@ -139,8 +138,7 @@ public class UNTMain {
                     }
                 }
                 LOGGER.error(errMessage.toString());
-                //todo 
-//                throw new TranslatorException(errMessage.toString());
+                throw new TranslatorException(errMessage.toString());
             }
 
         String outputDir = basePath + File.separator + "output";
@@ -220,7 +218,6 @@ public class UNTMain {
                     List<JavaClass> classes = classesUdfMap.get(udfType);
                     for (int i = 0; i < classes.size(); i++) {
                         String formatClassName = TranslatorUtils.formatClassName(classes.get(i).getClassName());
-                        //todo change cpp file
                         String nativeDir = cppDir + File.separator + formatClassName;
                         String udfCppFile = nativeDir + File.separator + formatClassName + "_native.cpp";
 
