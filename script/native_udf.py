@@ -25,7 +25,7 @@ sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', write_through
 
 def main():
     if len(sys.argv) != 3:
-        print("Usage: python native_udf.py <jar_path> <command>")
+        print("Usage: python native_udf.py <command> <jar_path>")
         print("Available commands:")
         print("  list  - success native udf message")
         print("  source_info    - success native udf source code")
@@ -57,8 +57,7 @@ def main():
         sys.exit(1)
 
 def get_hash(file_path):
-    hash_file = os.path.join(BASE_DIR, hash_record.txt)
-    sha256 = hashlib.sha256()
+    hash_file = os.path.join(BASE_DIR, "hash_record.txt")
     try:
         with open(hash_file, 'r') as f:
             lines=f.readlines()

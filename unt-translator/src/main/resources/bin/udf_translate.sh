@@ -46,7 +46,26 @@ export CPLUS_INCLUDE_PATH=${cppDir}/include:$CPLUS_INCLUDE_PATH
 
 sha256="$( sed -n '1p' ${baseDir}/SHA256)"
 
-echo "${jarPath}:${sha256}" > ${baseDir}/hash_record.txt
+hash_record_file=${baseDir}/hash_record.txt
+if [ ! -e $hash_record_file ]; then
+    touch $hash_record_file
+fi
+
+records=$(cat $hash_record_file)
+jar_match=0
+for record in $records; do
+    if [[ $record == ${jarPath}:* ]]; then
+        jar_match=1
+        echo "${jarPath}:${sha256}:" >> ${baseDir}/hash_record_new.txt
+    else
+        echo $record >> ${baseDir}/hash_record_new.txt
+    fi
+done
+
+if [ $jar_match -eq 0 ]; then
+    echo "${jarPath}:${sha256}:" >> ${baseDir}/hash_record_new.txt
+fi
+mv ${baseDir}/hash_record_new.txt $hash_record_file
 
 cppDir="${cppDir}/${sha256}"
 
