@@ -86,7 +86,7 @@ public class TranslatorContext {
         LOGGER.info("Init TranslatorContext");
 
         String udfConfigDir = (configDir.endsWith(File.separator) ? configDir : configDir + File.separator)
-                +"unt_conf.properties";
+                +"udf_tune.properties";
         LOGGER.info("load properties: {}", udfConfigDir);
         Properties udfProperties = new Properties();
 
