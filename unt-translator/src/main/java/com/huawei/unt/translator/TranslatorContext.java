@@ -86,7 +86,7 @@ public class TranslatorContext {
         LOGGER.info("Init TranslatorContext");
 
         String udfConfigDir = (configDir.endsWith(File.separator) ? configDir : configDir + File.separator)
-                +"unt_conf.properties";
+                +"udf_tune.properties";
         LOGGER.info("load properties: {}", udfConfigDir);
         Properties udfProperties = new Properties();
 
@@ -154,15 +154,15 @@ public class TranslatorContext {
 
         LOGGER.info("load conf base");
 
-        String classProfile = configDir + "conf" + File.separator + "class.properties";
+        String classProfile = configDir + "conf" + File.separator + "depend_class.properties";
         String functionProfile = configDir + "conf" + File.separator + "function.properties";
-        String includeProfile = configDir + "conf" + File.separator + "include.properties";
+        String includeProfile = configDir + "conf" + File.separator + "depend_include.properties";
         String ignorePackageProfile = configDir + "conf" + File.separator + "ignoredPackage";
         String ignoreClassProfile = configDir + "conf" + File.separator + "ignoredClasses";
         String externPrimaryTypesProfile = configDir + "conf" + File.separator + "externPrimaryTypes";
         String ignoredMethodsProfile = configDir + "conf" + File.separator + "ignoredMethods";
         String stdStringMethodsProfile = configDir + "conf" + File.separator + "stdStringMethods";
-        String libInterfaceRefsInfo = configDir + "conf" + File.separator + "libInterfaceRefs";
+        String libInterfaceRefsInfo = configDir + "conf" + File.separator + "depend_interface.config";
 
         Properties classProperties = new Properties();
         Properties functionProperties = new Properties();
