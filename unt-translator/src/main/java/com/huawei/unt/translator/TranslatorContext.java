@@ -45,7 +45,6 @@ public class TranslatorContext {
     public static final String OLD_VAR_PUT = TAB + "if (old%1$S != nullptr){" + NEW_LINE +
             TAB + TAB + "old%1$S->putRefCount();" + NEW_LINE +
             TAB + "}" + NEW_LINE;
-    // todo
     public static int  ARRAY_LIB_TYPE = 0;
     public static int TUNELEVEL;
     public static boolean ISMEMTUNE;
@@ -63,30 +62,18 @@ public class TranslatorContext {
     public static Set<String> FILTER_PACKAGES;
     public static Set<String> IGNORED_CLASSES;
     public static Set<String> IGNORED_METHODS;
-    public static Set<String> PRIMARY_TYPES;
     public static Set<String> STD_STRING_METHODS;
     public static Set<String> GENERIC_FUNCTION;
 
-    // todo: make it configurable
     public static final int MAX_CLASS_DEPTH = 100;
     public static final int MAX_CLASS_COUNT = 100;
     public static final int MAX_FUNCTION_SIZE = 1000;
 
     public static void init(String configDir) {
-        // make it log info
-        GENERIC_FUNCTION = new HashSet<>();
-        GENERIC_FUNCTION.add("FilterFunction");
-        GENERIC_FUNCTION.add("RichParallelSourceFunction");
-        GENERIC_FUNCTION.add("FlatMapFunction");
-        GENERIC_FUNCTION.add("RichFlatMapFunction");
-        GENERIC_FUNCTION.add("MapFunction");
-        GENERIC_FUNCTION.add("ReduceFunction");
-        GENERIC_FUNCTION.add("KeySelect");
-
         LOGGER.info("Init TranslatorContext");
 
         String udfConfigDir = (configDir.endsWith(File.separator) ? configDir : configDir + File.separator)
-                +"unt_conf.properties";
+                +"udf_tune.properties";
         LOGGER.info("load properties: {}", udfConfigDir);
         Properties udfProperties = new Properties();
 
@@ -102,8 +89,8 @@ public class TranslatorContext {
             throw new TranslatorException("Load udf_config files failed: " + e.getMessage());
         }
 
-        if (!UDF_MAP.containsKey("base.dir")){
-            throw new TranslatorException("base.dir is not set");
+        if (!UDF_MAP.containsKey("basic_lib_path")){
+            throw new TranslatorException("basic_lib_path is not set");
         }
         if (!UDF_MAP.containsKey("tune_level")){
             LOGGER.info("tune_level is not configured, use default tune_level 0");
@@ -150,36 +137,35 @@ public class TranslatorContext {
             LOGGER.info("use compile_option: " + COMPILEOPTION);
         }
 
-        configDir = UDF_MAP.get("base.dir").endsWith(File.separator)?UDF_MAP.get("base.dir") : UDF_MAP.get("base.dir") + File.separator;
+        configDir = UDF_MAP.get("basic_lib_path").endsWith(File.separator)?UDF_MAP.get("basic_lib_path") : UDF_MAP.get("basic_lib_path") + File.separator;
 
         LOGGER.info("load conf base");
 
-        String classProfile = configDir + "conf" + File.separator + "class.properties";
+        String dependClassProfile = configDir + "conf" + File.separator + "depend_class.properties";
         String functionProfile = configDir + "conf" + File.separator + "function.properties";
-        String includeProfile = configDir + "conf" + File.separator + "include.properties";
-        String ignorePackageProfile = configDir + "conf" + File.separator + "ignoredPackage";
-        String ignoreClassProfile = configDir + "conf" + File.separator + "ignoredClasses";
-        String externPrimaryTypesProfile = configDir + "conf" + File.separator + "externPrimaryTypes";
-        String ignoredMethodsProfile = configDir + "conf" + File.separator + "ignoredMethods";
-        String stdStringMethodsProfile = configDir + "conf" + File.separator + "stdStringMethods";
-        String libInterfaceRefsInfo = configDir + "conf" + File.separator + "libInterfaceRefs";
+        String dependIncludeProfile = configDir + "conf" + File.separator + "depend_include.properties";
+        String ignorePackageProfile = configDir + "conf" + File.separator + "ignoredPackage.config";
+        String ignoreClassProfile = configDir + "conf" + File.separator + "ignoredClasses.config";
+        String ignoredMethodsProfile = configDir + "conf" + File.separator + "ignoredMethods.config";
+        String stdStringMethodsProfile = configDir + "conf" + File.separator + "stdStringMethods.config";
+        String dependInterfaceInfo = configDir + "conf" + File.separator + "depend_interface.config";
+        String genericFunctionInfo = configDir + "conf" + File.separator + "udf_generic.config";
 
         Properties classProperties = new Properties();
         Properties functionProperties = new Properties();
         Properties includeProperties = new Properties();
         Set<String> filterPackages = new HashSet<>();
         Set<String> ignoreClasses = new HashSet<>();
-        Set<String> externPrimaryTypes = new HashSet<>();
         Set<String> ignoredMethods = new HashSet<>();
         Set<String> stdStringMethods = new HashSet<>();
-        Map<String, Integer> libInterfaceRefs = new HashMap<>();
+        Map<String, Integer> dependInterfaces = new HashMap<>();
+        Set<String> genericFunctions = new HashSet<>();
 
         try (InputStream classProfileInput = Files.newInputStream(Paths.get(classProfile));
             InputStream functionProfileInput = Files.newInputStream(Paths.get(functionProfile));
             InputStream includeProfileInput = Files.newInputStream(Paths.get(includeProfile));
             BufferedReader ignoredPackageReader = Files.newBufferedReader(Paths.get(ignorePackageProfile));
             BufferedReader ignoredClassReader = Files.newBufferedReader(Paths.get(ignoreClassProfile));
-            BufferedReader externPrimaryTypesReader = Files.newBufferedReader(Paths.get(externPrimaryTypesProfile));
             BufferedReader ignoredMethodReader = Files.newBufferedReader(Paths.get(ignoredMethodsProfile));
             BufferedReader stdStringMethodReader = Files.newBufferedReader(Paths.get(stdStringMethodsProfile));
             BufferedReader libInterFaceRefsReader = Files.newBufferedReader(Paths.get(libInterfaceRefsInfo))) {
@@ -197,11 +183,6 @@ public class TranslatorContext {
                 ignoreClasses.add(ignoredClass.trim());
             }
 
-            String externPrimaryType;
-            while ((externPrimaryType = externPrimaryTypesReader.readLine()) != null) {
-                externPrimaryTypes.add(externPrimaryType.trim());
-            }
-
             String ignoredMethod;
             while ((ignoredMethod = ignoredMethodReader.readLine()) != null) {
                 ignoredMethods.add(ignoredMethod.trim());
@@ -212,11 +193,17 @@ public class TranslatorContext {
                 stdStringMethods.add(stdStringMethod);
             }
 
-            String interfaceRef;
-            while((interfaceRef = libInterFaceRefsReader.readLine()) != null) {
-                String[] ref = interfaceRef.trim().split(", ");
-                libInterfaceRefs.put(ref[0].trim(), Integer.valueOf(ref[1].trim()));
+            String dependInterface;
+            while((dependInterface = dependInterfacesReader.readLine()) != null) {
+                String[] ref = dependInterface.trim().split(", ");
+                dependInterfaces.put(ref[0].trim(), Integer.valueOf(ref[1].trim()));
             }
+
+            String genericFunction;
+            while((genericFunction = genericFunctionReader.readLine()) != null) {
+                genericFunctions.add(genericFunction.trim());
+            }
+
         } catch (IOException e) {
             throw new TranslatorException("Load config files failed: " + e.getMessage());
         }
@@ -254,12 +241,6 @@ public class TranslatorContext {
             LOGGER.info(c);
         }
 
-        LOGGER.info("load extern primary type:");
-        PRIMARY_TYPES = externPrimaryTypes;
-        for (String e : externPrimaryTypes) {
-            LOGGER.info(e);
-        }
-
         LOGGER.info("load ignored method:");
         IGNORED_METHODS = ignoredMethods;
         for (String m : ignoredMethods) {
@@ -273,10 +254,17 @@ public class TranslatorContext {
         }
 
         LOGGER.info("load lib interface ref info:");
-        LIB_INTERFACE_REF = libInterfaceRefs;
-        for (String libInterface : libInterfaceRefs.keySet()) {
-            LOGGER.info("load ref {}, {}", libInterface, libInterfaceRefs.get(libInterface));
+        LIB_INTERFACE_REF = dependInterfaces;
+        for (String libInterface : dependInterfaces.keySet()) {
+            LOGGER.info("load ref {}, {}", libInterface, dependInterfaces.get(libInterface));
         }
+
+        LOGGER.info("load generic functions");
+        GENERIC_FUNCTION = genericFunctions;
+        for (String s : genericFunctions) {
+            LOGGER.info(s);
+        }
+
     }
 
     private TranslatorContext() {}

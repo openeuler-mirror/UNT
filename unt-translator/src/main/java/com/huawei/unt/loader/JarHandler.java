@@ -60,7 +60,6 @@ public class JarHandler {
         this.javaView = view;
     }
 
-
     public boolean isSubClass(String className, ClassType superClassType) {
         JavaClassType classType = JavaIdentifierFactory.getInstance().getClassType(className);
 

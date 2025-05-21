@@ -267,7 +267,6 @@ public class MemoryReleaseOptimizer implements Optimizer {
         return j;
     }
 
-    // todo: udf inputs mark
     private void identityStmtHandle(int i) {
         Stmt stmt = stmts.get(i);
         Local local = ((JIdentityStmt) stmt).getLeftOp();
@@ -538,7 +537,6 @@ public class MemoryReleaseOptimizer implements Optimizer {
     }
 
     private int getRef(Value value) {
-        // todo: check new
         if (isNewExpr(value) || value instanceof StringConstant || isToString(value)) {
             return 1;
         } else if (value instanceof AbstractInvokeExpr) {
