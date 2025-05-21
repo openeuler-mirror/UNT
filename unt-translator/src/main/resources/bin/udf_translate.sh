@@ -46,6 +46,8 @@ export CPLUS_INCLUDE_PATH=${cppDir}/include:$CPLUS_INCLUDE_PATH
 
 sha256="$( sed -n '1p' ${baseDir}/SHA256)"
 
+echo "${jarPath}:${sha256}" > ${baseDir}/hash_record.txt
+
 cppDir="${cppDir}/${sha256}"
 
 outputDir="${outputDir}/${sha256}"
