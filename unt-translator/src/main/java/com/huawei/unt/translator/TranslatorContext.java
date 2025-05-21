@@ -90,8 +90,8 @@ public class TranslatorContext {
         LOGGER.info("load properties: {}", udfConfigDir);
         Properties udfProperties = new Properties();
 
-        try{
-            udfProperties.load(Files.newInputStream(Paths.get(udfConfigDir)));
+        try (InputStream udfConfigInput = Files.newInputStream(Paths.get(udfConfigDir))) {
+            udfProperties.load(udfConfigInput);
             LOGGER.info("load udf config");
             UDF_MAP = new HashMap<String, String>();
             for (Object key : udfProperties.keySet()) {
@@ -174,18 +174,18 @@ public class TranslatorContext {
         Set<String> stdStringMethods = new HashSet<>();
         Map<String, Integer> libInterfaceRefs = new HashMap<>();
 
-        try {
-            classProperties.load(Files.newInputStream(Paths.get(classProfile)));
-
-            functionProperties.load((Files.newInputStream(Paths.get(functionProfile))));
-            includeProperties.load((Files.newInputStream(Paths.get(includeProfile))));
-
+        try (InputStream classProfileInput = Files.newInputStream(Paths.get(classProfile));
+            InputStream functionProfileInput = Files.newInputStream(Paths.get(functionProfile));
+            InputStream includeProfileInput = Files.newInputStream(Paths.get(includeProfile));
             BufferedReader ignoredPackageReader = Files.newBufferedReader(Paths.get(ignorePackageProfile));
             BufferedReader ignoredClassReader = Files.newBufferedReader(Paths.get(ignoreClassProfile));
             BufferedReader externPrimaryTypesReader = Files.newBufferedReader(Paths.get(externPrimaryTypesProfile));
             BufferedReader ignoredMethodReader = Files.newBufferedReader(Paths.get(ignoredMethodsProfile));
             BufferedReader stdStringMethodReader = Files.newBufferedReader(Paths.get(stdStringMethodsProfile));
-            BufferedReader libInterFaceRefsReader = Files.newBufferedReader(Paths.get(libInterfaceRefsInfo));
+            BufferedReader libInterFaceRefsReader = Files.newBufferedReader(Paths.get(libInterfaceRefsInfo))) {
+            classProperties.load(classProfileInput);
+            functionProperties.load(functionProfileInput);
+            includeProperties.load(includeProfileInput);
 
             String ignorePackage;
             while ((ignorePackage = ignoredPackageReader.readLine()) != null) {
