@@ -11,7 +11,7 @@
             <PatternLayout pattern="${LOG_PATTERN}" />
         </Console>
 
-        <RollingRandomAccessFile name="File" fileName="../log/unt.log" filePattern="../log/unt-%d{yyyy-MM-dd}_%i.log.gz">
+        <RollingRandomAccessFile name="File" fileName="/opt/udf-trans-opt/udf-translator/log/unt.log" filePattern="/opt/udf-trans-opt/udf-translator/log/unt-%d{yyyy-MM-dd}_%i.log.gz">
             <PatternLayout pattern="${LOG_PATTERN}" />
             <Policies>
                 <TimeBasedTriggeringPolicy interval="24" />

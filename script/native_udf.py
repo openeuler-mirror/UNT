@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import sys
@@ -57,15 +57,16 @@ def main():
         sys.exit(1)
 
 def get_hash(file_path):
+    hash_file = os.path.join(BASE_DIR, hash_record.txt)
     sha256 = hashlib.sha256()
     try:
-        with open(file_path, 'rb') as f:
-            while True:
-                chunk = f.read(1024)
-                if not chunk:
-                    break
-                sha256.update(chunk)
-        return sha256.hexdigest()
+        with open(hash_file, 'r') as f:
+            lines=f.readlines()
+            for content in lines:
+                if content.startswith(file_path):
+                    words = content.split(":")
+                    return words[1]
+        return "null"
     except Exception as e:
         raise Exception(f"failed to get jarHash: {str(e)}")
 
@@ -114,7 +115,7 @@ def source_info(file_path):
 def depend_info(file_path):
     try:
         jar_path = os.path.join(SCANNER_DIR, "unt-scanner-1.0-bin.jar")
-        txt_path = os.path.join(SCANNER_DIR, "DependencyScanResult.txt")
+        txt_path = os.path.join(BASE_DIR, "DependencyScanResult.txt")
 
         if not os.path.exists(jar_path):
             raise FileNotFoundError(f"untScanner not found: {jar_path}")
