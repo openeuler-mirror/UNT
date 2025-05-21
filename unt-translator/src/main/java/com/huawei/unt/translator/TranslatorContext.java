@@ -161,17 +161,18 @@ public class TranslatorContext {
         Map<String, Integer> dependInterfaces = new HashMap<>();
         Set<String> genericFunctions = new HashSet<>();
 
-        try (InputStream classProfileInput = Files.newInputStream(Paths.get(classProfile));
+        try (InputStream dependClassProfileInput = Files.newInputStream(Paths.get(dependClassProfile));
             InputStream functionProfileInput = Files.newInputStream(Paths.get(functionProfile));
-            InputStream includeProfileInput = Files.newInputStream(Paths.get(includeProfile));
+            InputStream dependIncludeProfileInput = Files.newInputStream(Paths.get(dependIncludeProfile));
             BufferedReader ignoredPackageReader = Files.newBufferedReader(Paths.get(ignorePackageProfile));
             BufferedReader ignoredClassReader = Files.newBufferedReader(Paths.get(ignoreClassProfile));
             BufferedReader ignoredMethodReader = Files.newBufferedReader(Paths.get(ignoredMethodsProfile));
             BufferedReader stdStringMethodReader = Files.newBufferedReader(Paths.get(stdStringMethodsProfile));
-            BufferedReader libInterFaceRefsReader = Files.newBufferedReader(Paths.get(libInterfaceRefsInfo))) {
-            classProperties.load(classProfileInput);
+            BufferedReader dependInterfacesReader = Files.newBufferedReader(Paths.get(dependInterfaceInfo));
+            BufferedReader genericFunctionReader = Files.newBufferedReader(Paths.get(genericFunctionInfo))) {
+            classProperties.load(dependClassProfileInput);
             functionProperties.load(functionProfileInput);
-            includeProperties.load(includeProfileInput);
+            includeProperties.load(dependIncludeProfileInput);
 
             String ignorePackage;
             while ((ignorePackage = ignoredPackageReader.readLine()) != null) {
