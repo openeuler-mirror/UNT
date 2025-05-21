@@ -140,7 +140,7 @@ public class UNTMain {
                 }
                 LOGGER.error(errMessage.toString());
                 //todo 
-//                throw new TranslatorException(errMessage.toString());
+                throw new TranslatorException(errMessage.toString());
             }
 
         String outputDir = basePath + File.separator + "output";

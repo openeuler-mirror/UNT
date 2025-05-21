@@ -11,7 +11,7 @@ from typing import Final
 import hashlib
 
 BASE_DIR: Final[str] = "/opt/udf-trans-opt/udf-translator/"
-
+SCANNER_DIR: Final[str] = "/opt/udf-trans-opt/"
 MIN_PYTHON = (3, 6)
 if sys.version_info < MIN_PYTHON:
     sys.exit(
@@ -31,20 +31,23 @@ def main():
         print("  source_info    - success native udf source code")
         print("  depend_info  - get dependencies")
         print("  fail_info  - get fail message")
+        print("  tune_level  - change native udf tune level")
         sys.exit(1)
 
-    file_path = sys.argv[1]
-    command = sys.argv[2].lower()
+    command = sys.argv[1].lower()
+    option = sys.argv[2]
 
     try:
         if command == "list":
-            list_udf(file_path)
+            list_udf(option)
         elif command == "source_info":
-            source_info(file_path)
+            source_info(option)
         elif command == "depend_info":
-            depend_info(file_path)
+            depend_info(option)
         elif command == "fail_info":
-            fail_info(file_path)
+            fail_info(option)
+        elif command == "tune_level":
+            udf_tune(option)
         else:
             print(f"invalid command: {command}")
             print("valid command: list, source_info, depend_info, fail_info")
@@ -89,13 +92,29 @@ def source_info(file_path):
     if not os.path.exists(hash_cpp_path):
         print("cpp dir doesn't exist")
         return
-    print("source code location:\n")
-    print(hash_cpp_path)
+    print("source code path:", hash_cpp_path)
+    sub_dirs = []
+    print("udf share cpp files:")
+    for root, dirs, files in os.walk(hash_cpp_path):
+        for name in dirs:
+            sub_dirs.append(name)
+        for name in files:
+            if name.endswith(".cpp"):
+                print(name)
+        break
+    for sub_dir in sub_dirs:
+        print("udf private files for " + sub_dir + ":")
+        sub_path = os.path.join(hash_cpp_path, sub_dir)
+        for sub_root, sub_dirs, sub_files in os.walk(sub_path):
+            for sub_name in sub_files:
+                if sub_name.endswith(".cpp"):
+                    print(os.path.join(sub_dir,sub_name))
+            break
 
 def depend_info(file_path):
     try:
-        jar_path = os.path.join(BASE_DIR, "untScanner-1.2-bin.jar")
-        txt_path = os.path.join(BASE_DIR, "DependencyScanResult.txt")
+        jar_path = os.path.join(SCANNER_DIR, "unt-scanner-1.0-bin.jar")
+        txt_path = os.path.join(SCANNER_DIR, "DependencyScanResult.txt")
 
         if not os.path.exists(jar_path):
             raise FileNotFoundError(f"untScanner not found: {jar_path}")
@@ -223,7 +242,7 @@ def reverse_readline(filename, buf_size=8192):
         position = f.tell()
         remainder = bytearray()
 
-        while position >= 0:
+        while position > 0:
             if position - buf_size < 0:
                 read_size = position
                 position = 0
@@ -245,5 +264,26 @@ def reverse_readline(filename, buf_size=8192):
         if remainder:
             yield remainder.decode('utf-8').rstrip('\r\n')
 
+
+def udf_tune(level):
+    tune_file = os.path.join(BASE_DIR, "conf", "udf_tune.properties")
+    try:
+        with open(tune_file, "r") as f:
+            lines = f.readlines()
+            modify_line_num = 0
+            select_content=""
+            for content in lines:
+                if content.startswith("tune_level"):
+                    words = content.split("=")
+                    select_content = words[0] + "=" + level + "\n"
+                    break
+                modify_line_num += 1
+            lines[modify_line_num] = select_content
+        with open(tune_file, "w") as f:
+            f.writelines(lines)
+    except Exception as e:
+        print("open tune file fail:",e)
+
 if __name__ == "__main__":
     main()
+
