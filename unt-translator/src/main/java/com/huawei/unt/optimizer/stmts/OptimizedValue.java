@@ -1,17 +1,27 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
+ */
+
 package com.huawei.unt.optimizer.stmts;
 
 import com.google.common.base.Objects;
+
 import sootup.core.jimple.basic.JimpleComparator;
 import sootup.core.jimple.basic.Value;
 import sootup.core.jimple.visitor.ValueVisitor;
 import sootup.core.types.Type;
 import sootup.core.util.printer.StmtPrinter;
 
-import javax.annotation.Nonnull;
 import java.util.stream.Stream;
 
-public class OptimizedValue implements Value {
+import javax.annotation.Nonnull;
 
+/**
+ * OptimizedValue is new value created by optimizers
+ *
+ * @since 2025-05-19
+ */
+public class OptimizedValue implements Value {
     private final String optimizedString;
     private final Value originalValue;
 
@@ -57,10 +67,11 @@ public class OptimizedValue implements Value {
         }
 
         OptimizedValue other = (OptimizedValue) o;
-        return other.getCode().equals(this.getCode()) &&
-                other.getOriginalValue().equivTo(this.getOriginalValue());
+        return other.getCode().equals(this.getCode())
+                && other.getOriginalValue().equivTo(this.getOriginalValue());
     }
 
+    @Override
     public void accept(@Nonnull ValueVisitor v) {
         v.defaultCaseValue(this);
     }

@@ -1,6 +1,11 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
+ */
+
 package com.huawei.unt.optimizer;
 
 import com.huawei.unt.model.MethodContext;
+
 import sootup.core.jimple.common.stmt.BranchingStmt;
 import sootup.core.jimple.common.stmt.Stmt;
 import sootup.core.model.Body;
@@ -13,6 +18,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * Deal with branch stmt
+ *
+ * @since 2025-05-19
+ */
 public class BranchStmtLabeler implements Optimizer {
     @Override
     public boolean fetch(MethodContext methodContext) {
@@ -37,7 +47,7 @@ public class BranchStmtLabeler implements Optimizer {
 
         for (int i = 0; i < stmts.size(); i++) {
             Stmt stmt = stmts.get(i);
-            if (stmt.branches()) {
+            if (stmt instanceof BranchingStmt) {
                 List<Stmt> targetBranches = body.getStmtGraph().getBranchTargetsOf((BranchingStmt) stmt);
                 List<Integer> targetList = new ArrayList<>();
 
