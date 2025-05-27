@@ -139,6 +139,7 @@ public class MemoryReleaseOptimizer implements Optimizer {
 
             if (loops.containsKey(i)) {
                 i = loopHandle(i, methodContext);
+                continue;
             }
             if (stmt instanceof JIdentityStmt) {
                 identityStmtHandle(i);
@@ -352,6 +353,7 @@ public class MemoryReleaseOptimizer implements Optimizer {
         if (ref == 0) {
             if (value instanceof Local && locals.containsKey(value) && locals.get(value) == 1) {
                 locals.put((Local) value, 0);
+                return;
             }
             if (value instanceof JCastExpr) {
                 Immediate op = ((JCastExpr) value).getOp();
@@ -451,6 +453,7 @@ public class MemoryReleaseOptimizer implements Optimizer {
                 if (branchTargets.get(0) == i) {
                     continueStmts.add(j);
                 }
+                continue;
             }
             if (stmt instanceof JAssignStmt) {
                 loopAssignStmtHandle(j, blockLocals);
@@ -500,9 +503,11 @@ public class MemoryReleaseOptimizer implements Optimizer {
                     assignLocation.add(j);
                     localAssign.put((Local) leftOp, assignLocation);
                 }
+                return;
             }
             if (leftOp instanceof JFieldRef) {
                 fieldRefAssignStmtHandle(j, leftOp, value, ref);
+                return;
             }
             if (leftOp instanceof JArrayRef) {
                 arrRefAssignStmtHandle(j, leftOp, value, ref);
