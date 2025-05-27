@@ -1,29 +1,44 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
+ */
+
 package com.huawei.unt.optimizer;
 
-import com.google.common.collect.ImmutableList;
 import com.huawei.unt.model.MethodContext;
 import com.huawei.unt.optimizer.stmts.OptimizedLinesStmt;
-import com.huawei.unt.translator.TranslatorContext;
+
+import com.google.common.collect.ImmutableList;
+
 import sootup.core.jimple.common.stmt.Stmt;
 
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * Handle all optimizers
+ *
+ * @since 2505-05-19
+ */
 public class Optimizers {
-    public static List<Optimizer> OPTIMIZERS = ImmutableList.of(
+    /**
+     * All optimizers
+     */
+    public static final List<Optimizer> OPTIMIZERS = ImmutableList.of(
             new StmtGraphAnalyzer(),
             new BranchStmtLabeler(),
-//            new ReduceTupleOptimizer(),
             new NewRefOptimizer(),
-//            new RemoveLogger(),
             new RemoveTrap(),
             new RemoveIgnoreClass(),
-            new MemoryReleaseOptimizer(TranslatorContext.LIB_INTERFACE_REF),
-//            new StringBuilderOptimizer(),
+            new MemoryReleaseOptimizer(),
             new ArrayFieldHandler(),
             new StringPacking(),
             new InitStaticReturnHandler());
 
+    /**
+     * Use all optimizers
+     *
+     * @param methodContext methodContext
+     */
     public static void optimize(MethodContext methodContext) {
         for (Optimizer optimizer : OPTIMIZERS) {
             if (optimizer.fetch(methodContext)) {
@@ -32,6 +47,12 @@ public class Optimizers {
         }
     }
 
+    /**
+     * Return an empty stmt
+     *
+     * @param stmt originalStmt
+     * @return empty stmt
+     */
     public static Stmt getEmptyOptimizedStmt(Stmt stmt) {
         return new OptimizedLinesStmt(Collections.emptyList(), stmt);
     }

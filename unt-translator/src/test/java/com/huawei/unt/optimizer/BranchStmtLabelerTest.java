@@ -1,29 +1,42 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
+ */
+
 package com.huawei.unt.optimizer;
 
-import com.google.common.collect.ImmutableList;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import com.huawei.unt.BaseTest;
 import com.huawei.unt.loader.JarHandler;
 import com.huawei.unt.model.MethodContext;
 import com.huawei.unt.type.NoneUDF;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+
+import com.google.common.collect.ImmutableList;
+
 import sootup.core.inputlocation.AnalysisInputLocation;
 import sootup.core.model.SourceType;
 import sootup.java.bytecode.frontend.inputlocation.PathBasedAnalysisInputLocation;
 import sootup.java.core.JavaSootMethod;
 import sootup.java.core.views.JavaView;
 
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
+/**
+ * Test BranchStmtLabeler optimizer
+ *
+ * @since 2025-05-19
+ */
 public class BranchStmtLabelerTest extends BaseTest {
     private static final BranchStmtLabeler BRANCH_LABELER = new BranchStmtLabeler();
-    private static JarHandler JAR_HANDLER;
+
+    private static JarHandler jarHandler;
 
     @BeforeAll
     public static void init() {
@@ -33,12 +46,13 @@ public class BranchStmtLabelerTest extends BaseTest {
 
         JavaView javaView = new JavaView(inputLocation);
 
-        JAR_HANDLER = new JarHandler(javaView);
+        jarHandler = new JarHandler(javaView);
     }
 
     @Test
     public void testIf() {
-        Optional<JavaSootMethod> method = JAR_HANDLER.tryGetMethod("TestBranch", "testIf", "void", ImmutableList.of("int"));
+        Optional<JavaSootMethod> method = jarHandler.tryGetMethod(
+                "TestBranch", "testIf", "void", ImmutableList.of("int"));
         Assertions.assertTrue(method.isPresent());
         MethodContext methodContext = new MethodContext(method.get(), NoneUDF.INSTANCE);
 
@@ -55,7 +69,8 @@ public class BranchStmtLabelerTest extends BaseTest {
 
     @Test
     public void testSwitch() {
-        Optional<JavaSootMethod> method = JAR_HANDLER.tryGetMethod("TestBranch", "testSwitch", "void", ImmutableList.of("int"));
+        Optional<JavaSootMethod> method = jarHandler.tryGetMethod(
+                "TestBranch", "testSwitch", "void", ImmutableList.of("int"));
         Assertions.assertTrue(method.isPresent());
         MethodContext methodContext = new MethodContext(method.get(), NoneUDF.INSTANCE);
 
@@ -72,7 +87,8 @@ public class BranchStmtLabelerTest extends BaseTest {
 
     @Test
     public void testLoop() {
-        Optional<JavaSootMethod> method = JAR_HANDLER.tryGetMethod("TestBranch", "testLoop", "void", ImmutableList.of());
+        Optional<JavaSootMethod> method = jarHandler.tryGetMethod(
+                "TestBranch", "testLoop", "void", ImmutableList.of());
         Assertions.assertTrue(method.isPresent());
         MethodContext methodContext = new MethodContext(method.get(), NoneUDF.INSTANCE);
 

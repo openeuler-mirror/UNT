@@ -1,24 +1,37 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
+ */
+
 package com.huawei.unt.type.flink;
 
-import com.google.common.collect.ImmutableSet;
+import static com.huawei.unt.translator.TranslatorContext.NEW_LINE;
+import static com.huawei.unt.translator.TranslatorContext.TAB;
+
 import com.huawei.unt.model.MethodContext;
 import com.huawei.unt.translator.TranslatorUtils;
 import com.huawei.unt.type.UDFType;
-import org.apache.flink.api.common.functions.ReduceFunction;
-import org.apache.flink.api.common.functions.RichFilterFunction;
-import org.apache.flink.configuration.Configuration;
+
+import com.google.common.collect.ImmutableSet;
+
 import sootup.core.jimple.basic.Local;
 import sootup.core.model.MethodModifier;
 import sootup.core.types.ClassType;
 import sootup.java.core.JavaIdentifierFactory;
 import sootup.java.core.JavaSootMethod;
 
+import org.apache.flink.api.common.functions.ReduceFunction;
+
 import java.util.Set;
 
-import static com.huawei.unt.translator.TranslatorContext.NEW_LINE;
-import static com.huawei.unt.translator.TranslatorContext.TAB;
-
+/**
+ * Flink ReduceFunction
+ *
+ * @since 2025-05-19
+ */
 public class FlinkReduceFunction implements UDFType {
+    /**
+     * Flink Reduce Function instance
+     */
     public static final FlinkReduceFunction INSTANCE = new FlinkReduceFunction();
 
     @Override

@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
+ */
+
 package com.huawei.unt.optimizer;
 
 import com.huawei.unt.model.MethodContext;
@@ -8,6 +12,7 @@ import com.huawei.unt.translator.TranslatorException;
 import com.huawei.unt.translator.TranslatorUtils;
 import com.huawei.unt.translator.visitor.TranslatorTypeVisitor;
 import com.huawei.unt.translator.visitor.TranslatorValueVisitor;
+
 import sootup.core.jimple.basic.Local;
 import sootup.core.jimple.basic.Value;
 import sootup.core.jimple.common.ref.JArrayRef;
@@ -16,6 +21,11 @@ import sootup.core.jimple.common.stmt.Stmt;
 import sootup.core.types.PrimitiveType;
 import sootup.core.types.Type;
 
+/**
+ * Deal with array field
+ *
+ * @since 2025-05-19
+ */
 public class ArrayFieldHandler implements Optimizer {
     @Override
     public boolean fetch(MethodContext methodContext) {
@@ -31,23 +41,12 @@ public class ArrayFieldHandler implements Optimizer {
                 JArrayRef arrayRef = (JArrayRef) ((JAssignStmt) stmt).getLeftOp();
                 Local base = arrayRef.getBase();
 
-                String res = base.toString() + "->append(" + ((JAssignStmt) stmt).getRightOp().toString() + ")";
+                String res = base + "->append(" + ((JAssignStmt) stmt).getRightOp() + ")";
                 OptimizedDirectStmt optimizedDirectStmt = new OptimizedDirectStmt(res, stmt);
 
-                methodContext.getStmts().set(i,optimizedDirectStmt);
-
-//                arrayRef.getIndex().accept(valueVisitor);
-//
-//                String left = "(*" + TranslatorUtils.formatLocalName(arrayRef.getBase())
-//                        + ")[" + valueVisitor.toCode() + "]";
-//
-//                valueVisitor.clear();
-//
-//                OptimizedValue leftValue = new OptimizedValue(left, ((JAssignStmt) stmt).getLeftOp());
-//
-//                methodContext.getStmts().set(i, new OptimizedJAssignStmt(leftValue,
-//                        ((JAssignStmt) stmt).getRightOp(), (JAssignStmt)  stmt));
+                methodContext.getStmts().set(i, optimizedDirectStmt);
             }
+
             if (stmt instanceof JAssignStmt && ((JAssignStmt) stmt).getRightOp() instanceof JArrayRef) {
                 JArrayRef arrayRef = (JArrayRef) ((JAssignStmt) stmt).getRightOp();
                 String localName = TranslatorUtils.formatLocalName(arrayRef.getBase());

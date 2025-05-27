@@ -1,34 +1,39 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
+ */
+
 package com.huawei.unt.optimizer.stmts;
 
-
 import sootup.core.jimple.basic.JimpleComparator;
-import sootup.core.jimple.basic.StmtPositionInfo;
 import sootup.core.jimple.common.stmt.AbstractStmt;
 import sootup.core.jimple.common.stmt.Stmt;
 import sootup.core.jimple.visitor.StmtVisitor;
 import sootup.core.util.printer.StmtPrinter;
 
-import javax.annotation.Nonnull;
 import java.util.Objects;
 
-/*
-    The optimizer returns the result directly.
+import javax.annotation.Nonnull;
+
+/**
+ * The optimizer returns the result directly.
+ *
+ * @since 2025-05-19
  */
 public class OptimizedDirectStmt extends AbstractStmt {
     private final Stmt originalStmt;
     private final String optimizedRes;
 
-    public OptimizedDirectStmt(String optimizedRes, Stmt originalStmt){
+    public OptimizedDirectStmt(String optimizedRes, Stmt originalStmt) {
         super(originalStmt.getPositionInfo());
         this.originalStmt = originalStmt;
         this.optimizedRes = optimizedRes;
     }
 
-    public String getOptimizedRes(){
+    public String getOptimizedRes() {
         return optimizedRes;
     }
 
-    public Stmt getOriginalStmt(){
+    public Stmt getOriginalStmt() {
         return originalStmt;
     }
 
@@ -49,12 +54,12 @@ public class OptimizedDirectStmt extends AbstractStmt {
 
     @Override
     public int equivHashCode() {
-        return Objects.hash(originalStmt,optimizedRes);
+        return Objects.hash(originalStmt, optimizedRes);
     }
 
     @Override
     public boolean equivTo(Object o, @Nonnull JimpleComparator jimpleComparator) {
-        if (!(o instanceof OptimizedDirectStmt)){
+        if (!(o instanceof OptimizedDirectStmt)) {
             return false;
         }
 

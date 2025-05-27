@@ -1,28 +1,41 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
+ */
+
 package com.huawei.unt.optimizer;
 
-import com.google.common.collect.ImmutableList;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import com.huawei.unt.BaseTest;
 import com.huawei.unt.loader.JarHandler;
 import com.huawei.unt.model.MethodContext;
 import com.huawei.unt.type.NoneUDF;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+
+import com.google.common.collect.ImmutableList;
+
 import sootup.core.inputlocation.AnalysisInputLocation;
 import sootup.core.model.SourceType;
 import sootup.java.bytecode.frontend.inputlocation.PathBasedAnalysisInputLocation;
 import sootup.java.core.JavaSootMethod;
 import sootup.java.core.views.JavaView;
 
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
+/**
+ * Test RemoveTrap optimizer
+ *
+ * @since 2025-05-19
+ */
 public class RemoveTrapTest extends BaseTest {
+    private static MethodContext methodContext;
+
     private final RemoveTrap opt = new RemoveTrap();
-    private static MethodContext METHOD_CONTEXT;
 
     @BeforeAll
     public static void init() {
@@ -37,24 +50,23 @@ public class RemoveTrapTest extends BaseTest {
         Optional<JavaSootMethod> method =
                 jarHandler.tryGetMethod("TestTrap", "checkException", "void", ImmutableList.of());
 
-        METHOD_CONTEXT = new MethodContext(method.get(), NoneUDF.INSTANCE);
+        methodContext = new MethodContext(method.get(), NoneUDF.INSTANCE);
     }
 
     @Test
     public void testFetch() {
-        assertTrue(opt.fetch(METHOD_CONTEXT));
-
+        assertTrue(opt.fetch(methodContext));
     }
 
     @Test
     public void testOptimize() {
         Optimizer optimizer = new RemoveTrap();
-        optimizer.optimize(METHOD_CONTEXT);
+        optimizer.optimize(methodContext);
 
         List<Integer> removedStmt = ImmutableList.of(4, 5, 6, 7, 9, 10);
 
         for (int index : removedStmt) {
-            assertTrue(METHOD_CONTEXT.isRemoved(index));
+            assertTrue(methodContext.isRemoved(index));
         }
     }
 }

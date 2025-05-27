@@ -1,26 +1,37 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
+ */
+
 package com.huawei.unt.type.flink;
-
-import com.google.common.collect.ImmutableSet;
-import com.huawei.unt.model.JavaClass;
-import com.huawei.unt.model.MethodContext;
-import com.huawei.unt.translator.TranslatorContext;
-import com.huawei.unt.translator.TranslatorException;
-import com.huawei.unt.translator.TranslatorUtils;
-import com.huawei.unt.translator.visitor.TranslatorTypeVisitor;
-import com.huawei.unt.type.UDFType;
-import org.apache.flink.api.java.functions.KeySelector;
-import sootup.core.jimple.basic.Local;
-import sootup.core.model.MethodModifier;
-import sootup.core.types.ClassType;
-import sootup.core.types.Type;
-import sootup.java.core.JavaIdentifierFactory;
-import sootup.java.core.JavaSootMethod;
-
-import java.util.Set;
 
 import static com.huawei.unt.translator.TranslatorContext.NEW_LINE;
 
+import com.huawei.unt.model.MethodContext;
+import com.huawei.unt.translator.TranslatorContext;
+import com.huawei.unt.translator.TranslatorUtils;
+import com.huawei.unt.type.UDFType;
+
+import com.google.common.collect.ImmutableSet;
+
+import sootup.core.jimple.basic.Local;
+import sootup.core.model.MethodModifier;
+import sootup.core.types.ClassType;
+import sootup.java.core.JavaIdentifierFactory;
+import sootup.java.core.JavaSootMethod;
+
+import org.apache.flink.api.java.functions.KeySelector;
+
+import java.util.Set;
+
+/**
+ * Flink keySelector
+ *
+ * @since 2025-05-19
+ */
 public class FlinkKeySelector implements UDFType {
+    /**
+     * instance
+     */
     public static final FlinkKeySelector INSTANCE = new FlinkKeySelector();
 
     @Override
@@ -30,19 +41,10 @@ public class FlinkKeySelector implements UDFType {
 
     @Override
     public String getCppFileString(String className) {
-
         return "#include \"../" + className + ".h\"\n\n"
                 + "extern \"C\" std::unique_ptr<KeySelect<Object>> NewInstance(nlohmann::json jsonObj) {\n"
                 + "    return std::make_unique<" + className + ">(jsonObj);\n"
                 + "}";
-
-//        return "#include \"" + className + ".h\"\n\n" +
-//                "extern \"C\" size_t Hash(Object *value) {\n" +
-//                "    return " + className + "::Hash(value);\n"+
-//                "}\n\n" +
-//                "extern \"C\" bool Cmp(Object *value1, Object *value2) {\n" +
-//                "    return " + className + "::Cmp(value1, value2);\n" +
-//                "}\n";
     }
 
     @Override
@@ -59,9 +61,9 @@ public class FlinkKeySelector implements UDFType {
             return false;
         }
 
-        return method.getParameterCount() == 1 &&
-                method.getReturnType() instanceof ClassType &&
-                method.getParameterType(0) instanceof ClassType;
+        return method.getParameterCount() == 1
+                && method.getReturnType() instanceof ClassType
+                && method.getParameterType(0) instanceof ClassType;
     }
 
     @Override
@@ -82,8 +84,8 @@ public class FlinkKeySelector implements UDFType {
     public String printHeadAndParams(MethodContext methodContext) {
         String className = TranslatorUtils.formatType(methodContext.getJavaMethod().getDeclClassType());
 
-        if (methodContext.getJavaMethod().getName().equals("getKey") &&
-                isUdfFunction(methodContext.getJavaMethod())) {
+        if ("getKey".equals(methodContext.getJavaMethod().getName())
+                && isUdfFunction(methodContext.getJavaMethod())) {
             StringBuilder headBuilder = new StringBuilder();
 
             headBuilder.append("Object *")
@@ -145,59 +147,5 @@ public class FlinkKeySelector implements UDFType {
     public Set<ClassType> getRequiredIncludes() {
         JavaIdentifierFactory factory = JavaIdentifierFactory.getInstance();
         return ImmutableSet.of(factory.getClassType(KeySelector.class.getName()));
-    }
-
-    public String getDeclareHashAndCmpFunction(JavaClass javaClass) {
-        String className = TranslatorUtils.formatClassName(javaClass.getClassName());
-
-        return NEW_LINE + "public:" + NEW_LINE +
-                "    static " + className + "* instance;" + NEW_LINE +
-                "    static size_t Hash(Object *obj);" + NEW_LINE +
-                "    static bool Cmp(Object *value1, Object *value2);" + NEW_LINE;
-    }
-
-    public String getHashAndCmpFunction(JavaClass javaClass) {
-        String className;
-        Type keyType = null;
-
-        if (javaClass.isLambda()) {
-            JavaSootMethod method = javaClass.getMethods().stream().findFirst().get();
-
-            String declClassName = TranslatorUtils.formatClassName(
-                    method.getDeclClassType().getFullyQualifiedName());
-            String methodName = TranslatorUtils.formatClassName(method.getName());
-            className = declClassName + "_" + methodName;
-            keyType = method.getReturnType();
-        } else {
-            className = TranslatorUtils.formatClassName(javaClass.getClassName());
-            for (JavaSootMethod method : javaClass.getMethods()) {
-                if (isUdfFunction(method)) {
-                    keyType = method.getReturnType();
-                    break;
-                }
-            }
-
-            if (!(keyType instanceof ClassType)) {
-                throw  new TranslatorException("key selector type is empty or not class type.");
-            }
-        }
-
-        String keyTypeName = TranslatorTypeVisitor.getTypeString(keyType);
-
-        // print instance
-        return NEW_LINE + className + " *" + className + "::instance = new " + className + "();" + NEW_LINE + NEW_LINE +
-                // print Hash
-                "size_t " + className + "::Hash(Object *obj) {" +NEW_LINE +
-                "    " + keyTypeName + " *r1 = reinterpret_cast<" + keyTypeName + " *>(" +
-                className + "::instance->getKey(obj));" + NEW_LINE +
-                "    return r1->hashCode();" + NEW_LINE +
-                "}" + NEW_LINE + NEW_LINE +
-                // print Cmp
-                "bool " + className + "::Cmp(Object *value1, Object *value2) {" + NEW_LINE +
-                "    " + keyTypeName + " *r1 = reinterpret_cast<" + keyTypeName + " *>(" +
-                className + "::instance->getKey(value1));" + NEW_LINE +
-                "    Object *r2 = " + className + "::instance->getKey(value2);" + NEW_LINE +
-                "    return r1->equals(r2);" + NEW_LINE +
-                "}" + NEW_LINE;
     }
 }
