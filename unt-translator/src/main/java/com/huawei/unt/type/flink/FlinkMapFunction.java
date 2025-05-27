@@ -1,23 +1,37 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
+ */
+
 package com.huawei.unt.type.flink;
 
-import com.google.common.collect.ImmutableSet;
+import static com.huawei.unt.translator.TranslatorContext.NEW_LINE;
+
 import com.huawei.unt.model.MethodContext;
 import com.huawei.unt.translator.TranslatorContext;
 import com.huawei.unt.translator.TranslatorUtils;
 import com.huawei.unt.type.UDFType;
-import org.apache.flink.api.common.functions.MapFunction;
-import org.apache.flink.api.common.functions.ReduceFunction;
+
+import com.google.common.collect.ImmutableSet;
+
 import sootup.core.jimple.basic.Local;
 import sootup.core.model.MethodModifier;
 import sootup.core.types.ClassType;
 import sootup.java.core.JavaIdentifierFactory;
 import sootup.java.core.JavaSootMethod;
 
+import org.apache.flink.api.common.functions.MapFunction;
+
 import java.util.Set;
 
-import static com.huawei.unt.translator.TranslatorContext.NEW_LINE;
-
+/**
+ * Flink map Function
+ *
+ * @since 2025-05-22
+ */
 public class FlinkMapFunction implements UDFType {
+    /**
+     * Flink Map Function Instance
+     */
     public static final FlinkMapFunction INSTANCE = new FlinkMapFunction();
 
     @Override

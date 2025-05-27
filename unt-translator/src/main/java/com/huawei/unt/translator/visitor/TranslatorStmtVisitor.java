@@ -1,16 +1,20 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
+ */
+
 package com.huawei.unt.translator.visitor;
 
+import static com.huawei.unt.translator.TranslatorContext.NEW_LINE;
+import static com.huawei.unt.translator.TranslatorContext.TAB;
+
+import com.huawei.unt.model.MethodContext;
 import com.huawei.unt.optimizer.stmts.OptimizedDirectStmt;
 import com.huawei.unt.optimizer.stmts.OptimizedJAssignStmt;
 import com.huawei.unt.optimizer.stmts.OptimizedLinesStmt;
-import com.huawei.unt.translator.TranslatorContext;
 import com.huawei.unt.translator.TranslatorException;
-import com.huawei.unt.model.MethodContext;
-import sootup.core.jimple.basic.LValue;
+
 import sootup.core.jimple.basic.Local;
-import sootup.core.jimple.basic.Value;
 import sootup.core.jimple.common.constant.IntConstant;
-import sootup.core.jimple.common.ref.JArrayRef;
 import sootup.core.jimple.common.ref.JCaughtExceptionRef;
 import sootup.core.jimple.common.ref.JParameterRef;
 import sootup.core.jimple.common.ref.JThisRef;
@@ -28,16 +32,18 @@ import sootup.core.jimple.javabytecode.stmt.JExitMonitorStmt;
 import sootup.core.jimple.javabytecode.stmt.JSwitchStmt;
 import sootup.core.jimple.visitor.AbstractStmtVisitor;
 
-import javax.annotation.Nonnull;
 import java.util.List;
 
-import static com.huawei.unt.translator.TranslatorContext.NEW_LINE;
-import static com.huawei.unt.translator.TranslatorContext.TAB;
+import javax.annotation.Nonnull;
 
+/**
+ * TranslatorStmtVisitor
+ *
+ * @since 2025-05-19
+ */
 public class TranslatorStmtVisitor extends AbstractStmtVisitor {
-    protected final StringBuilder stmtBuilder = new StringBuilder();
-
-    protected final MethodContext methodContext;
+    private final StringBuilder stmtBuilder = new StringBuilder();
+    private final MethodContext methodContext;
     private final boolean isStaticInit;
 
     private int tabSize = 1;
@@ -68,8 +74,9 @@ public class TranslatorStmtVisitor extends AbstractStmtVisitor {
         } else if (stmt.getRightOp() instanceof JThisRef) {
             // skip this local
             methodContext.removeLocal(stmt.getLeftOp());
-//            methodContext.setThisLocal(stmt.getLeftOp());
         } else if (stmt.getRightOp() instanceof JCaughtExceptionRef) {
+            // do nothing
+            return;
         } else {
             defaultCaseStmt(stmt);
         }
@@ -133,7 +140,6 @@ public class TranslatorStmtVisitor extends AbstractStmtVisitor {
 
         printTab();
         stmtBuilder.append("}").append(NEW_LINE);
-
     }
 
     @Override
@@ -212,7 +218,7 @@ public class TranslatorStmtVisitor extends AbstractStmtVisitor {
             return;
         }
 
-        if (stmt instanceof OptimizedDirectStmt){
+        if (stmt instanceof OptimizedDirectStmt) {
             printTab();
             stmtBuilder.append(((OptimizedDirectStmt) stmt).getOptimizedRes()).append(";").append(NEW_LINE);
             return;
@@ -221,16 +227,11 @@ public class TranslatorStmtVisitor extends AbstractStmtVisitor {
         throw new TranslatorException("Can't translate stmt type: " + stmt.getClass().getSimpleName());
     }
 
+    /**
+     * clear translated code cache
+     */
     public void clear() {
         stmtBuilder.delete(0, stmtBuilder.length());
-    }
-
-    public void increaseTab() {
-        tabSize++;
-    }
-
-    public void decreaseTab() {
-        tabSize--;
     }
 
     private void printTab() {
@@ -239,6 +240,11 @@ public class TranslatorStmtVisitor extends AbstractStmtVisitor {
         }
     }
 
+    /**
+     * return translated code
+     *
+     * @return code string
+     */
     public String toCode() {
         return stmtBuilder.toString();
     }

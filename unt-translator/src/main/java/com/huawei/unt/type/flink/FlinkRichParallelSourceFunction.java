@@ -1,25 +1,40 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
+ */
+
 package com.huawei.unt.type.flink;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
+import static com.huawei.unt.translator.TranslatorContext.NEW_LINE;
+import static com.huawei.unt.translator.TranslatorContext.TAB;
+
 import com.huawei.unt.model.MethodContext;
 import com.huawei.unt.translator.TranslatorException;
 import com.huawei.unt.translator.TranslatorUtils;
 import com.huawei.unt.type.UDFType;
-import org.apache.flink.streaming.api.functions.source.RichParallelSourceFunction;
-import org.apache.flink.streaming.api.functions.source.SourceFunction;
+
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+
 import sootup.core.jimple.basic.Local;
 import sootup.core.types.ClassType;
 import sootup.core.types.VoidType;
 import sootup.java.core.JavaIdentifierFactory;
 import sootup.java.core.JavaSootMethod;
 
+import org.apache.flink.streaming.api.functions.source.RichParallelSourceFunction;
+import org.apache.flink.streaming.api.functions.source.SourceFunction;
+
 import java.util.Set;
 
-import static com.huawei.unt.translator.TranslatorContext.NEW_LINE;
-import static com.huawei.unt.translator.TranslatorContext.TAB;
-
+/**
+ * Flink RichParallelSourceFunction
+ *
+ * @since 2025-05-22
+ */
 public class FlinkRichParallelSourceFunction implements UDFType {
+    /**
+     * Flink RichParallelSourceFunction instance
+     */
     public static final FlinkRichParallelSourceFunction INSTANCE = new FlinkRichParallelSourceFunction();
 
     @Override
@@ -29,9 +44,9 @@ public class FlinkRichParallelSourceFunction implements UDFType {
 
     @Override
     public String getCppFileString(String className) {
-
         return "#include \"../" + className + ".h\"\n\n"
-                + "extern \"C\" std::unique_ptr<RichParallelSourceFunction<Object>> NewInstance(nlohmann::json jsonObj) {\n"
+                + "extern \"C\" std::unique_ptr<RichParallelSourceFunction<Object>> "
+                + "NewInstance(nlohmann::json jsonObj) {\n"
                 + "    return std::make_unique<" + className + ">(jsonObj);\n"
                 + "}";
     }
@@ -53,10 +68,10 @@ public class FlinkRichParallelSourceFunction implements UDFType {
         }
 
         if (method.getName().equals("run")) {
-            return method.getParameterCount() == 1 &&
-                    method.getReturnType() instanceof VoidType &&
-                    method.getParameterType(0) instanceof ClassType &&
-                    ((ClassType) method.getParameterType(0)).getFullyQualifiedName()
+            return method.getParameterCount() == 1
+                    && method.getReturnType() instanceof VoidType
+                    && method.getParameterType(0) instanceof ClassType
+                    && ((ClassType) method.getParameterType(0)).getFullyQualifiedName()
                             .equals(SourceFunction.SourceContext.class.getName());
         }
 
@@ -86,8 +101,8 @@ public class FlinkRichParallelSourceFunction implements UDFType {
     public String printHeadAndParams(MethodContext methodContext) {
         String className = TranslatorUtils.formatType(methodContext.getJavaMethod().getDeclClassType());
 
-        if (methodContext.getJavaMethod().getName().equals("run") &&
-                isUdfFunction(methodContext.getJavaMethod())) {
+        if ("run".equals(methodContext.getJavaMethod().getName())
+                && isUdfFunction(methodContext.getJavaMethod())) {
             StringBuilder headBuilder = new StringBuilder();
 
             headBuilder.append("void ")
@@ -106,13 +121,12 @@ public class FlinkRichParallelSourceFunction implements UDFType {
                     .append(NEW_LINE);
 
             return headBuilder.append(NEW_LINE).toString();
-        } else if (methodContext.getJavaMethod().getName().equals("cancel") &&
-                isUdfFunction(methodContext.getJavaMethod())) {
-
+        } else if ("cancel".equals(methodContext.getJavaMethod().getName())
+                && isUdfFunction(methodContext.getJavaMethod())) {
             return "void " + className + "::cancel()" + NEW_LINE + "{" + NEW_LINE;
+        } else {
+            return TranslatorUtils.printHeadAndParams(methodContext);
         }
-
-        return TranslatorUtils.printHeadAndParams(methodContext);
     }
 
     @Override
