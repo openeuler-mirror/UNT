@@ -217,8 +217,8 @@ public class TranslatorContext {
         }
 
         if (!getUdfMap().containsKey("compile_option") || "".equals(getUdfMap().get("compile_option"))) {
-            compileOption = "-o3 -std=c++17 -fPIC";
-            LOGGER.info("use default compile_option: -o3 -std=c++17 -fPIC");
+            compileOption = "-O3 -std=c++17 -fPIC";
+            LOGGER.info("use default compile_option: -O3 -std=c++17 -fPIC");
         } else {
             compileOption = getUdfMap().get("compile_option");
             LOGGER.info("use compile_option: {}", getCompileOption());

@@ -204,7 +204,7 @@ public class UNTMain {
                 subMakefileTemplate = subMakefileTemplate.replace("$(regex_lib)", "");
             }
             // MakeFile
-            mainMakefileTemplate = mainMakefileTemplate.replace("CXXFLAGS := -o3 -std=c++17 -fPIC",
+            mainMakefileTemplate = mainMakefileTemplate.replace("CXXFLAGS := -O3 -std=c++17 -fPIC",
                     "CXXFLAGS := " + TranslatorContext.getCompileOption());
         } catch (IOException e) {
             throw new TranslatorException("load Makefile templates failed: " + e.getMessage());

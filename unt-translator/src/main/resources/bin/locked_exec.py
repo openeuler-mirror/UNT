@@ -18,10 +18,7 @@ sys.stdin = io.TextIOWrapper(sys.stdin.buffer, encoding='utf-8')
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', write_through=True)
 sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', write_through=True)
 
-script_path = os.path.abspath(__file__)
-script_dir = os.path.dirname(script_path)
-
-LOCK_FILE = os.path.join(script_dir, 'script_temp.lock')
+LOCK_FILE = os.path.join(os.getcwd(), 'script_temp.lock')
 
 def main():
 
