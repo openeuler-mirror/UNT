@@ -472,6 +472,10 @@ public class TranslatorValueVisitor extends AbstractValueVisitor {
                 && "<java.lang.String: java.lang.String replaceAll(java.lang.String,java.lang.String)>"
                     .equals(expr.getMethodSignature().toString())) {
             valueBuilder.append("_tune");
+            if ("\"[^A-Za-z0-9_/.]+\"".equals(expr.getArgs().get(0).toString())){
+                valueBuilder.append("(").append(expr.getArgs().get(1)).append(")");
+                return;
+            }
         }
 
         valueBuilder.append(TranslatorUtils.paramsToString(expr.getMethodSignature(), expr.getArgs(), methodContext));
