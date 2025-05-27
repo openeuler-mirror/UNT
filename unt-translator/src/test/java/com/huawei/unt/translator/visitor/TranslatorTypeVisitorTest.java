@@ -1,9 +1,12 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
+ */
+
 package com.huawei.unt.translator.visitor;
 
 import com.huawei.unt.BaseTest;
 import com.huawei.unt.translator.TranslatorException;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+
 import sootup.core.jimple.visitor.TypeVisitor;
 import sootup.core.types.ArrayType;
 import sootup.core.types.NullType;
@@ -13,8 +16,16 @@ import sootup.core.types.UnknownType;
 import sootup.core.types.VoidType;
 import sootup.java.core.JavaIdentifierFactory;
 
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+
 import javax.annotation.Nonnull;
 
+/**
+ * Test TranslatorTypeVisitor
+ *
+ * @since 2025-05-19
+ */
 public class TranslatorTypeVisitorTest extends BaseTest {
     @Test
     public void primaryTypeTest() {
@@ -30,7 +41,8 @@ public class TranslatorTypeVisitorTest extends BaseTest {
 
     @Test
     public void arrayTypeTest() {
-        Assertions.assertEquals(TranslatorTypeVisitor.getTypeString(new ArrayType(PrimitiveType.IntType.getInstance(), 10)), "Array");
+        Assertions.assertEquals(TranslatorTypeVisitor.getTypeString(
+                new ArrayType(PrimitiveType.IntType.getInstance(), 10)), "Array");
     }
 
     @Test
@@ -45,13 +57,16 @@ public class TranslatorTypeVisitorTest extends BaseTest {
 
     @Test
     public void classTypeTest() {
-        Assertions.assertEquals(TranslatorTypeVisitor.getTypeString(JavaIdentifierFactory.getInstance().getType("java.lang.Integer")), "java_lang_Integer");
+        Assertions.assertEquals(TranslatorTypeVisitor.getTypeString(
+                JavaIdentifierFactory.getInstance().getType("java.lang.Integer")), "java_lang_Integer");
     }
 
     @Test
     public void unknownTypeTest() {
-        Assertions.assertThrows(TranslatorException.class, () -> TranslatorTypeVisitor.getTypeString(UnknownType.getInstance()));
-        Assertions.assertThrows(TranslatorException.class, () -> TranslatorTypeVisitor.getTypeString(new OtherType()));
+        Assertions.assertThrows(TranslatorException.class,
+                () -> TranslatorTypeVisitor.getTypeString(UnknownType.getInstance()));
+        Assertions.assertThrows(TranslatorException.class,
+                () -> TranslatorTypeVisitor.getTypeString(new OtherType()));
     }
 
     private static class OtherType extends Type {
