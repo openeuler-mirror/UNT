@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025-2025. Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
  */
 
 package com.huawei.unt;
@@ -8,7 +8,15 @@ import com.google.common.collect.ImmutableSet;
 
 import java.util.Set;
 
+/**
+ * unt-scanner Constant
+ *
+ * @since 2025-05-19
+ */
 public class UNTConstant {
+    /**
+     * All flink udf classes
+     */
     public static final Set<String> FLINK_UDF_CLASSES = ImmutableSet.of(
             "org.apache.flink.api.common.functions.AbstractRichFunction",
             "org.apache.flink.api.common.functions.AggregateFunction",

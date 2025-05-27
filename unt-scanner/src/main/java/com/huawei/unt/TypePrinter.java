@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025-2025. Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
  */
 
 package com.huawei.unt;
@@ -10,11 +10,24 @@ import sootup.core.types.Type;
 
 import javax.annotation.Nonnull;
 
+/**
+ * Print type
+ *
+ * @since 2025-05-19
+ */
 public class TypePrinter extends AbstractTypeVisitor {
-    protected final StringBuilder typeBuilder = new StringBuilder();
-
     private static final TypePrinter INSTANCE = new TypePrinter();
 
+    private final StringBuilder typeBuilder = new StringBuilder();
+
+    private TypePrinter() {}
+
+    /**
+     * Get Type code string
+     *
+     * @param type type
+     * @return type code string
+     */
     public static String getTypeString(Type type) {
         type.accept(INSTANCE);
         String typeString = INSTANCE.toCode();
@@ -92,13 +105,19 @@ public class TypePrinter extends AbstractTypeVisitor {
         throw new UNTException("Has unsupported type");
     }
 
+    /**
+     * clear type builder
+     */
     public void clear() {
         typeBuilder.delete(0, typeBuilder.length());
     }
 
+    /**
+     * type to code string
+     *
+     * @return code string
+     */
     public String toCode() {
         return typeBuilder.toString();
     }
-
-    private TypePrinter() {}
 }
