@@ -77,8 +77,8 @@ public class TranslatorContext {
         LOGGER.info("load properties: {}", udfConfigDir);
         Properties udfProperties = new Properties();
 
-        try{
-            udfProperties.load(Files.newInputStream(Paths.get(udfConfigDir)));
+        try (InputStream udfConfigInput = Files.newInputStream(Paths.get(udfConfigDir))) {
+            udfProperties.load(udfConfigInput);
             LOGGER.info("load udf config");
             UDF_MAP = new HashMap<String, String>();
             for (Object key : udfProperties.keySet()) {
@@ -161,18 +161,18 @@ public class TranslatorContext {
         Map<String, Integer> dependInterfaces = new HashMap<>();
         Set<String> genericFunctions = new HashSet<>();
 
-        try {
-            classProperties.load(Files.newInputStream(Paths.get(dependClassProfile)));
-            functionProperties.load((Files.newInputStream(Paths.get(functionProfile))));
-            includeProperties.load((Files.newInputStream(Paths.get(dependIncludeProfile))));
-
+        try (InputStream dependClassProfileInput = Files.newInputStream(Paths.get(dependClassProfile));
+            InputStream functionProfileInput = Files.newInputStream(Paths.get(functionProfile));
+            InputStream dependIncludeProfileInput = Files.newInputStream(Paths.get(dependIncludeProfile));
             BufferedReader ignoredPackageReader = Files.newBufferedReader(Paths.get(ignorePackageProfile));
             BufferedReader ignoredClassReader = Files.newBufferedReader(Paths.get(ignoreClassProfile));
             BufferedReader ignoredMethodReader = Files.newBufferedReader(Paths.get(ignoredMethodsProfile));
             BufferedReader stdStringMethodReader = Files.newBufferedReader(Paths.get(stdStringMethodsProfile));
             BufferedReader dependInterfacesReader = Files.newBufferedReader(Paths.get(dependInterfaceInfo));
-            BufferedReader genericFunctionReader = Files.newBufferedReader(Paths.get(genericFunctionInfo));
-
+            BufferedReader genericFunctionReader = Files.newBufferedReader(Paths.get(genericFunctionInfo))) {
+            classProperties.load(dependClassProfileInput);
+            functionProperties.load(functionProfileInput);
+            includeProperties.load(dependIncludeProfileInput);
 
             String ignorePackage;
             while ((ignorePackage = ignoredPackageReader.readLine()) != null) {
