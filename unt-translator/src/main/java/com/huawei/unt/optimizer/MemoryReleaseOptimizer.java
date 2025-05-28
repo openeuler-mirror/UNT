@@ -79,7 +79,6 @@ public class MemoryReleaseOptimizer implements Optimizer {
     private Map<Integer, Set<LValue>> makeNullSet;
     private Set<Integer> gotoFreeStmts;
     private Map<Integer, Immediate> retStmts;
-    private Map<Integer, Local> clearStmts;
     private Set<Integer> reassignStmts;
     private Set<Local> reassignLocals;
     private Set<Integer> ignoredReturnValues;
@@ -119,14 +118,12 @@ public class MemoryReleaseOptimizer implements Optimizer {
         makeNullSet = new HashMap<>();
         gotoFreeStmts = new HashSet<>();
         retStmts = new HashMap<>();
-        clearStmts = new HashMap<>();
         reassignStmts = new HashSet<>();
         reassignLocals = new HashSet<>();
         ignoredReturnValues = new HashSet<>();
         finalReturn = -1;
         needRet = false;
         needFree = false;
-        Map<Integer, LValue> iterFree = new HashMap<>();
 
         findLoops(methodContext);
 
@@ -179,10 +176,8 @@ public class MemoryReleaseOptimizer implements Optimizer {
         methodContext.setGotoFreeStmts(gotoFreeStmts);
         methodContext.setUnknownFree(unknownFree);
         methodContext.setCircleFree(circleFree);
-        methodContext.setIterFree(iterFree);
         methodContext.setGetRef(getRef);
         methodContext.setMakeNull(makeNullSet);
-        methodContext.setClearStmts(clearStmts);
         methodContext.setReassignStmts(reassignStmts);
         methodContext.setReassignLocals(reassignLocals);
         methodContext.setIgnoredReturnValues(ignoredReturnValues);

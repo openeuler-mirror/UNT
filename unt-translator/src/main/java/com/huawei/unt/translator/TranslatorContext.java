@@ -48,11 +48,6 @@ public class TranslatorContext {
     public static final String TAB = "    ";
 
     /**
-     * simple put ref cpp code string
-     */
-    public static final String SIMPLE_PUT_REF = TAB + "%1$s->putRefCount();" + NEW_LINE;
-
-    /**
      * unknown put ref cpp code string
      */
     public static final String UNKNOWN_PUT_REF = TAB + "if (%1$s != nullptr) {" + NEW_LINE
@@ -92,11 +87,6 @@ public class TranslatorContext {
      * return ret code string
      */
     public static final String RETURN_RET = TAB + "return ret;" + NEW_LINE;
-
-    /**
-     * clear code string
-     */
-    public static final String CLEAR = TAB + "%s->clear();" + NEW_LINE;
 
     /**
      * tmp object declare code string

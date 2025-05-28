@@ -95,17 +95,6 @@ public class JavaMethodTranslator {
                             .append(":").append(NEW_LINE);
                 }
 
-                // deal with circle tail
-                if (methodContext.getIterFree(i) != null) {
-                    methodContext.getIterFree(i).accept(valueVisitor);
-                    bodyBuilder.append(String.format(TranslatorContext.SIMPLE_PUT_REF, valueVisitor.toCode()));
-                    valueVisitor.clear();
-                }
-
-                if (methodContext.getClearColl(i) != null) {
-                    bodyBuilder.append(String.format(TranslatorContext.CLEAR, methodContext.getClearColl(i).getName()));
-                }
-
                 // deal with makeNull
                 for (LValue refs : methodContext.getMakeNullVars(i)) {
                     refs.accept(valueVisitor);

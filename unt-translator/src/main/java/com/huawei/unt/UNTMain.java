@@ -143,10 +143,9 @@ public class UNTMain {
                 for (String method : TranslatorContext.getMissingInterfaces().get(className)) {
                     errMessage.append(TranslatorContext.TAB).append(method).append(TranslatorContext.NEW_LINE);
                 }
-                LOGGER.error(errMessage.toString());
-                throw new TranslatorException(errMessage.toString());
             }
             LOGGER.error(errMessage.toString());
+            throw new TranslatorException(errMessage.toString());
         }
 
         String outputDir = basePath + File.separator + "output";

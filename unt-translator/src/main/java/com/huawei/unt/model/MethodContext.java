@@ -53,7 +53,6 @@ public class MethodContext {
     private final HashSet<Integer> removedStmts = new HashSet<>();
     private final Map<Integer, Map<LValue, Integer>> unknownFree = new HashMap<>();
     private final Map<Integer, Map<LValue, Integer>> circleFree = new HashMap<>();
-    private final Map<Integer, LValue> iterFree = new HashMap<>();
     private final Map<Integer, Map<LValue, Integer>> getRef = new HashMap<>();
     private final Set<Integer> reassignStmts = new HashSet<>();
     private final Set<Local> reassignLocals = new HashSet<>();
@@ -61,7 +60,6 @@ public class MethodContext {
     private final Map<Integer, Set<LValue>> makeNull = new HashMap<>();
     private final Set<Integer> gotoFreeStmts = new HashSet<>();
     private final Map<Integer, Immediate> retStmts = new HashMap<>();
-    private final Map<Integer, Local> clearStmts = new HashMap<>();
     private final Map<Integer, Set<Local>> beforeLocals = new HashMap<>();
     private final Map<Integer, Set<Local>> afterLocals = new HashMap<>();
     private final Set<ClassType> staticClasses = new HashSet<>();
@@ -243,15 +241,6 @@ public class MethodContext {
     }
 
     /**
-     * Set Iter Free
-     *
-     * @param iterFree iterFree
-     */
-    public void setIterFree(Map<Integer, LValue> iterFree) {
-        this.iterFree.putAll(iterFree);
-    }
-
-    /**
      * Set Get ref
      *
      * @param getRef getRef
@@ -373,16 +362,6 @@ public class MethodContext {
     }
 
     /**
-     * IterFree
-     *
-     * @param i index
-     * @return iterFree LValue
-     */
-    public LValue getIterFree(int i) {
-        return iterFree.get(i);
-    }
-
-    /**
      * Get getRef vars
      *
      * @param i ref index
@@ -455,25 +434,6 @@ public class MethodContext {
      */
     public Immediate getRetValue(int i) {
         return retStmts.get(i);
-    }
-
-    /**
-     * set clear stmts
-     *
-     * @param clearStmts clear stmts
-     */
-    public void setClearStmts(Map<Integer, Local> clearStmts) {
-        this.clearStmts.putAll(clearStmts);
-    }
-
-    /**
-     * get clear coll
-     *
-     * @param i clear stmt index
-     * @return clear coll
-     */
-    public Local getClearColl(int i) {
-        return clearStmts.get(i);
     }
 
     /**
