@@ -250,7 +250,7 @@ public class UNTMain {
                     }
 
                     String subMakefile = nativeDir + File.separator + "Makefile";
-                    String soFileName = udfType.getSoPrefix() + i;
+                    String soFileName = udfType.getSoPrefix() + "_" + formatClassName;
                     String subMakefileContent = subMakefileTemplate.replace("${soFileName}", soFileName);
                     try (FileWriter subMakefileWriter = new FileWriter(subMakefile, false)) {
                         subMakefileWriter.write(subMakefileContent);
