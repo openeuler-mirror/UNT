@@ -99,6 +99,10 @@ public class FlinkFlatMapFunction implements UDFType {
                     .append("::flatMap(Object *obj, Collector *collector) {")
                     .append(NEW_LINE);
 
+            if (methodContext.isIgnore()) {
+                return headBuilder.toString();
+            }
+
             Local param1 = methodContext.getParams().get(0);
             methodContext.removeLocal(param1);
             String typeString = TranslatorUtils.formatType(param1.getType());

@@ -112,6 +112,10 @@ public class FlinkRichParallelSourceFunction implements UDFType {
                     .append("{")
                     .append(NEW_LINE);
 
+            if (methodContext.isIgnore()) {
+                return headBuilder.toString();
+            }
+
             Local paramLocal = methodContext.getParams().get(0);
             methodContext.removeLocal(paramLocal);
 
