@@ -83,6 +83,7 @@ public class UNTMain {
                 codeMap.put(javaClass, JavaClassTranslator.translate(javaClass));
             } catch (TranslatorException e) {
                 LOGGER.error("Translate {} failed, {}", javaClass.getClassName(), e.getMessage());
+                throw e;
             }
         }
 
