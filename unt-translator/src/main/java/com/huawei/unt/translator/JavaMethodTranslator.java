@@ -208,7 +208,8 @@ public class JavaMethodTranslator {
         } else if (isInit) {
             headAndParams = printInitFunctionHead(methodContext);
         } else if (isIgnore) {
-            headAndParams = TranslatorUtils.formatParamType(method.getReturnType())
+            headAndParams = isLambda ? type.printLambdaHeadAndParams(methodContext)
+                    : TranslatorUtils.formatParamType(method.getReturnType())
                     + TranslatorUtils.formatClassName(method.getDeclClassType().getFullyQualifiedName())
                     + "::" + method.getName() + "("
                     + TranslatorUtils.methodParamsToString(methodContext.getJavaMethod())

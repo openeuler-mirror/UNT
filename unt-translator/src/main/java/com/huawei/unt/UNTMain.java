@@ -83,6 +83,7 @@ public class UNTMain {
                 codeMap.put(javaClass, JavaClassTranslator.translate(javaClass));
             } catch (TranslatorException e) {
                 LOGGER.error("Translate {} failed, {}", javaClass.getClassName(), e.getMessage());
+                throw e;
             }
         }
 
@@ -250,7 +251,7 @@ public class UNTMain {
                     }
 
                     String subMakefile = nativeDir + File.separator + "Makefile";
-                    String soFileName = udfType.getSoPrefix() + i;
+                    String soFileName = udfType.getSoPrefix() + "_" + formatClassName;
                     String subMakefileContent = subMakefileTemplate.replace("${soFileName}", soFileName);
                     try (FileWriter subMakefileWriter = new FileWriter(subMakefile, false)) {
                         subMakefileWriter.write(subMakefileContent);

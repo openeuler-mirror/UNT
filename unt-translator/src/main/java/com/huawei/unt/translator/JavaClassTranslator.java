@@ -264,9 +264,8 @@ public class JavaClassTranslator {
             return JavaMethodTranslator.translateMethod(type, method, isLambda) + NEW_LINE;
         } catch (TranslatorException e) {
             LOGGER.error("Translate method {} failed, {}", method.getSignature(), e.getMessage());
-            LOGGER.warn("The translated class has failed methods!");
-            TranslatorContext.getIgnoredMethods().add(method.getSignature().toString());
-            return JavaMethodTranslator.translateMethod(type, method, isLambda) + NEW_LINE;
+            LOGGER.error("The translated class has failed methods!");
+            throw e;
         }
     }
 

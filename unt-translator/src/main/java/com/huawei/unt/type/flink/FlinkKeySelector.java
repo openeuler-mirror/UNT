@@ -94,6 +94,10 @@ public class FlinkKeySelector implements UDFType {
                     .append("getKey(Object *obj) {")
                     .append(NEW_LINE);
 
+            if (methodContext.isIgnore()) {
+                return headBuilder.toString();
+            }
+
             Local paramLocal = methodContext.getParams().get(0);
             methodContext.removeLocal(paramLocal);
 

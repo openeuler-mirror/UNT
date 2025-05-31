@@ -95,6 +95,10 @@ public class FlinkReduceFunction implements UDFType {
                     .append("{")
                     .append(NEW_LINE);
 
+            if (methodContext.isIgnore()) {
+                return headBuilder.toString();
+            }
+
             for (int i = 0; i < methodContext.getParams().size(); i++) {
                 Local paramLocal = methodContext.getParams().get(i);
                 methodContext.removeLocal(paramLocal);

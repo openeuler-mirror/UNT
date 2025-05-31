@@ -57,7 +57,7 @@ public class ArrayFieldHandler implements Optimizer {
                 Type type = arrayRef.getType();
 
                 if (type instanceof PrimitiveType) {
-                    throw new TranslatorException("Array is only support primary type yet");
+                    throw new TranslatorException("Array do not support primary type yet");
                 }
 
                 String typeString = TranslatorTypeVisitor.getTypeString(type);
