@@ -8,7 +8,6 @@ import com.huawei.unt.model.MethodContext;
 import com.huawei.unt.optimizer.stmts.OptimizedJAssignStmt;
 import com.huawei.unt.optimizer.stmts.OptimizedValue;
 import com.huawei.unt.translator.visitor.TranslatorValueVisitor;
-
 import sootup.core.jimple.common.constant.StringConstant;
 import sootup.core.jimple.common.expr.JVirtualInvokeExpr;
 import sootup.core.jimple.common.stmt.JAssignStmt;

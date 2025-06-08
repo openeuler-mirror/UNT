@@ -4,26 +4,22 @@
 
 package com.huawei.unt.translator;
 
-import static com.huawei.unt.translator.TranslatorContext.NEW_LINE;
-import static com.huawei.unt.translator.TranslatorContext.TAB;
-
 import com.huawei.unt.model.JavaClass;
 import com.huawei.unt.model.MethodContext;
 import com.huawei.unt.translator.visitor.TranslatorTypeVisitor;
 import com.huawei.unt.translator.visitor.TranslatorValueVisitor;
 import com.huawei.unt.type.EngineType;
 import com.huawei.unt.type.UDFType;
-
 import sootup.core.jimple.basic.Immediate;
 import sootup.core.jimple.basic.Local;
 import sootup.core.jimple.common.constant.IntConstant;
 import sootup.core.jimple.common.constant.StringConstant;
 import sootup.core.signatures.MethodSignature;
+import sootup.core.types.ArrayType;
 import sootup.core.types.ClassType;
 import sootup.core.types.PrimitiveType;
-import sootup.core.types.VoidType;
 import sootup.core.types.Type;
-import sootup.core.types.ArrayType;
+import sootup.core.types.VoidType;
 import sootup.java.core.JavaIdentifierFactory;
 import sootup.java.core.JavaSootMethod;
 
@@ -41,6 +37,9 @@ import java.util.Set;
 import java.util.StringJoiner;
 import java.util.stream.Collectors;
 
+import static com.huawei.unt.translator.TranslatorContext.NEW_LINE;
+import static com.huawei.unt.translator.TranslatorContext.TAB;
+
 /**
  * TranslatorUtils
  *
@@ -48,6 +47,7 @@ import java.util.stream.Collectors;
  */
 public class TranslatorUtils {
     private static final String ARRAY_TYPE = "Array";
+    private static final String PRIMITIVE_ARRAY_TYPE = "JavaArray<%s>";
     private static final String ARRAY_HEAD = "basictypes/Arrays.h";
     private static final String JSON_HEAD = "nlohmann/json.hpp";
     private static final String CLASSCONSTANT_HEAD = "basictypes/ClassConstant.h";
@@ -457,6 +457,9 @@ public class TranslatorUtils {
      */
     public static String formatType(Type type) {
         if (type instanceof ArrayType) {
+            if (((ArrayType) type).getBaseType() instanceof PrimitiveType) {
+                return String.format(PRIMITIVE_ARRAY_TYPE, ((ArrayType) type).getBaseType());
+            }
             return ARRAY_TYPE;
         }
 

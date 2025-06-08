@@ -4,11 +4,9 @@
 
 package com.huawei.unt.optimizer;
 
+import com.google.common.collect.ImmutableList;
 import com.huawei.unt.model.MethodContext;
 import com.huawei.unt.optimizer.stmts.OptimizedLinesStmt;
-
-import com.google.common.collect.ImmutableList;
-
 import sootup.core.jimple.common.stmt.Stmt;
 
 import java.util.Collections;
@@ -30,8 +28,8 @@ public class Optimizers {
             new RemoveTrap(),
             new RemoveIgnoreClass(),
             new MemoryReleaseOptimizer(),
-            new ArrayFieldHandler(),
             new StringPacking(),
+            new ArrayFieldHandler(),
             new InitStaticReturnHandler());
 
     /**

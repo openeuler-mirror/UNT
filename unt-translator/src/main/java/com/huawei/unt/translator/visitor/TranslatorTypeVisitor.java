@@ -6,7 +6,6 @@ package com.huawei.unt.translator.visitor;
 
 import com.huawei.unt.translator.TranslatorException;
 import com.huawei.unt.translator.TranslatorUtils;
-
 import sootup.core.jimple.visitor.AbstractTypeVisitor;
 import sootup.core.types.ClassType;
 import sootup.core.types.Type;
@@ -91,7 +90,7 @@ public class TranslatorTypeVisitor extends AbstractTypeVisitor {
 
     @Override
     public void caseNullType() {
-        typeBuilder.append("null_ptr");
+        typeBuilder.append("nullptr");
     }
 
     @Override
