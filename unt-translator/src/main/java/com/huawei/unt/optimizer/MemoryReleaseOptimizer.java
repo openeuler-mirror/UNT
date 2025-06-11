@@ -7,8 +7,7 @@ package com.huawei.unt.optimizer;
 import com.huawei.unt.model.MethodContext;
 import com.huawei.unt.translator.TranslatorContext;
 import com.huawei.unt.translator.TranslatorException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 import sootup.core.jimple.basic.Immediate;
 import sootup.core.jimple.basic.LValue;
 import sootup.core.jimple.basic.Local;
@@ -34,6 +33,9 @@ import sootup.core.jimple.common.stmt.Stmt;
 import sootup.core.signatures.MethodSignature;
 import sootup.core.types.ClassType;
 import sootup.core.types.PrimitiveType;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.HashMap;

@@ -4,12 +4,16 @@
 
 package com.huawei.unt.translator;
 
+import static com.huawei.unt.translator.TranslatorContext.NEW_LINE;
+import static com.huawei.unt.translator.TranslatorContext.TAB;
+
 import com.huawei.unt.model.JavaClass;
 import com.huawei.unt.model.MethodContext;
 import com.huawei.unt.translator.visitor.TranslatorTypeVisitor;
 import com.huawei.unt.translator.visitor.TranslatorValueVisitor;
 import com.huawei.unt.type.EngineType;
 import com.huawei.unt.type.UDFType;
+
 import sootup.core.jimple.basic.Immediate;
 import sootup.core.jimple.basic.Local;
 import sootup.core.jimple.common.constant.IntConstant;
@@ -36,9 +40,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.StringJoiner;
 import java.util.stream.Collectors;
-
-import static com.huawei.unt.translator.TranslatorContext.NEW_LINE;
-import static com.huawei.unt.translator.TranslatorContext.TAB;
 
 /**
  * TranslatorUtils

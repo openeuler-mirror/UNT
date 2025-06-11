@@ -9,7 +9,7 @@ import com.huawei.unt.optimizer.stmts.OptimizedValue;
 import com.huawei.unt.translator.TranslatorContext;
 import com.huawei.unt.translator.TranslatorException;
 import com.huawei.unt.translator.TranslatorUtils;
-import org.apache.commons.lang3.StringEscapeUtils;
+
 import sootup.core.jimple.basic.Immediate;
 import sootup.core.jimple.basic.Local;
 import sootup.core.jimple.basic.Value;
@@ -67,6 +67,8 @@ import sootup.core.jimple.common.ref.Ref;
 import sootup.core.jimple.visitor.AbstractValueVisitor;
 import sootup.core.types.PrimitiveType;
 import sootup.core.types.Type;
+
+import org.apache.commons.lang3.StringEscapeUtils;
 
 import javax.annotation.Nonnull;
 
