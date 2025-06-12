@@ -10,12 +10,13 @@ import com.huawei.unt.loader.JarHandler;
 import com.huawei.unt.model.JavaClass;
 import com.huawei.unt.type.NoneUDF;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
 import sootup.core.inputlocation.AnalysisInputLocation;
 import sootup.java.bytecode.frontend.inputlocation.OTFCompileAnalysisInputLocation;
 import sootup.java.core.JavaSootClass;
 import sootup.java.core.views.JavaView;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -62,11 +63,8 @@ public class JavaClassTranslatorTest extends BaseTest {
 
     @Test
     public void testFieldTranslate() throws IOException {
-
-        byte[] bytes = Files.readAllBytes(Paths.get("src/test/resources/translator/expect/TestFieldTranslate.txt"));
-        String expectString = new String(bytes, StandardCharsets.UTF_8);
-
-        AnalysisInputLocation inputLocation = new OTFCompileAnalysisInputLocation(Paths.get("src/test/resources/translator/source/TestFieldTranslate.java"));
+        AnalysisInputLocation inputLocation = new OTFCompileAnalysisInputLocation(
+                Paths.get("src/test/resources/translator/source/TestFieldTranslate.java"));
         JavaView view = new JavaView(inputLocation);
         JarHandler jarHandler = new JarHandler(view);
         ArrayList<JavaClass> allClasses = new ArrayList<>();
@@ -87,18 +85,16 @@ public class JavaClassTranslatorTest extends BaseTest {
         }
         List<String> actual = translatorResults.get(0);
         String actualString = actual.toString();
-        System.out.println(actualString);
-        System.out.println(expectString);
+        byte[] bytes = Files.readAllBytes(
+                Paths.get("src/test/resources/translator/expect/TestFieldTranslate.txt"));
+        String expectString = new String(bytes, StandardCharsets.UTF_8);
         Assertions.assertTrue(expectString.equals(actualString));
     }
 
     @Test
     public void testStaticFieldTranslate() throws IOException {
-
-        byte[] bytes = Files.readAllBytes(Paths.get("src/test/resources/translator/expect/TestStaticFieldTranslator.txt"));
-        String expectString = new String(bytes, StandardCharsets.UTF_8);
-
-        AnalysisInputLocation inputLocation = new OTFCompileAnalysisInputLocation(Paths.get("src/test/resources/translator/source/TestStaticFieldTranslator.java"));
+        AnalysisInputLocation inputLocation = new OTFCompileAnalysisInputLocation(
+                Paths.get("src/test/resources/translator/source/TestStaticFieldTranslator.java"));
         JavaView view = new JavaView(inputLocation);
         JarHandler jarHandler = new JarHandler(view);
         ArrayList<JavaClass> allClasses = new ArrayList<>();
@@ -119,7 +115,9 @@ public class JavaClassTranslatorTest extends BaseTest {
         }
         List<String> actual = translatorResults.get(0);
         String actualString = actual.toString();
+        byte[] bytes = Files.readAllBytes(
+                Paths.get("src/test/resources/translator/expect/TestStaticFieldTranslator.txt"));
+        String expectString = new String(bytes, StandardCharsets.UTF_8);
         Assertions.assertTrue(expectString.equals(actualString));
     }
-
 }
