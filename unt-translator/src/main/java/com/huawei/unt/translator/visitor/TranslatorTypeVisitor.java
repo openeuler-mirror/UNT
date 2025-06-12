@@ -91,7 +91,7 @@ public class TranslatorTypeVisitor extends AbstractTypeVisitor {
 
     @Override
     public void caseNullType() {
-        typeBuilder.append("null_ptr");
+        typeBuilder.append("nullptr");
     }
 
     @Override

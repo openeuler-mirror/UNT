@@ -30,8 +30,8 @@ public class Optimizers {
             new RemoveTrap(),
             new RemoveIgnoreClass(),
             new MemoryReleaseOptimizer(),
-            new ArrayFieldHandler(),
             new StringPacking(),
+            new ArrayFieldHandler(),
             new InitStaticReturnHandler());
 
     /**

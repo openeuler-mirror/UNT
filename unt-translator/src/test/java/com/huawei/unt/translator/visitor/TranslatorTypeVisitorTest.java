@@ -47,7 +47,7 @@ public class TranslatorTypeVisitorTest extends BaseTest {
 
     @Test
     public void nullTypeTest() {
-        Assertions.assertEquals(TranslatorTypeVisitor.getTypeString(NullType.getInstance()), "null_ptr");
+        Assertions.assertEquals(TranslatorTypeVisitor.getTypeString(NullType.getInstance()), "nullptr");
     }
 
     @Test

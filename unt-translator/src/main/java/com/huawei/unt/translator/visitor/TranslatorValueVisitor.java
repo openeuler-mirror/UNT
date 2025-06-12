@@ -66,6 +66,7 @@ import sootup.core.jimple.common.ref.JThisRef;
 import sootup.core.jimple.common.ref.Ref;
 import sootup.core.jimple.visitor.AbstractValueVisitor;
 import sootup.core.types.PrimitiveType;
+import sootup.core.types.Type;
 
 import org.apache.commons.lang3.StringEscapeUtils;
 
@@ -77,6 +78,8 @@ import javax.annotation.Nonnull;
  * @since 2025-05-19
  */
 public class TranslatorValueVisitor extends AbstractValueVisitor {
+    private static final String ARRAY_ELEM_GET = "%s->get(%s)";
+
     private final StringBuilder valueBuilder = new StringBuilder();
     private final MethodContext methodContext;
 
@@ -160,10 +163,17 @@ public class TranslatorValueVisitor extends AbstractValueVisitor {
     public void caseArrayRef(@Nonnull JArrayRef ref) {
         TranslatorValueVisitor valueVisitor = new TranslatorValueVisitor(methodContext);
         ref.getBase().accept(valueVisitor);
-        valueBuilder.append(valueVisitor.toCode()).append("->get(");
+        String base = valueVisitor.toCode();
         valueVisitor.clear();
         ref.getIndex().accept(valueVisitor);
-        valueBuilder.append(valueVisitor.toCode()).append(")");
+        String index = valueVisitor.toCode();
+        valueBuilder.append(String.format(ARRAY_ELEM_GET, base, index));
+        if (!(ref.getType() instanceof PrimitiveType)) {
+            String typeStr = TranslatorTypeVisitor.getTypeString(ref.getType());
+            String valueStr = valueBuilder.toString();
+            clear();
+            valueBuilder.append(String.format("reinterpret_cast<%s *>(%s)", typeStr, valueStr));
+        }
     }
 
     @Override
@@ -542,8 +552,13 @@ public class TranslatorValueVisitor extends AbstractValueVisitor {
     public void caseNewArrayExpr(@Nonnull JNewArrayExpr expr) {
         TranslatorValueVisitor visitor = new TranslatorValueVisitor(methodContext);
         expr.getSize().accept(visitor);
-
-        valueBuilder.append("new Array()");
+        String size = visitor.toCode();
+        Type baseType = expr.getBaseType();
+        if (baseType instanceof PrimitiveType) {
+            valueBuilder.append(String.format("new JavaArray<%s>(%s)", baseType, size));
+        } else {
+            valueBuilder.append(String.format("new Array(%s)", size));
+        }
     }
 
     @Override

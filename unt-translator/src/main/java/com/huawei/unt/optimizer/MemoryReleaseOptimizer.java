@@ -4,9 +4,8 @@
 
 package com.huawei.unt.optimizer;
 
-import com.huawei.unt.translator.TranslatorContext;
 import com.huawei.unt.model.MethodContext;
-
+import com.huawei.unt.translator.TranslatorContext;
 import com.huawei.unt.translator.TranslatorException;
 
 import sootup.core.jimple.basic.Immediate;
@@ -366,7 +365,7 @@ public class MemoryReleaseOptimizer implements Optimizer {
         }
     }
 
-    // deal with arr[0] = new ...  arr->append
+    // deal with arr[0] = new ...
     private void arrRefAssignStmtHandle(int i, LValue leftOp, Value value, int ref) {
         if (ref == 1 && leftOp instanceof JArrayRef) {
             Map<LValue, Integer> vars = unknownFree.getOrDefault(i, new HashMap<>());
