@@ -5,10 +5,13 @@
 package com.huawei.unt.translator.visitor;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.huawei.unt.BaseTest;
 import com.huawei.unt.loader.JarHandler;
 import com.huawei.unt.model.MethodContext;
+import com.huawei.unt.translator.TranslatorException;
 import com.huawei.unt.type.NoneUDF;
 
 import com.google.common.collect.ImmutableList;
@@ -25,6 +28,7 @@ import sootup.core.jimple.common.constant.NullConstant;
 import sootup.core.jimple.common.constant.StringConstant;
 import sootup.core.jimple.common.constant.EnumConstant;
 import sootup.core.jimple.common.constant.ClassConstant;
+import sootup.core.jimple.common.constant.MethodType;
 import sootup.core.jimple.common.expr.JAddExpr;
 import sootup.core.jimple.common.expr.JEqExpr;
 import sootup.core.jimple.common.expr.JVirtualInvokeExpr;
@@ -32,13 +36,37 @@ import sootup.core.jimple.common.expr.JSpecialInvokeExpr;
 import sootup.core.jimple.common.expr.JInstanceOfExpr;
 import sootup.core.jimple.common.expr.JNegExpr;
 import sootup.core.jimple.common.expr.JUshrExpr;
-import sootup.core.jimple.common.ref.JInstanceFieldRef;
-import sootup.core.jimple.common.ref.JArrayRef;
-import sootup.core.jimple.common.ref.JStaticFieldRef;
+import sootup.core.jimple.common.expr.JAndExpr;
+import sootup.core.jimple.common.expr.JOrExpr;
+import sootup.core.jimple.common.expr.JXorExpr;
+import sootup.core.jimple.common.expr.JSubExpr;
+import sootup.core.jimple.common.expr.JMulExpr;
+import sootup.core.jimple.common.expr.JDivExpr;
+import sootup.core.jimple.common.expr.JRemExpr;
+import sootup.core.jimple.common.expr.JNeExpr;
+import sootup.core.jimple.common.expr.JGeExpr;
+import sootup.core.jimple.common.expr.JGtExpr;
+import sootup.core.jimple.common.expr.JLeExpr;
+import sootup.core.jimple.common.expr.JLtExpr;
+import sootup.core.jimple.common.expr.JCmpExpr;
+import sootup.core.jimple.common.expr.JCmpgExpr;
+import sootup.core.jimple.common.expr.JCmplExpr;
+import sootup.core.jimple.common.expr.JShlExpr;
+import sootup.core.jimple.common.expr.JShrExpr;
+import sootup.core.jimple.common.expr.JNewExpr;
 import sootup.core.jimple.common.expr.JStaticInvokeExpr;
 import sootup.core.jimple.common.expr.JCastExpr;
 import sootup.core.jimple.common.expr.JLengthExpr;
+import sootup.core.jimple.common.expr.JNewArrayExpr;
+import sootup.core.jimple.common.expr.JNewMultiArrayExpr;
+import sootup.core.jimple.common.expr.JDynamicInvokeExpr;
+import sootup.core.jimple.common.ref.JInstanceFieldRef;
+import sootup.core.jimple.common.ref.JArrayRef;
+import sootup.core.jimple.common.ref.JStaticFieldRef;
+import sootup.core.jimple.common.ref.JCaughtExceptionRef;
+import sootup.core.jimple.common.ref.JThisRef;
 import sootup.core.model.SourceType;
+import sootup.core.signatures.MethodSubSignature;
 import sootup.core.types.ArrayType;
 import sootup.core.types.ClassType;
 import sootup.core.types.VoidType;
@@ -59,6 +87,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Collections;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 /**
  * Test TranslatorValueVisitor
@@ -67,12 +96,15 @@ import java.util.ArrayList;
  */
 public class TranslatorValueVisitorTest extends BaseTest {
     private static MethodContext methodContext;
+    private static final JavaView VIEW = new JavaView(PathBasedAnalysisInputLocation.create
+        (Paths.get("src/test/resources/optimizer/binary"), SourceType.Application, INTERCEPTORS));
+    private static final JavaIdentifierFactory IDFACTORY = JavaIdentifierFactory.getInstance();
 
     @BeforeAll
     public static void init() {
         Path binaryPath = Paths.get("src/test/resources/optimizer/binary");
         AnalysisInputLocation inputLocation =
-                PathBasedAnalysisInputLocation.create(binaryPath, SourceType.Application, INTERCEPTORS);
+            PathBasedAnalysisInputLocation.create(binaryPath, SourceType.Application, INTERCEPTORS);
         JavaView javaView = new JavaView(inputLocation);
         JarHandler jarHandler = new JarHandler(javaView);
         Optional<JavaSootMethod> method = jarHandler.tryGetMethod(
@@ -534,7 +566,7 @@ public class TranslatorValueVisitorTest extends BaseTest {
     @Test
     public void testCaseNewExprThrows() {
         TranslatorValueVisitor visitor = new TranslatorValueVisitor(methodContext);
-        ClassType objClassType = view.getIdentifierFactory().getClassType("java.lang.Object");
+        ClassType objClassType = VIEW.getIdentifierFactory().getClassType("java.lang.Object");
         JNewExpr newExpr = new JNewExpr(objClassType);
         TranslatorException ex = assertThrows(
                 TranslatorException.class,
@@ -546,11 +578,11 @@ public class TranslatorValueVisitorTest extends BaseTest {
     @Test
     public void testCaseNewArrayExpr() {
         TranslatorValueVisitor visitor = new TranslatorValueVisitor(methodContext);
-        ClassType elementType = view.getIdentifierFactory()
+        ClassType elementType = VIEW.getIdentifierFactory()
                 .getClassType("java.lang.Object");
         ArrayType arrayType = new ArrayType(elementType, 1);
         IntConstant size = IntConstant.getInstance(3);
-        JNewArrayExpr newArray = new JNewArrayExpr(arrayType, size, idFactory);
+        JNewArrayExpr newArray = new JNewArrayExpr(arrayType, size, IDFACTORY);
         newArray.accept(visitor);
         assertEquals("new Array()", visitor.toCode());
     }
@@ -558,7 +590,7 @@ public class TranslatorValueVisitorTest extends BaseTest {
     @Test
     public void testCaseNewMultiArrayExprThrows() {
         TranslatorValueVisitor visitor = new TranslatorValueVisitor(methodContext);
-        ClassType elem = view.getIdentifierFactory().getClassType("java.lang.Object");
+        ClassType elem = VIEW.getIdentifierFactory().getClassType("java.lang.Object");
         ArrayType multiType = new ArrayType(elem, 2);
         IntConstant arg1 = IntConstant.getInstance(2);
         IntConstant arg2 = IntConstant.getInstance(4);
@@ -570,7 +602,7 @@ public class TranslatorValueVisitorTest extends BaseTest {
 
     @Test
     public void testCaseDynamicInvokeExprThrows() {
-        MethodSignature bootstrapSig = view.getIdentifierFactory()
+        MethodSignature bootstrapSig = VIEW.getIdentifierFactory()
                 .getMethodSignature(
                         "java.lang.invoke.LambdaMetafactory",
                         "metafactory",
@@ -584,12 +616,12 @@ public class TranslatorValueVisitorTest extends BaseTest {
                                 "java.lang.invoke.MethodType"
                         )
                 );
-        ClassType dummy = view.getIdentifierFactory()
+        ClassType dummy = VIEW.getIdentifierFactory()
                 .getClassType(JDynamicInvokeExpr.INVOKEDYNAMIC_DUMMY_CLASS_NAME);
-        MethodSignature invokeSig = view.getIdentifierFactory()
+        MethodSignature invokeSig = VIEW.getIdentifierFactory()
                 .getMethodSignature(dummy, "ignored", "java.lang.Object",
                         Arrays.asList("java.lang.Object"));
-        ClassType stringType = idFactory.getClassType("java.lang.String");
+        ClassType stringType = IDFACTORY.getClassType("java.lang.String");
         List<Immediate> bsmArgs = Arrays.asList(new StringConstant("concat", stringType));
         List<Immediate> methodArgs = Arrays.asList(IntConstant.getInstance(42));
         JDynamicInvokeExpr dyn = new JDynamicInvokeExpr(
@@ -619,7 +651,7 @@ public class TranslatorValueVisitorTest extends BaseTest {
     public void testCaseCaughtExceptionRef() {
         TranslatorValueVisitor visitor = new TranslatorValueVisitor(methodContext);
         ClassType throwableType =
-                view.getIdentifierFactory().getClassType("java.lang.Throwable");
+                VIEW.getIdentifierFactory().getClassType("java.lang.Throwable");
         JCaughtExceptionRef caught = new JCaughtExceptionRef(throwableType);
         caught.accept(visitor);
         assertEquals("*ex", visitor.toCode());
@@ -628,7 +660,7 @@ public class TranslatorValueVisitorTest extends BaseTest {
     @Test
     public void testCaseThisRef() {
         TranslatorValueVisitor visitor = new TranslatorValueVisitor(methodContext);
-        ClassType cls = view.getIdentifierFactory().getClassType("com.example.Dummy");
+        ClassType cls = VIEW.getIdentifierFactory().getClassType("com.example.Dummy");
         JThisRef thisRef = new JThisRef(cls);
         thisRef.accept(visitor);
         assertEquals("this", visitor.toCode());
@@ -636,18 +668,18 @@ public class TranslatorValueVisitorTest extends BaseTest {
 
     @Test
     public void testCaseMethodTypeThrows() {
-        PrimitiveType retType = idFactory.getPrimitiveType("int")
+        PrimitiveType retType = IDFACTORY.getPrimitiveType("int")
                 .orElseThrow(() -> new RuntimeException("int type missing"));
-        PrimitiveType paramType1 = idFactory.getPrimitiveType("int")
+        PrimitiveType paramType1 = IDFACTORY.getPrimitiveType("int")
                 .orElseThrow(() -> new RuntimeException("int type missing"));
-        ClassType objType = view.getIdentifierFactory().getClassType("java.lang.Object");
-        MethodSubSignature subSig = view.getIdentifierFactory()
+        ClassType objType = VIEW.getIdentifierFactory().getClassType("java.lang.Object");
+        MethodSubSignature subSig = VIEW.getIdentifierFactory()
                 .getMethodSubSignature(
                         "methodFoo",
                         retType,
                         Arrays.asList(paramType1, objType)
                 );
-        ClassType returnType = view.getIdentifierFactory().getClassType("java.lang.String");
+        ClassType returnType = VIEW.getIdentifierFactory().getClassType("java.lang.String");
         MethodType mt = new MethodType(subSig, returnType);
         TranslatorValueVisitor visitor = new TranslatorValueVisitor(methodContext);
         TranslatorException ex = assertThrows(
