@@ -34,15 +34,13 @@ log() {
   echo "[${timestamp}] $1" | tee -a "$logFile"
 }
 
-log "start translate"
-
-if ! python ${binDir}/locked_exec.py java -Dlog4j.configurationFile="\"${baseDir}/conf/log4j2.xml\"" -cp "\"${baseDir}/lib/*\"" com.huawei.unt.UNTMain "${jarPath}" "${engineType}" "${baseDir}"; then
-  log "translate failed"
-  exit 1
-fi
-
 export C_INCLUDE_PATH=${cppDir}/include:$C_INCLUDE_PATH
 export CPLUS_INCLUDE_PATH=${cppDir}/include:$CPLUS_INCLUDE_PATH
+
+log "start translate"
+
+python ${binDir}/locked_exec.py java -Dlog4j.configurationFile="\"${baseDir}/conf/log4j2.xml\"" -cp "\"${baseDir}/lib/*\"" com.huawei.unt.UNTMain "${jarPath}" "${engineType}" "${baseDir}"
+translate_return_code=$?
 
 sha256="$( sed -n '1p' ${baseDir}/SHA256)"
 
@@ -66,6 +64,16 @@ if [ $jar_match -eq 0 ]; then
     echo "${jarPath}:${sha256}:" >> ${baseDir}/hash_record_new.txt
 fi
 mv ${baseDir}/hash_record_new.txt $hash_record_file
+
+if [ $translate_return_code -eq 0 ]; then
+    log "translate success"
+elif [ $return_code -eq 1 ]; then
+    log "translate failed"
+    exit 1;
+else
+    log "unknown error, translate failed"
+    exit 1;
+fi
 
 cppDir="${cppDir}/${sha256}"
 
