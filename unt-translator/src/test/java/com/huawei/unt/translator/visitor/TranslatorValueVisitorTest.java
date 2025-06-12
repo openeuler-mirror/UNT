@@ -210,7 +210,7 @@ public class TranslatorValueVisitorTest extends BaseTest {
         JArrayRef arrayRef = new JArrayRef(arrayLocal, IntConstant.getInstance(2));
         TranslatorValueVisitor valueVisitor = new TranslatorValueVisitor(methodContext);
         arrayRef.accept(valueVisitor);
-        assertEquals("arr->get(2)", valueVisitor.toCode());
+        assertEquals("reinterpret_cast<java_lang_String *>(arr->get(2))", valueVisitor.toCode());
     }
 
     @Test
@@ -584,7 +584,7 @@ public class TranslatorValueVisitorTest extends BaseTest {
         IntConstant size = IntConstant.getInstance(3);
         JNewArrayExpr newArray = new JNewArrayExpr(arrayType, size, IDFACTORY);
         newArray.accept(visitor);
-        assertEquals("new Array()", visitor.toCode());
+        assertEquals("new Array(3)", visitor.toCode());
     }
 
     @Test
