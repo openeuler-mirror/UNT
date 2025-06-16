@@ -14,6 +14,7 @@ import sootup.core.jimple.basic.Value;
 import sootup.core.jimple.common.ref.JArrayRef;
 import sootup.core.jimple.common.stmt.JAssignStmt;
 import sootup.core.jimple.common.stmt.Stmt;
+import sootup.core.types.PrimitiveType;
 
 /**
  * Deal with array field
@@ -21,10 +22,8 @@ import sootup.core.jimple.common.stmt.Stmt;
  * @since 2025-05-19
  */
 public class ArrayFieldHandler implements Optimizer {
-    /**
-     * array element set stmt
-     */
-    public static final String ARRAY_ELEM_SET = "%s->set(%s, %s)";
+    private static final String ARRAY_ELEM_SET = "%s->append(%s)";
+    private static final String JAVA_ARRAY_ELEM_SET = "%s->set(%s, %s)";
 
     @Override
     public boolean fetch(MethodContext methodContext) {
@@ -46,7 +45,12 @@ public class ArrayFieldHandler implements Optimizer {
                     rightValue = ((OptimizedJAssignStmt) stmt).getRightValue();
                 }
                 rightValue.accept(valueVisitor);
-                String res = String.format(ARRAY_ELEM_SET, base, arrayRef.getIndex(), valueVisitor.toCode());
+                String res;
+                if (arrayRef.getType() instanceof PrimitiveType) {
+                    res = String.format(JAVA_ARRAY_ELEM_SET, base, arrayRef.getIndex(), valueVisitor.toCode());
+                } else {
+                    res = String.format(ARRAY_ELEM_SET, base, valueVisitor.toCode());
+                }
                 valueVisitor.clear();
                 OptimizedDirectStmt optimizedDirectStmt = new OptimizedDirectStmt(res, stmt);
                 methodContext.getStmts().set(i, optimizedDirectStmt);
