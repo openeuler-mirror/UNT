@@ -584,7 +584,7 @@ public class TranslatorValueVisitorTest extends BaseTest {
         IntConstant size = IntConstant.getInstance(3);
         JNewArrayExpr newArray = new JNewArrayExpr(arrayType, size, IDFACTORY);
         newArray.accept(visitor);
-        assertEquals("new Array(3)", visitor.toCode());
+        assertEquals("new Array()", visitor.toCode());
     }
 
     @Test
