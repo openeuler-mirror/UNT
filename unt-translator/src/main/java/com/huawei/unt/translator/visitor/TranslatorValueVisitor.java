@@ -557,7 +557,7 @@ public class TranslatorValueVisitor extends AbstractValueVisitor {
         if (baseType instanceof PrimitiveType) {
             valueBuilder.append(String.format("new JavaArray<%s>(%s)", baseType, size));
         } else {
-            valueBuilder.append(String.format("new Array(%s)", size));
+            valueBuilder.append("new Array()");
         }
     }
 
