@@ -25,6 +25,7 @@ import sootup.core.types.PrimitiveType;
 import sootup.core.types.Type;
 import sootup.core.types.VoidType;
 import sootup.java.core.JavaIdentifierFactory;
+import sootup.java.core.JavaSootField;
 import sootup.java.core.JavaSootMethod;
 
 import java.io.FileInputStream;
@@ -346,6 +347,23 @@ public class TranslatorUtils {
                 .append(include)
                 .append("\"")
                 .append(NEW_LINE));
+
+        Set<PrimitiveType> primitiveTypeSet = new HashSet<>();
+        for (JavaSootField field : javaClass.getFields()) {
+            if (field.getType() instanceof PrimitiveType) {
+                if (!TranslatorContext.PRIMITIVE_TYPE_INCLUDESTRING_MAP.containsKey(field.getType())) {
+                    throw new TranslatorException("no support " + ((PrimitiveType) field.getType()).getName() + "primitive type");
+                }else {
+                    primitiveTypeSet.add((PrimitiveType) field.getType());
+                }
+            }
+        }
+        for (PrimitiveType primitiveType : primitiveTypeSet) {
+            includeBuilder.append("#include \"")
+                    .append(TranslatorContext.PRIMITIVE_TYPE_INCLUDESTRING_MAP.get(primitiveType))
+                    .append("\"")
+                    .append(NEW_LINE);
+        }
 
         return includeBuilder.toString();
     }

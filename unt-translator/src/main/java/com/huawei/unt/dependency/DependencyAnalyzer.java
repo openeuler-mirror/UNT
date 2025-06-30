@@ -22,6 +22,7 @@ import sootup.core.jimple.visitor.AbstractValueVisitor;
 import sootup.core.model.Body;
 import sootup.core.types.ArrayType;
 import sootup.core.types.ClassType;
+import sootup.core.types.PrimitiveType;
 import sootup.core.types.Type;
 import sootup.java.core.JavaIdentifierFactory;
 import sootup.java.core.JavaSootField;

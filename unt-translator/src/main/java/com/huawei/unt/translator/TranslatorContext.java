@@ -128,6 +128,13 @@ public class TranslatorContext {
         put(PrimitiveType.LongType.getInstance(),"Long");
     }};
 
+    public static final Map<PrimitiveType, String> PRIMITIVE_TYPE_INCLUDESTRING_MAP = new HashMap<PrimitiveType, String>(){{
+        put(PrimitiveType.BooleanType.getInstance(),"basictypes/java_lang_Boolean.h");
+        put(PrimitiveType.IntType.getInstance(),"basictypes/Integer.h");
+        put(PrimitiveType.DoubleType.getInstance(),"basictypes/Double.h");
+        put(PrimitiveType.LongType.getInstance(),"basictypes/Long.h");
+    }};
+
     private static Map<String, Set<String>> superclassMap = new HashMap<>();
     private static Map<String, Set<String>> subclassMap = new HashMap<>();
     private static Map<String, Set<String>> missingInterfaces = new HashMap<>();
