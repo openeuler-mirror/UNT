@@ -18,9 +18,6 @@ import sootup.core.jimple.basic.Immediate;
 import sootup.core.jimple.basic.Local;
 import sootup.core.jimple.common.constant.IntConstant;
 import sootup.core.jimple.common.constant.StringConstant;
-import sootup.core.jimple.common.ref.JParameterRef;
-import sootup.core.jimple.common.stmt.JIdentityStmt;
-import sootup.core.jimple.common.stmt.Stmt;
 import sootup.core.signatures.MethodSignature;
 import sootup.core.types.ArrayType;
 import sootup.core.types.ClassType;
@@ -35,7 +32,6 @@ import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -101,26 +97,13 @@ public class TranslatorUtils {
     public static String methodParamsToString(JavaSootMethod javaMethod) {
         StringJoiner joiner = new StringJoiner(", ");
 
-        List<Type> params = getMethodParamsType(javaMethod);
+        List<Type> params = javaMethod.getParameterTypes();
         int i = 0;
         for (Type type : params) {
             joiner.add(formatParamType(type) + "param" + i++);
         }
 
         return joiner.toString();
-    }
-    private static List<Type> getMethodParamsType(JavaSootMethod javaMethod) {
-        if (javaMethod.hasBody()) {
-            Type[] params = new Type[javaMethod.getParameterCount()];
-            for (Stmt stmt : javaMethod.getBody().getStmts()) {
-                if (stmt instanceof JIdentityStmt && ((JIdentityStmt) stmt).getRightOp() instanceof JParameterRef) {
-                    JParameterRef parameterRef = (JParameterRef) ((JIdentityStmt) stmt).getRightOp();
-                    params[parameterRef.getIndex()] = ((JIdentityStmt) stmt).getLeftOp().getType();
-                }
-            }
-            return Arrays.asList(params);
-        }
-        return javaMethod.getParameterTypes();
     }
 
     /**
@@ -136,7 +119,7 @@ public class TranslatorUtils {
         for (int i = 0; i < params.size(); i++) {
             Local local = params.get(i);
             methodContext.removeLocal(local);
-            joiner.add(formatParamType(local.getType()) + formatLocalName(local));
+            joiner.add(formatParamType(methodContext.getJavaMethod().getParameterType(i)) + formatLocalName(local));
         }
 
         return joiner.toString();
