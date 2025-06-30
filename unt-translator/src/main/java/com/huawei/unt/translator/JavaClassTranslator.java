@@ -300,9 +300,9 @@ public class JavaClassTranslator {
                     cppBuilder.append("REGISTER_PTR_FIELD(")
                             .append(TranslatorUtils.formatClassName(javaClass.getClassName())).append(", ")
                             .append(TranslatorUtils.formatFieldName(javaSootField.getName())).append(", ")
-                            .append(TranslatorUtils.formatParamType(javaSootField.getType())).append(", ")
+                            .append(TranslatorUtils.formatParamType(javaSootField.getType())).append(", ").append("\"")
                             .append(TranslatorUtils.parseSignature(fieldNode.signature == null ? fieldNode.desc : fieldNode.signature)
-                                    .replace('.', '_').replace('$', '_'))
+                                    .replace('.', '_').replace('$', '_')).append("\"")
                             .append(")");
                 } else if (javaSootField.getType() instanceof PrimitiveType){
                     if (!TranslatorContext.PRIMITIVE_TYPE_STRING_MAP.containsKey(javaSootField.getType())){
@@ -312,9 +312,9 @@ public class JavaClassTranslator {
                     cppBuilder.append("REGISTER_PRIMITIVE_FIELD(")
                             .append(TranslatorUtils.formatClassName(javaClass.getClassName())).append(", ")
                             .append(TranslatorUtils.formatFieldName(javaSootField.getName())).append(", ")
-                            .append(type).append(", ")
+                            .append(type).append(", ").append("\"")
                             .append(TranslatorUtils.parseSignature(fieldNode.signature == null ? fieldNode.desc : fieldNode.signature)
-                                    .replace('.', '_').replace('$', '_'))
+                                    .replace('.', '_').replace('$', '_')).append("\"")
                             .append(")");
                 }
                 cppBuilder.append(NEW_LINE);
