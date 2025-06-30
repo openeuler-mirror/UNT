@@ -110,14 +110,8 @@ public class JavaClassTranslator {
             if (!TranslatorContext.getIgnoredClasses().contains(superClassType.getFullyQualifiedName())) {
                 String formatType = TranslatorUtils.formatType(superClassType);
                 String templates = "";
-                if (TranslatorContext.getGenericFunction().contains(formatType)) {
-                    if ("KeyedCoProcessFunction".equals(formatType)) {
-                        templates = "<Object*, Object*, Object*, Object*>";
-                    } else if ("KeyedProcessFunction".equals(formatType)) {
-                        templates = "<Object*, Object*, Object*>";
-                    } else {
-                        templates = "<Object>";
-                    }
+                if (TranslatorContext.getGenericFunction().containsKey(formatType)) {
+                    templates = TranslatorContext.getGenericFunction().get(formatType);
                 }
                 joiner.add("public " + formatType + templates);
             }

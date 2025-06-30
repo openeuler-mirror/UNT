@@ -55,9 +55,11 @@ public class JavaClass {
         ClassType udfClassType = TranslatorUtils.getClassTypeFromClassName(udfType.getBaseClass().getName());
         this.supperClasses.add(udfClassType);
         this.isLambda = true;
-        TranslatorContext.getSuperclassMap().put(className, supperClasses.stream()
+        Set<String> superClassesSet = supperClasses.stream()
                 .map(ClassType::toString)
-                .collect(Collectors.toSet()));
+                .collect(Collectors.toSet());
+        superClassesSet.add("java.lang.Object");
+        TranslatorContext.getSuperclassMap().put(className, superClassesSet);
     }
 
     public JavaClass(JavaSootClass javaSootClass, UDFType type) {

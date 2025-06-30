@@ -140,7 +140,7 @@ public class TranslatorContext {
     private static Set<String> ignoredClasses = new HashSet<>();
     private static Set<String> ignoredMethods = new HashSet<>();
     private static Set<String> stdStringMethods = new HashSet<>();
-    private static Set<String> genericFunction = new HashSet<>();
+    private static Map<String, String> genericFunction = new HashMap<>();;
 
     private static int tuneLevel;
     private static boolean isMemTune;
@@ -246,7 +246,7 @@ public class TranslatorContext {
         Set<String> ignoredMethodsSet = new HashSet<>();
         Set<String> stdStringMethodSet = new HashSet<>();
         Map<String, Integer> dependInterfaces = new HashMap<>();
-        Set<String> genericFunctionsSet = new HashSet<>();
+        Map<String, String> genericFunctionsMap = new HashMap<>();
 
         try (BufferedReader ignoredPackageReader = Files.newBufferedReader(Paths.get(ignorePackageProfile));
                 BufferedReader ignoredClassReader = Files.newBufferedReader(Paths.get(ignoreClassProfile));
@@ -283,13 +283,20 @@ public class TranslatorContext {
 
             String dependInterface;
             while ((dependInterface = dependInterfacesReader.readLine()) != null) {
+                if(dependInterface.startsWith("%")) {
+                    continue;
+                }
                 String[] ref = dependInterface.trim().split(", ");
                 dependInterfaces.put(ref[0].trim(), Integer.valueOf(ref[1].trim()));
             }
 
             String grcFunction;
             while ((grcFunction = genericFunctionReader.readLine()) != null) {
-                genericFunctionsSet.add(grcFunction.trim());
+                if(grcFunction.startsWith("%")) {
+                    continue;
+                }
+                String[] ref = grcFunction.trim().split(": ");
+                genericFunctionsMap.put(ref[0].trim(), ref[1].trim());
             }
         } catch (IOException e) {
             throw new TranslatorException("Load config files failed: " + e.getMessage());
@@ -344,9 +351,9 @@ public class TranslatorContext {
         }
 
         LOGGER.info("load generic functions");
-        genericFunction = new HashSet<>(genericFunctionsSet);
-        for (String s : genericFunctionsSet) {
-            LOGGER.info(s);
+        genericFunction = new HashMap<>(genericFunctionsMap);
+        for (String s : genericFunctionsMap.keySet()) {
+            LOGGER.info(s + genericFunctionsMap.get(s));
         }
     }
 
@@ -431,7 +438,7 @@ public class TranslatorContext {
         return stdStringMethods;
     }
 
-    public static Set<String> getGenericFunction() {
+    public static Map<String, String> getGenericFunction() {
         return genericFunction;
     }
 }
