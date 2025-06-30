@@ -37,6 +37,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -152,9 +153,6 @@ public class TranslatorUtils {
         TranslatorValueVisitor valueVisitor = new TranslatorValueVisitor(methodContext);
         StringJoiner joiner = new StringJoiner(", ");
 
-        boolean shouldPackingString = !TranslatorContext.getStdStringMethods()
-                .contains(signature.toString());
-
         for (int i = 0; i < args.size(); i++) {
             Immediate immediate = args.get(i);
 
@@ -166,7 +164,7 @@ public class TranslatorUtils {
                 value = "(char) " + value;
             }
 
-            if (immediate instanceof StringConstant && shouldPackingString) {
+            if (immediate instanceof StringConstant && shouldPackingString(signature)) {
                 value = "StringConstant::getInstance().get(" + value + ")";
             }
 
@@ -175,6 +173,27 @@ public class TranslatorUtils {
         }
 
         return "(" + joiner + ")";
+    }
+
+    private static boolean shouldPackingString(MethodSignature signature) {
+        Set<String> stdStringMethods = TranslatorContext.getStdStringMethods();
+        String signatureStr = signature.toString();
+        String declClassName = signature.getDeclClassType().getFullyQualifiedName();
+        Set<String> searched = new HashSet<>();
+        LinkedList<String> classQueue = new LinkedList<>();
+        classQueue.add(declClassName);
+        while(!classQueue.isEmpty()) {
+            String className = classQueue.removeFirst();
+            if(!searched.contains(className)) {
+                if (stdStringMethods.contains(signatureStr.replace(declClassName, className))) {
+                    stdStringMethods.add(declClassName);
+                    return false;
+                }
+                searched.add(className);
+                classQueue.addAll(TranslatorContext.getSuperclassMap().getOrDefault(className, new HashSet<>()));
+            }
+        }
+        return true;
     }
 
     private static class LocalComparator implements Comparator<Local> {

@@ -115,7 +115,7 @@ public class JavaClass {
                 .collect(Collectors.toSet()));
 
         this.isLambda = false;
-        this.isAbstract = ! javaSootClass.isConcrete();
+        this.isAbstract = !javaSootClass.isConcrete();
     }
 
     public String getClassName() {

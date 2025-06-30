@@ -648,6 +648,8 @@ public class MemoryReleaseOptimizer implements Optimizer {
                 String methodSignatureStr = methodSignature.toString();
                 methodSignatureStr = methodSignatureStr.replace(className, superClass);
                 if (refMap.containsKey(methodSignatureStr)) {
+                    int res = refMap.get(methodSignatureStr);
+                    refMap.put(methodSignature.toString(), res);
                     return refMap.get(methodSignatureStr);
                 }
                 if (TranslatorContext.getSuperclassMap().containsKey(superClass)) {
