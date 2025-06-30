@@ -17,6 +17,7 @@ import sootup.core.jimple.common.stmt.Stmt;
 import sootup.core.jimple.visitor.AbstractStmtVisitor;
 import sootup.core.jimple.visitor.AbstractValueVisitor;
 import sootup.core.types.ClassType;
+import sootup.core.types.Type;
 import sootup.java.core.JavaSootMethod;
 
 import java.util.ArrayList;
@@ -45,6 +46,7 @@ public class MethodContext {
     private final Set<Local> locals;
     private final List<Stmt> stmts;
     private final Map<Integer, Local> params = new HashMap<>();
+    private final Map<Local, Type> paramLocals = new HashMap<>();
     private final List<Integer> labels = new ArrayList<>();
     private final Map<Integer, List<Integer>> branches = new HashMap<>();
     private final HashSet<Integer> removedStmts = new HashSet<>();
@@ -185,6 +187,10 @@ public class MethodContext {
         return params;
     }
 
+    public Map<Local, Type> getParamLocals() {
+        return paramLocals;
+    }
+
     public UDFType getUdfType() {
         return type;
     }
@@ -220,6 +226,10 @@ public class MethodContext {
      */
     public void putParams(int idx, Local local) {
         params.put(idx, local);
+    }
+
+    public void putParamLocal(Local local, Type type) {
+        paramLocals.put(local, type);
     }
 
     /**
