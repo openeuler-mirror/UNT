@@ -332,7 +332,7 @@ public class MemoryReleaseOptimizer implements Optimizer {
                 return;
             }
             if (leftOp instanceof JArrayRef) {
-                arrRefAssignStmtHandle(i, leftOp, value, ref);
+                arrRefAssignStmtHandle(i, leftOp, ref);
             }
         }
     }
@@ -378,7 +378,7 @@ public class MemoryReleaseOptimizer implements Optimizer {
     }
 
     // deal with arr[0] = new ...
-    private void arrRefAssignStmtHandle(int i, LValue leftOp, Value value, int ref) {
+    private void arrRefAssignStmtHandle(int i, LValue leftOp, int ref) {
         if (ref == 1 && leftOp instanceof JArrayRef) {
             Map<LValue, Integer> vars = unknownFree.getOrDefault(i, new HashMap<>());
             vars.put(leftOp, AFTER);
@@ -516,7 +516,7 @@ public class MemoryReleaseOptimizer implements Optimizer {
                 return;
             }
             if (leftOp instanceof JArrayRef) {
-                arrRefAssignStmtHandle(j, leftOp, value, ref);
+                arrRefAssignStmtHandle(j, leftOp, ref);
             }
         }
     }
