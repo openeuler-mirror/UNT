@@ -127,6 +127,10 @@ public class JavaClassTranslator {
 
         if (javaClass.isLambda()) {
             headBuilder.append("public:").append(NEW_LINE);
+            headBuilder.append(TAB)
+                    .append(TranslatorUtils.formatClassName(javaClass.getClassName()))
+                    .append("() = default;")
+                    .append(NEW_LINE);
             headBuilder.append(javaClass.getType().printLambdaDeclare());
             if (javaClass.isJsonConstructor()) {
                 printConstructorFromJsonDeclare(headBuilder, javaClass);
@@ -152,8 +156,18 @@ public class JavaClassTranslator {
                     headBuilder.append(printStaticInitMethod(sootMethod)).append(NEW_LINE));
 
             if (!initMethods.isEmpty()) {
+                boolean requireDefaultInit = true;
                 for (JavaSootMethod method : initMethods) {
+                    if (method.getParameterCount() == 0) {
+                        requireDefaultInit = false;
+                    }
                     headBuilder.append(javaClass.getType().printDeclareMethod(method));
+                }
+                if (requireDefaultInit) {
+                    headBuilder.append(TAB)
+                            .append(TranslatorUtils.formatClassName(javaClass.getClassName()))
+                            .append("() = default;")
+                            .append(NEW_LINE);
                 }
                 headBuilder.append(NEW_LINE);
             }

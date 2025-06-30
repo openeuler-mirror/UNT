@@ -4,10 +4,12 @@
 
 package com.huawei.unt.optimizer;
 
+import static com.huawei.unt.translator.TranslatorContext.NEW_LINE;
+import static com.huawei.unt.translator.TranslatorContext.TAB;
+
 import com.huawei.unt.model.MethodContext;
 import com.huawei.unt.optimizer.stmts.OptimizedJAssignStmt;
 import com.huawei.unt.optimizer.stmts.OptimizedValue;
-import com.huawei.unt.translator.TranslatorContext;
 import com.huawei.unt.translator.TranslatorException;
 import com.huawei.unt.translator.TranslatorUtils;
 import com.huawei.unt.translator.visitor.TranslatorValueVisitor;
@@ -32,8 +34,8 @@ import java.util.stream.Collectors;
  */
 public class DynamicInvokeHandle implements Optimizer {
     private static final String NEW_OBJ = "new %s(%s)";
-    private static final String TAB_INLINE = TranslatorContext.TAB + TranslatorContext.TAB + TranslatorContext.TAB;
-    private static final String OBJ_TRANS = TAB_INLINE + "%1$s *in%2$d = (%1$s*) %3$s;" + TranslatorContext.NEW_LINE;
+    private static final String TAB_INLINE = TAB + TAB + TAB;
+    private static final String OBJ_TRANS = TAB_INLINE + "%1$s *in%2$d = (%1$s*) %3$s;" + NEW_LINE;
 
     private TranslatorValueVisitor valueVisitor;
 
@@ -82,11 +84,11 @@ public class DynamicInvokeHandle implements Optimizer {
             }
             MethodSignature invokeMethodReferenceSignature = (MethodSignature) invokeMethod.getReferenceSignature();
             lambdaCodes.append(getInputParams(declMethodType.getParameterTypes()))
-                    .append(" {").append(TranslatorContext.NEW_LINE);
+                    .append(" {").append(NEW_LINE);
 
             lambdaCodes.append(
                             getMethodBody(invokeMethodReferenceSignature, args, declMethodType.getParameterTypes()))
-                    .append(TranslatorContext.TAB).append(TranslatorContext.TAB).append("}");
+                    .append(TAB).append(TAB).append("}");
             return lambdaCodes.toString();
         } catch (ClassCastException e) {
             throw new TranslatorException(e.getMessage());
@@ -116,7 +118,7 @@ public class DynamicInvokeHandle implements Optimizer {
             }
         }
         stmts.append(TAB_INLINE).append(signature.getName()).append("(")
-                .append(params).append(");").append(TranslatorContext.NEW_LINE);
+                .append(params).append(");").append(NEW_LINE);
         return stmts.toString();
     }
 

@@ -5,9 +5,9 @@
 package com.huawei.unt.type.flink;
 
 import static com.huawei.unt.translator.TranslatorContext.NEW_LINE;
+import static com.huawei.unt.translator.TranslatorContext.TAB;
 
 import com.huawei.unt.model.MethodContext;
-import com.huawei.unt.translator.TranslatorContext;
 import com.huawei.unt.translator.TranslatorUtils;
 import com.huawei.unt.type.UDFType;
 
@@ -103,7 +103,7 @@ public class FlinkMapFunction implements UDFType {
 
             String typeString = TranslatorUtils.formatType(paramLocal.getType());
 
-            headBuilder.append(TranslatorContext.TAB)
+            headBuilder.append(TAB)
                     .append(typeString).append(" *").append(TranslatorUtils.formatLocalName(paramLocal))
                     .append(" = reinterpret_cast<").append(typeString).append(" *>(obj);")
                     .append(NEW_LINE);
@@ -141,7 +141,7 @@ public class FlinkMapFunction implements UDFType {
 
         String typeString = TranslatorUtils.formatType(paramLocal.getType());
 
-        headBuilder.append(TranslatorContext.TAB)
+        headBuilder.append(TAB)
                 .append(typeString).append(" *").append(TranslatorUtils.formatLocalName(paramLocal))
                 .append(" = reinterpret_cast<").append(typeString).append(" *>(obj);")
                 .append(NEW_LINE);
