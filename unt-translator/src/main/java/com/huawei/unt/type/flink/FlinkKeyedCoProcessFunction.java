@@ -97,6 +97,9 @@ public class FlinkKeyedCoProcessFunction implements UDFType {
         if (isUdfFunction(method) && "processElement2".equals(method.getName())) {
             return "    void processElement2(Object *obj, Context *ctx, Collector *collector) override;" + NEW_LINE;
         }
+        if (isUdfFunction(method) && "open".equals(method.getName())) {
+            return "    void open(const Configuration& conf) override;" + NEW_LINE;
+        }
         return TranslatorUtils.printDeclareMethod(method);
     }
 

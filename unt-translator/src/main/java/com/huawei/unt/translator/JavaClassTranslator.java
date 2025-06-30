@@ -14,6 +14,7 @@ import com.huawei.unt.type.UDFType;
 import sootup.core.model.FieldModifier;
 import sootup.core.types.ClassType;
 import sootup.core.types.PrimitiveType;
+import sootup.java.core.JavaSootClass;
 import sootup.java.core.JavaSootField;
 import sootup.java.core.JavaSootMethod;
 
@@ -111,9 +112,9 @@ public class JavaClassTranslator {
                 String templates = "";
                 if (TranslatorContext.getGenericFunction().contains(formatType)) {
                     if ("KeyedCoProcessFunction".equals(formatType)) {
-                        templates = "<Object, Object*, Object*, Object*>";
+                        templates = "<Object*, Object*, Object*, Object*>";
                     } else if ("KeyedProcessFunction".equals(formatType)) {
-                        templates = "<Object, Object*, Object*>";
+                        templates = "<Object*, Object*, Object*>";
                     } else {
                         templates = "<Object>";
                     }
@@ -272,7 +273,10 @@ public class JavaClassTranslator {
             cppBuilder.append("DEFINE_REFLECT_CLASS_BEGIN(").append(TranslatorUtils.formatClassName(javaClass.getClassName())).append(")").append(NEW_LINE);
 
             for (JavaSootField javaSootField : fields) {
-                //todo
+
+                JavaSootClass javaSootClass = javaClass.getJavaSootClass();
+//                javaSootClass.getClassSource().
+
                 cppBuilder.append(TAB);
                 if (javaSootField.getType() instanceof ClassType){
                     cppBuilder.append("REGISTER_PTR_FIELD(")

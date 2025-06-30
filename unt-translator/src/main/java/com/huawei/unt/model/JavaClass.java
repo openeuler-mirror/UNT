@@ -14,6 +14,7 @@ import sootup.core.types.ClassType;
 import sootup.core.types.Type;
 import sootup.java.core.JavaIdentifierFactory;
 import sootup.java.core.JavaSootClass;
+import sootup.java.core.JavaSootClassSource;
 import sootup.java.core.JavaSootField;
 import sootup.java.core.JavaSootMethod;
 import sootup.java.core.types.JavaClassType;
@@ -39,6 +40,7 @@ public class JavaClass {
     private final Set<ClassType> supperClasses = new HashSet<>();
     private final Set<ClassType> includes = new HashSet<>();
     private final Set<ClassType> loopIncludes = new HashSet<>();
+    private JavaSootClass javaSootClass = null;
 
     private boolean hasArray = false;
     private boolean hasObjectField = false;
@@ -61,6 +63,7 @@ public class JavaClass {
     public JavaClass(JavaSootClass javaSootClass, UDFType type) {
         this.className = javaSootClass.getName();
         this.type = type;
+        this.javaSootClass = javaSootClass;
 
         for (JavaSootField field : javaSootClass.getFields()) {
             if (field.getType() instanceof ClassType
@@ -70,7 +73,9 @@ public class JavaClass {
             }
             this.fields.add(field);
         }
+        JavaSootClassSource classSource = javaSootClass.getClassSource();
 
+        // new AsmClassSource();
         for (JavaSootMethod method : javaSootClass.getMethods()) {
             if (method.isNative()) {
                 throw new LoaderException("Not support native method now");
@@ -195,6 +200,14 @@ public class JavaClass {
     public boolean isAbstract() {
         return this.isAbstract;
     }
+
+    public void setJavaSootClass(JavaSootClass javaSootClass) {
+        this.javaSootClass = javaSootClass;
+    }
+
+    public JavaSootClass getJavaSootClass() {
+        return javaSootClass;
+    };
 
     @Override
     public boolean equals(Object o) {

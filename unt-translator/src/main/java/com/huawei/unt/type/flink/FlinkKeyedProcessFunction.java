@@ -95,6 +95,10 @@ public class FlinkKeyedProcessFunction implements UDFType {
             + ") override;" + NEW_LINE;
         }
 
+        if (isUdfFunction(method) && "open".equals(method.getName())) {
+            return "    void open(const Configuration& conf) override;" + NEW_LINE;
+        }
+
         return TranslatorUtils.printDeclareMethod(method);
     }
 
