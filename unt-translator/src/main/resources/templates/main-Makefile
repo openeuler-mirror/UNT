@@ -8,7 +8,7 @@ regex_lib := /usr/local/ksl/lib/libKHSEL_ops.a
 
 CXX := g++
 CXXFLAGS := -O3 -std=c++17 -fPIC -I$(basic_inc)
-LDFLAGS := -shared
+LDFLAGS := -shared -L$(basic_dir)/lib -ltnel
 
 SRC_DIR := $(CURDIR)
 OUTPUT_DIR := $(SRC_DIR)/../../output/${sha256}
