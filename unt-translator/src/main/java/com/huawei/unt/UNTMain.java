@@ -229,6 +229,9 @@ public class UNTMain {
             for (UDFType udfType : classesUdfMap.keySet()) {
                 List<JavaClass> classes = classesUdfMap.get(udfType);
                 for (int i = 0; i < classes.size(); i++) {
+                    if (classes.get(i).isAbstract()) {
+                        continue;
+                    }
                     String formatClassName = TranslatorUtils.formatClassName(classes.get(i).getClassName());
                     String nativeDir = cppDir + File.separator + formatClassName;
                     String udfCppFile = nativeDir + File.separator + formatClassName + "_native.cpp";
