@@ -11,9 +11,12 @@ import com.huawei.unt.model.JavaClass;
 import com.huawei.unt.type.NoneUDF;
 import com.huawei.unt.type.UDFType;
 
+import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.FieldNode;
 import sootup.core.model.FieldModifier;
 import sootup.core.types.ClassType;
 import sootup.core.types.PrimitiveType;
+import sootup.java.core.JavaSootClassSource;
 import sootup.java.core.JavaSootClass;
 import sootup.java.core.JavaSootField;
 import sootup.java.core.JavaSootMethod;
@@ -21,6 +24,7 @@ import sootup.java.core.JavaSootMethod;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -266,17 +270,40 @@ public class JavaClassTranslator {
         if (!javaClass.isAbstract() && javaClass.getType().equals(NoneUDF.INSTANCE)){
             cppBuilder.append("DEFINE_REFLECT_CLASS_BEGIN(").append(TranslatorUtils.formatClassName(javaClass.getClassName())).append(")").append(NEW_LINE);
 
-            for (JavaSootField javaSootField : fields) {
+            JavaSootClass javaSootClass = javaClass.getJavaSootClass();
+            JavaSootClassSource classSource = javaSootClass.getClassSource();
+            List<FieldNode> fieldNodes = null;
+            try{
+                Class<?> aClass = ClassLoader.getSystemClassLoader().loadClass("sootup.java.bytecode.frontend.conversion.AsmClassSource");
+                Field classNodeField = aClass.getDeclaredField("classNode");
+                classNodeField.setAccessible(true);
+                ClassNode classNode = (ClassNode)(classNodeField.get(classSource));
+                fieldNodes = classNode.fields;
+            }catch (Exception e){
+                LOGGER.error("can not get classNode");
+            }
 
-                JavaSootClass javaSootClass = javaClass.getJavaSootClass();
-//                javaSootClass.getClassSource().
+            for (JavaSootField javaSootField : fields) {
+                FieldNode fieldNode = null;
+                for (FieldNode field : fieldNodes) {
+                    if (field.name.equals(javaSootField.getName())){
+                        fieldNode = field;
+                    }
+                }
+
+                if (fieldNode == null) {
+                    throw new TranslatorException("can not find " + javaSootField.getName() + " field");
+                }
 
                 cppBuilder.append(TAB);
                 if (javaSootField.getType() instanceof ClassType){
                     cppBuilder.append("REGISTER_PTR_FIELD(")
                             .append(TranslatorUtils.formatClassName(javaClass.getClassName())).append(", ")
                             .append(TranslatorUtils.formatFieldName(javaSootField.getName())).append(", ")
-                            .append(TranslatorUtils.formatParamType(javaSootField.getType())).append(")");
+                            .append(TranslatorUtils.formatParamType(javaSootField.getType())).append(", ")
+                            .append(TranslatorUtils.parseSignature(fieldNode.signature == null ? fieldNode.desc : fieldNode.signature)
+                                    .replace('.', '_').replace('$', '_'))
+                            .append(")");
                 } else if (javaSootField.getType() instanceof PrimitiveType){
                     if (!TranslatorContext.PRIMITIVE_TYPE_STRING_MAP.containsKey(javaSootField.getType())){
                         throw new TranslatorException("no support " + ((PrimitiveType) javaSootField.getType()).getName() + "primitive type");
@@ -285,7 +312,10 @@ public class JavaClassTranslator {
                     cppBuilder.append("REGISTER_PRIMITIVE_FIELD(")
                             .append(TranslatorUtils.formatClassName(javaClass.getClassName())).append(", ")
                             .append(TranslatorUtils.formatFieldName(javaSootField.getName())).append(", ")
-                            .append(type).append(")");
+                            .append(type).append(", ")
+                            .append(TranslatorUtils.parseSignature(fieldNode.signature == null ? fieldNode.desc : fieldNode.signature)
+                                    .replace('.', '_').replace('$', '_'))
+                            .append(")");
                 }
                 cppBuilder.append(NEW_LINE);
             }

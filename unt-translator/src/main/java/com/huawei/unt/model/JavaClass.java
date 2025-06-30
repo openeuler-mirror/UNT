@@ -14,7 +14,6 @@ import sootup.core.types.ClassType;
 import sootup.core.types.Type;
 import sootup.java.core.JavaIdentifierFactory;
 import sootup.java.core.JavaSootClass;
-import sootup.java.core.JavaSootClassSource;
 import sootup.java.core.JavaSootField;
 import sootup.java.core.JavaSootMethod;
 import sootup.java.core.types.JavaClassType;
@@ -23,6 +22,7 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.lang.reflect.Field;
 import java.util.stream.Collectors;
 
 /**
@@ -75,9 +75,7 @@ public class JavaClass {
             }
             this.fields.add(field);
         }
-        JavaSootClassSource classSource = javaSootClass.getClassSource();
 
-        // new AsmClassSource();
         for (JavaSootMethod method : javaSootClass.getMethods()) {
             if (method.isNative()) {
                 throw new LoaderException("Not support native method now");

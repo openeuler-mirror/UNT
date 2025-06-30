@@ -1,7 +1,7 @@
 [#ifndef TESTINHERITANCE_H
 #define TESTINHERITANCE_H
 
-#include "basictypes/ClassConstant.h"
+#include "basictypes/ClassRegistry.h"
 #include "basictypes/StringConstant.h"
 #include "nlohmann/json.hpp"
 

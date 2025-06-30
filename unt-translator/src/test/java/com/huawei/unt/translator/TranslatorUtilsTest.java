@@ -22,4 +22,11 @@ public class TranslatorUtilsTest extends BaseTest {
 
         Assertions.assertTrue(expectHash.equals(actualHash));
     }
+
+    @Test
+    public void testParseSignature() {
+        String signature = "Ljava/util/List<Ljava/lang/String;>;";
+        String actualSignature = TranslatorUtils.parseSignature(signature);
+        System.out.println(actualSignature);
+    }
 }

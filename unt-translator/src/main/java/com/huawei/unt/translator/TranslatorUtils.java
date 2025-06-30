@@ -34,6 +34,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -56,7 +57,7 @@ public class TranslatorUtils {
     private static final String PRIMITIVE_ARRAY_TYPE = "JavaArray<%s>";
     private static final String ARRAY_HEAD = "basictypes/Arrays.h";
     private static final String JSON_HEAD = "nlohmann/json.hpp";
-    private static final String CLASSCONSTANT_HEAD = "basictypes/ClassConstant.h";
+    private static final String CLASSCONSTANT_HEAD = "basictypes/ClassRegistry.h";
     private static final String STRINGCONSTANT_HEAD = "basictypes/StringConstant.h";
 
     private TranslatorUtils() {}
@@ -569,6 +570,68 @@ public class TranslatorUtils {
             return sb.toString();
         } catch (NoSuchAlgorithmException|IOException e) {
             throw new TranslatorException("Failed to get jar hash path");
+        }
+    }
+
+    public static String parseSignature(String signature){
+        if (signature == null || signature.isEmpty()) return "";
+
+        StringBuilder result = new StringBuilder();
+        int[] pos = {0}; //
+        result.append(parseType(signature, pos));
+        return result.toString();
+    }
+    private static String parseType(String sig, int[] pos) {
+        if (pos[0] >= sig.length()) return "";
+
+        char ch = sig.charAt(pos[0]);
+
+        //
+        if (ch == '[') {
+            pos[0]++;
+            return parseType(sig, pos) + "[]";
+        }
+
+        // /
+        if (ch == 'L') {
+            pos[0]++;
+            StringBuilder className = new StringBuilder();
+
+            while (pos[0] < sig.length()) {
+                char c = sig.charAt(pos[0]);
+
+                if (c == '<') {
+                    pos[0]++; //  '<'
+                    List<String> typeArgs = new ArrayList<>();
+                    while (sig.charAt(pos[0]) != '>') {
+                        typeArgs.add(parseType(sig, pos));
+                    }
+                    pos[0]++; //  '>'
+                    String qualified = className.toString().replace('/', '.');
+                    return qualified + "<" + String.join(",", typeArgs) + ">";
+                } else if (c == ';') {
+                    pos[0]++;
+                    return className.toString().replace('/', '.');
+                } else {
+                    className.append(c);
+                    pos[0]++;
+                }
+            }
+        }
+
+        //
+        pos[0]++;
+        switch (ch) {
+            case 'Z': return "boolean";
+            case 'B': return "byte";
+            case 'C': return "char";
+            case 'S': return "short";
+            case 'I': return "int";
+            case 'J': return "long";
+            case 'F': return "float";
+            case 'D': return "double";
+            case 'V': return "void";
+            default:  return "<?>"; //
         }
     }
 }
