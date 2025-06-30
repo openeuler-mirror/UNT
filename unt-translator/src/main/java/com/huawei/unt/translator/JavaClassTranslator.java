@@ -344,7 +344,7 @@ public class JavaClassTranslator {
 
         // fill fields
         for (JavaSootField field : javaClass.getFields()) {
-            if (!field.isStatic()) {
+            if (!field.isStatic() && !FieldModifier.isTransient(field.getModifiers())) {
                 methodBuilder.append(TAB)
                         .append("if(!jsonObj[\"")
                         .append(TranslatorUtils.formatFieldName(field.getName()))
