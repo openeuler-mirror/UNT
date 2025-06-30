@@ -6,6 +6,7 @@ package com.huawei.unt.translator;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sootup.core.types.PrimitiveType;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -119,6 +120,13 @@ public class TranslatorContext {
     public static final String OLD_VAR_PUT = TAB + "if (old%1$S != nullptr) {" + NEW_LINE
             + TAB + TAB + "old%1$S->putRefCount();" + NEW_LINE
             + TAB + "}" + NEW_LINE;
+
+    public static final Map<PrimitiveType, String> PRIMITIVE_TYPE_STRING_MAP = new HashMap<PrimitiveType, String>(){{
+        put(PrimitiveType.BooleanType.getInstance(),"Boolean");
+        put(PrimitiveType.IntType.getInstance(),"Integer");
+        put(PrimitiveType.DoubleType.getInstance(),"Double");
+        put(PrimitiveType.LongType.getInstance(),"Long");
+    }};
 
     private static Map<String, Set<String>> superclassMap = new HashMap<>();
     private static Map<String, Set<String>> subclassMap = new HashMap<>();
