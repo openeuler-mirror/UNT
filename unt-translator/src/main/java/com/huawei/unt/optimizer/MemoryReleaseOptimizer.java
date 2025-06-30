@@ -20,6 +20,7 @@ import sootup.core.jimple.common.expr.JInterfaceInvokeExpr;
 import sootup.core.jimple.common.expr.JNewArrayExpr;
 import sootup.core.jimple.common.expr.JNewExpr;
 import sootup.core.jimple.common.expr.JNewMultiArrayExpr;
+import sootup.core.jimple.common.expr.JSpecialInvokeExpr;
 import sootup.core.jimple.common.expr.JVirtualInvokeExpr;
 import sootup.core.jimple.common.ref.JArrayRef;
 import sootup.core.jimple.common.ref.JFieldRef;
@@ -132,6 +133,16 @@ public class MemoryReleaseOptimizer implements Optimizer {
             }
 
             Stmt stmt = stmts.get(i);
+
+            // todo: delete it, put it in the removedStmt before
+            if (isInit && stmt instanceof JInvokeStmt && ((JInvokeStmt) stmt).getInvokeExpr().isPresent()
+                    && ((JInvokeStmt) stmt).getInvokeExpr().get() instanceof JSpecialInvokeExpr
+            && ((JSpecialInvokeExpr) ((JInvokeStmt) stmt).getInvokeExpr().get()).getBase()
+                    .equals(methodContext.getThisLocal())
+                    && TranslatorContext.INIT_FUNCTION_NAME.equals(
+                    ((JInvokeStmt) stmt).getInvokeExpr().get().getMethodSignature().getName())) {
+                continue;
+            }
 
             if (loops.containsKey(i)) {
                 i = loopHandle(i, methodContext);
@@ -511,9 +522,9 @@ public class MemoryReleaseOptimizer implements Optimizer {
 
     private void invokeStmtHandle(int i) {
         Stmt stmt = stmts.get(i);
-        if (stmt instanceof JInvokeStmt) {
+        if (stmt instanceof JInvokeStmt && ((JInvokeStmt) stmt).getInvokeExpr().isPresent()) {
             Optional<AbstractInvokeExpr> expr = ((JInvokeStmt) stmt).getInvokeExpr();
-            if (expr.isPresent() && getRef(expr.get()) == 1) {
+            if (!isObjInit(expr.get()) && getRef(expr.get()) == 1) {
                 ignoredReturnValues.add(i);
             }
         }
@@ -646,6 +657,12 @@ public class MemoryReleaseOptimizer implements Optimizer {
             }
         }
         return -1;
+    }
+
+    private boolean isObjInit(Value value) {
+        return value instanceof JSpecialInvokeExpr
+                && ((JSpecialInvokeExpr) value).getMethodSignature().getName()
+                .equals(TranslatorContext.INIT_FUNCTION_NAME);
     }
 
     private boolean isNewExpr(Value value) {
