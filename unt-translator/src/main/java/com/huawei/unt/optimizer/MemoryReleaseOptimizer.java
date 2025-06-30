@@ -16,6 +16,7 @@ import sootup.core.jimple.common.constant.StringConstant;
 import sootup.core.jimple.common.expr.AbstractInstanceInvokeExpr;
 import sootup.core.jimple.common.expr.AbstractInvokeExpr;
 import sootup.core.jimple.common.expr.JCastExpr;
+import sootup.core.jimple.common.expr.JDynamicInvokeExpr;
 import sootup.core.jimple.common.expr.JInterfaceInvokeExpr;
 import sootup.core.jimple.common.expr.JNewArrayExpr;
 import sootup.core.jimple.common.expr.JNewExpr;
@@ -602,7 +603,8 @@ public class MemoryReleaseOptimizer implements Optimizer {
     }
 
     private int getRef(Value value) {
-        if (isNewExpr(value) || value instanceof StringConstant || isToString(value)) {
+        if (value instanceof JDynamicInvokeExpr || isNewExpr(value)
+                || value instanceof StringConstant || isToString(value)) {
             return 1;
         }
         if (value instanceof AbstractInvokeExpr) {
