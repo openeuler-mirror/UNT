@@ -1,12 +1,13 @@
 basic_dir := ${basicPath}
 basic_inc := \
     $(basic_dir)include \
-    $(basic_dir)include/core \
-    $(basic_dir)include/core/include \
-    $(basic_dir)include/runtime \
-    $(basic_dir)include/streaming \
-    $(basic_dir)include/table \
-    $(basic_dir)include/include
+    $(basic_dir)include/OmniStream \
+    $(basic_dir)include/OmniStream/core \
+    $(basic_dir)include/OmniStream/core/include \
+    $(basic_dir)include/OmniStream/runtime \
+    $(basic_dir)include/OmniStream/streaming \
+    $(basic_dir)include/OmniStream/table \
+    $(basic_dir)include/OmniStream/include
 basic_lib := $(basic_dir)lib/libbasictypes.a
 function_lib := $(basic_dir)lib/libbasicfunctions.a
 third_lib := $(basic_dir)lib/libthirdlibrary.a
