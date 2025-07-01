@@ -147,7 +147,7 @@ public class TranslatorContext {
     private static Set<String> ignoredClasses = new HashSet<>();
     private static Set<String> ignoredMethods = new HashSet<>();
     private static Set<String> stdStringMethods = new HashSet<>();
-    private static Map<String, String> genericFunction = new HashMap<>();;
+    private static Map<String, String> genericFunction = new HashMap<>();
 
     private static int tuneLevel;
     private static boolean isMemTune;

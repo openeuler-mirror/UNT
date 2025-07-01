@@ -22,7 +22,6 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.lang.reflect.Field;
 import java.util.stream.Collectors;
 
 /**
@@ -207,7 +206,7 @@ public class JavaClass {
 
     public JavaSootClass getJavaSootClass() {
         return javaSootClass;
-    };
+    }
 
     @Override
     public boolean equals(Object o) {

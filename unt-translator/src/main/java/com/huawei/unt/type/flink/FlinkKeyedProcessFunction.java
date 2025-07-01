@@ -98,8 +98,8 @@ public class FlinkKeyedProcessFunction implements UDFType {
     public String printDeclareMethod(JavaSootMethod method) {
         if (isUdfFunction(method) && "processElement".equals(method.getName())) {
             return "    void processElement("
-            + "Object *obj, KeyedProcessFunction<Object*, Object*, Object*>::Context *ctx, Collector *collector"
-            + ") override;" + NEW_LINE;
+                    + "Object *obj, KeyedProcessFunction<Object*, Object*, Object*>::Context *ctx, Collector *collector"
+                    + ") override;" + NEW_LINE;
         }
 
         if (isUdfFunction(method) && "open".equals(method.getName())) {
@@ -178,8 +178,8 @@ public class FlinkKeyedProcessFunction implements UDFType {
     @Override
     public String printLambdaDeclare() {
         return "    void processElement("
-        + "Object *obj, KeyedProcessFunction<Object*, Object*, Object*>::Context *ctx, Collector *collector"
-        + ") override;" + NEW_LINE;
+                + "Object *obj, KeyedProcessFunction<Object*, Object*, Object*>::Context *ctx, Collector *collector"
+                + ") override;" + NEW_LINE;
     }
 
     @Override

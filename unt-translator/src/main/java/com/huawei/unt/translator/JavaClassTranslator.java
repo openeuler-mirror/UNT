@@ -187,8 +187,6 @@ public class JavaClassTranslator {
                 }
             }
 
-            // if (!publicFields.isEmpty()) {
-            //     for (JavaSootField field : publicFields) {
             if (!fields.isEmpty()) {
                 for (JavaSootField field : fields) {
                     headBuilder.append(printField(field));

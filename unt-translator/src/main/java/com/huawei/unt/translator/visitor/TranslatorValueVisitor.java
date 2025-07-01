@@ -141,7 +141,10 @@ public class TranslatorValueVisitor extends AbstractValueVisitor {
 
     @Override
     public void caseClassConstant(@Nonnull ClassConstant constant) {
-        valueBuilder.append("ClassConstant::getInstance().get(\"").append(constant.getValue()).append("\")");
+        valueBuilder.append("ClassRegistry::instance().getClass(\"").append(
+                TranslatorUtils.parseSignature(constant.getValue())
+                        .replace('.', '_')
+                        .replace('$', '_')).append("\")");
     }
 
     @Override

@@ -87,7 +87,7 @@ public class DynamicInvokeHandle implements Optimizer {
                     .append(" {").append(NEW_LINE);
 
             lambdaCodes.append(
-                            getMethodBody(invokeMethodReferenceSignature, args, declMethodType.getParameterTypes()))
+                    getMethodBody(invokeMethodReferenceSignature, args, declMethodType.getParameterTypes()))
                     .append(TAB).append(TAB).append("}");
             return lambdaCodes.toString();
         } catch (ClassCastException e) {

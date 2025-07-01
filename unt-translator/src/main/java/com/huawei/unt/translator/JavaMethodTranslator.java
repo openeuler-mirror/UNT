@@ -257,7 +257,7 @@ public class JavaMethodTranslator {
 
     private static String printVirtual(JavaSootMethod method) {
         StringBuilder virtualBuilder = new StringBuilder(NEW_LINE)
-                .append(TranslatorContext.TAB).append("virtual ")
+                .append(TAB).append("virtual ")
                 .append(TranslatorUtils.formatType(method.getReturnType())).append(" ")
                 .append(method.getName()).append("(");
 

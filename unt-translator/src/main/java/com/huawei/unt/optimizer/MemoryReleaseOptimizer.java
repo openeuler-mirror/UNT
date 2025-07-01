@@ -137,7 +137,7 @@ public class MemoryReleaseOptimizer implements Optimizer {
 
             if (isInit && stmt instanceof JInvokeStmt && ((JInvokeStmt) stmt).getInvokeExpr().isPresent()
                     && ((JInvokeStmt) stmt).getInvokeExpr().get() instanceof JSpecialInvokeExpr
-            && ((JSpecialInvokeExpr) ((JInvokeStmt) stmt).getInvokeExpr().get()).getBase()
+                    && ((JSpecialInvokeExpr) ((JInvokeStmt) stmt).getInvokeExpr().get()).getBase()
                     .equals(methodContext.getThisLocal())
                     && TranslatorContext.INIT_FUNCTION_NAME.equals(
                     ((JInvokeStmt) stmt).getInvokeExpr().get().getMethodSignature().getName())) {

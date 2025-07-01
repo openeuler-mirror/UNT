@@ -1,7 +1,7 @@
 [#ifndef TESTFIELDTRANSLATE_H
 #define TESTFIELDTRANSLATE_H
 
-##include "basictypes/ClassRegistry.h"
+#include "basictypes/ClassRegistry.h"
 #include "basictypes/StringConstant.h"
 #include "nlohmann/json.hpp"
 
