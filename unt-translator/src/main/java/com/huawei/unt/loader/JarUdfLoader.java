@@ -212,7 +212,7 @@ public class JarUdfLoader {
                 methodSignature.getType().toString(),
                 paramTypes);
 
-        String outputClassName = className + "$" + methodSignature.getName();
+        String outputClassName = TranslatorUtils.formatLambdaUdfClassName(methodSignature, udfType);
 
         if (method.isPresent()) {
             JavaClass lambdaClass = new JavaClass(outputClassName, udfType, method.get());

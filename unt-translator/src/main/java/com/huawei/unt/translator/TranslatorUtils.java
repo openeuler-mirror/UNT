@@ -182,9 +182,10 @@ public class TranslatorUtils {
         return true;
     }
 
-    public static String formatMethodRefUdfClassName(MethodSignature methodSignature) {
-        // todo: shi yin
-        return "shiyin";
+    public static String formatLambdaUdfClassName(MethodSignature methodSignature, UDFType udfType) {
+        return methodSignature.getDeclClassType().getFullyQualifiedName()
+                + "$" + methodSignature.getName()
+                + "#" + udfType.getBaseClass().getName();
     }
 
     private static class LocalComparator implements Comparator<Local> {

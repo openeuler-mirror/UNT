@@ -127,7 +127,7 @@ public class JavaClass {
     }
 
     public JavaClass(MethodSignature methodSignature, UDFType udfType, Kind kind) {
-        this.className = TranslatorUtils.formatMethodRefUdfClassName(methodSignature);
+        this.className = TranslatorUtils.formatLambdaUdfClassName(methodSignature, udfType);
         this.type = udfType;
         this.kind = kind;
         this.isLambda = true;
