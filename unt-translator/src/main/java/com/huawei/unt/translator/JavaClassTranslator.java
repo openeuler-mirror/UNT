@@ -4,6 +4,8 @@
 
 package com.huawei.unt.translator;
 
+import static com.huawei.unt.model.JavaClass.Kind.INSTANCE_METHOD_REF;
+import static com.huawei.unt.model.JavaClass.Kind.STATIC_METHOD_REF;
 import static com.huawei.unt.translator.TranslatorContext.NEW_LINE;
 import static com.huawei.unt.translator.TranslatorContext.TAB;
 
@@ -11,11 +13,15 @@ import com.huawei.unt.model.JavaClass;
 import com.huawei.unt.type.NoneUDF;
 import com.huawei.unt.type.UDFType;
 
+import com.google.common.collect.ImmutableList;
+
 import sootup.core.model.FieldModifier;
+import sootup.core.signatures.MethodSignature;
 import sootup.core.types.ClassType;
 import sootup.core.types.PrimitiveType;
-import sootup.java.core.JavaSootClassSource;
+import sootup.core.types.VoidType;
 import sootup.java.core.JavaSootClass;
+import sootup.java.core.JavaSootClassSource;
 import sootup.java.core.JavaSootField;
 import sootup.java.core.JavaSootMethod;
 
@@ -43,6 +49,8 @@ public class JavaClassTranslator {
     private static final String ACCESS_PREFIX = "access$";
     private static final String STATIC_INIT_FIELD = "initStaticField";
     private static final String STATIC_INIT_METHOD = "initStatic";
+    private static final String STATIC_METHOD_INVOKE = "%s::%s(%s);" + NEW_LINE;
+    private static final String INSTANCE_METHOD_INVOKE = "%s->%s();" + NEW_LINE;
 
     private JavaClassTranslator() {
     }
@@ -151,14 +159,14 @@ public class JavaClassTranslator {
                     headBuilder.append(printStaticInitMethod(sootMethod)).append(NEW_LINE));
 
             if (!initMethods.isEmpty()) {
-                boolean isRequireDefaultInit = true;
+                boolean requireDefaultInit = true;
                 for (JavaSootMethod method : initMethods) {
                     if (method.getParameterCount() == 0) {
-                        isRequireDefaultInit = false;
+                        requireDefaultInit = false;
                     }
                     headBuilder.append(javaClass.getType().printDeclareMethod(method));
                 }
-                if (isRequireDefaultInit) {
+                if (requireDefaultInit) {
                     headBuilder.append(TAB)
                             .append(TranslatorUtils.formatClassName(javaClass.getClassName()))
                             .append("() = default;")
@@ -190,7 +198,7 @@ public class JavaClassTranslator {
                 headBuilder.append(NEW_LINE);
             }
 
-            if (!javaClass.isAbstract() && NoneUDF.INSTANCE.equals(javaClass.getType())) {
+            if (!javaClass.isAbstract() && javaClass.getType().equals(NoneUDF.INSTANCE)) {
                 headBuilder.append(TAB).append("static Class* getClass();").append(NEW_LINE)
                         .append(TAB).append("static Class* clazz_;").append(NEW_LINE);
             }
@@ -240,6 +248,13 @@ public class JavaClassTranslator {
             printConstructorFromJson(cppBuilder, javaClass);
         }
 
+        if (javaClass.getKind().equals(STATIC_METHOD_REF)) {
+            printStaticMethodRefUdf(cppBuilder, javaClass);
+        }
+
+        if (javaClass.getKind().equals(INSTANCE_METHOD_REF)) {
+            printInstanceMethodRefUdf(cppBuilder, javaClass);
+        }
         for (JavaSootMethod method : allNeedTranslateMethod) {
             if (method.isAbstract() || TranslatorContext.STATIC_INIT_FUNCTION_NAME.equals(method.getName())) {
                 continue;
@@ -293,12 +308,12 @@ public class JavaClassTranslator {
                                     .replace('.', '_').replace('$', '_')).append("\"")
                             .append(")");
                 } else if (javaSootField.getType() instanceof PrimitiveType) {
-                    if (!TranslatorContext.getPrimitiveTypeStringMap().containsKey(javaSootField.getType())) {
+                    if (!TranslatorContext.PRIMITIVE_TYPE_STRING_MAP.containsKey(javaSootField.getType())){
                         throw new TranslatorException("no support "
                                 + ((PrimitiveType) javaSootField.getType()).getName()
                                 + "primitive type");
                     }
-                    String type = TranslatorContext.getPrimitiveTypeStringMap().get(javaSootField.getType());
+                    String type = TranslatorContext.PRIMITIVE_TYPE_STRING_MAP.get(javaSootField.getType());
                     cppBuilder.append("REGISTER_PRIMITIVE_FIELD(")
                             .append(TranslatorUtils.formatClassName(javaClass.getClassName())).append(", ")
                             .append(TranslatorUtils.formatFieldName(javaSootField.getName())).append(", ")
@@ -317,8 +332,59 @@ public class JavaClassTranslator {
                     .append(")").append(NEW_LINE);
         }
         translateRes.add(cppBuilder.toString());
-
         return translateRes;
+    }
+
+    private static void printStaticMethodRefUdf(StringBuilder cppBuilder, JavaClass javaClass) {
+        MethodSignature refMethod = javaClass.getRefMethod();
+        int refCount = TranslatorContext.getRefCount(refMethod);
+
+        cppBuilder.append(javaClass.getType()
+                .printMethodRefHeadAndParams(javaClass.getClassName(), refMethod.getParameterTypes()));
+        cppBuilder.append(TAB);
+        if (!(refMethod.getType() instanceof VoidType)) {
+            cppBuilder.append("tmp = ");
+        }
+        StringJoiner params = new StringJoiner(", ");
+        for (int i = 0; i < refMethod.getParameterCount(); i++) {
+            params.add("in" + i);
+        }
+        cppBuilder.append(String.format(STATIC_METHOD_INVOKE,
+                TranslatorUtils.formatClassName(refMethod.getDeclClassType().getFullyQualifiedName()),
+                refMethod.getName(), params));
+        printMethodRefUdfReturn(cppBuilder, javaClass, refCount);
+    }
+
+    private static void printInstanceMethodRefUdf(StringBuilder cppBuilder, JavaClass javaClass) {
+        MethodSignature refMethod = javaClass.getRefMethod();
+        int refCount = TranslatorContext.getRefCount(refMethod);
+
+        cppBuilder.append(javaClass.getType()
+                .printMethodRefHeadAndParams(javaClass.getClassName(), ImmutableList.of(refMethod.getDeclClassType())));
+        cppBuilder.append(TAB);
+        if (!(refMethod.getType() instanceof VoidType)) {
+            cppBuilder.append("tmp = ");
+        }
+        cppBuilder.append(String.format(INSTANCE_METHOD_INVOKE,
+                TranslatorUtils.formatClassName(refMethod.getDeclClassType().getFullyQualifiedName()),
+                refMethod.getName()));
+        printMethodRefUdfReturn(cppBuilder, javaClass, refCount);
+    }
+
+    private static void printMethodRefUdfReturn(StringBuilder cppBuilder, JavaClass javaClass, int refCount) {
+        if (javaClass.getType().refLambdaReturn()) {
+            if (refCount == 0) {
+                cppBuilder.append(String.format(TranslatorContext.GET_REF, "tmp"));
+            }
+            cppBuilder.append(TAB).append("return tmp;");
+        }
+        if (!javaClass.getType().refLambdaReturn()) {
+            if (refCount == 1) {
+                cppBuilder.append(String.format(TranslatorContext.UNKNOWN_PUT_REF, "tmp"));
+            }
+            cppBuilder.append(TAB).append("return;");
+        }
+        cppBuilder.append(NEW_LINE).append("}").append(NEW_LINE);
     }
 
     private static String printField(JavaSootField field) {

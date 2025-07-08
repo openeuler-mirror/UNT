@@ -95,12 +95,6 @@ public class JavaMethodTranslator {
                             .append(":").append(NEW_LINE);
                 }
 
-                // deal with makeNull
-                for (LValue refs : methodContext.getMakeNullVars(i)) {
-                    refs.accept(valueVisitor);
-                    bodyBuilder.append(String.format(TranslatorContext.MAKE_NULL, valueVisitor.toCode()));
-                    valueVisitor.clear();
-                }
                 // deal with retStmts
                 if (methodContext.hasRet(i)) {
                     methodContext.getRetValue(i).accept(valueVisitor);

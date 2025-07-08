@@ -4,8 +4,13 @@
 
 package com.huawei.unt.loader;
 
+import static com.huawei.unt.model.JavaClass.Kind.INSTANCE_METHOD_REF;
+import static com.huawei.unt.model.JavaClass.Kind.STATIC_METHOD_REF;
+import static sootup.core.jimple.common.constant.MethodHandle.Kind.REF_INVOKE_STATIC;
+
 import com.huawei.unt.model.JavaClass;
 import com.huawei.unt.translator.TranslatorContext;
+import com.huawei.unt.translator.TranslatorException;
 import com.huawei.unt.translator.TranslatorUtils;
 import com.huawei.unt.type.EngineType;
 import com.huawei.unt.type.UDFType;
@@ -18,7 +23,7 @@ import sootup.core.jimple.common.expr.JDynamicInvokeExpr;
 import sootup.core.jimple.common.stmt.JAssignStmt;
 import sootup.core.jimple.common.stmt.Stmt;
 import sootup.core.model.Body;
-import sootup.core.signatures.MethodSubSignature;
+import sootup.core.signatures.MethodSignature;
 import sootup.core.types.ClassType;
 import sootup.core.types.Type;
 import sootup.java.core.JavaIdentifierFactory;
@@ -105,10 +110,9 @@ public class JarUdfLoader {
 
             if (lambdaClasses != null && !lambdaClasses.isEmpty()) {
                 for (JavaClass lambdaClass : lambdaClasses) {
-                    if (!classUdfMap.containsKey(lambdaClass.getType())) {
-                        classUdfMap.put(lambdaClass.getType(), new ArrayList<>());
-                    }
-                    classUdfMap.get(lambdaClass.getType()).add(lambdaClass);
+                    List<JavaClass> udfClasses = classUdfMap.getOrDefault(lambdaClass.getType(), new ArrayList<>());
+                    udfClasses.add(lambdaClass);
+                    classUdfMap.put(lambdaClass.getType(), udfClasses);
                 }
             }
         }
@@ -152,39 +156,70 @@ public class JarUdfLoader {
                     && udfTypeMap.containsKey((Local) ((JAssignStmt) stmt).getLeftOp())
                     && ((JAssignStmt) stmt).getRightOp() instanceof JDynamicInvokeExpr) {
                 JDynamicInvokeExpr invokeExpr = (JDynamicInvokeExpr) ((JAssignStmt) stmt).getRightOp();
-                MethodHandle methodHandle;
-                if (invokeExpr.getBootstrapArgCount() > 2
-                        && invokeExpr.getBootstrapArg(1) instanceof MethodHandle) {
-                    methodHandle = (MethodHandle) invokeExpr.getBootstrapArg(1);
-                } else {
-                    continue;
-                }
-
-                MethodSubSignature signature;
-                if (methodHandle.getReferenceSignature().getSubSignature() instanceof MethodSubSignature) {
-                    signature = (MethodSubSignature) methodHandle.getReferenceSignature().getSubSignature();
-                } else {
-                    continue;
-                }
-
-                List<String> paramTypes = signature.getParameterTypes().stream()
-                        .map(Type::toString).collect(Collectors.toList());
-
-                Optional<JavaSootMethod> method = jarHandler.tryGetMethod(className, signature.getName(),
-                        signature.getType().toString(), paramTypes);
-
-                String outputClassName = className + "$" + signature.getName();
-
-                if (method.isPresent()) {
-                    UDFType udfType = udfTypeMap.get((Local) ((JAssignStmt) stmt).getLeftOp());
-                    JavaClass lambdaClass = new JavaClass(outputClassName, udfType, method.get());
-                    lambdaClass.addIncludes(udfType.getRequiredIncludes());
-                    lambdaFunctions.add(lambdaClass);
-                }
+                UDFType udfType = udfTypeMap.get((Local) ((JAssignStmt) stmt).getLeftOp());
+                JavaClass lambdaClass = getLambdaClass(invokeExpr, udfType, className);
+                lambdaClass.addIncludes(udfType.getRequiredIncludes());
+                lambdaFunctions.add(lambdaClass);
             }
         }
 
         return lambdaFunctions;
+    }
+
+    private JavaClass getLambdaClass(JDynamicInvokeExpr invokeExpr, UDFType udfType, String className) {
+        Optional<JavaClass> lambdaClass = Optional.empty();
+        MethodHandle methodHandle = null;
+
+        if (invokeExpr.getBootstrapArgCount() > 2
+                && invokeExpr.getBootstrapArg(1) instanceof MethodHandle) {
+            methodHandle = (MethodHandle) invokeExpr.getBootstrapArg(1);
+        }
+
+        if (methodHandle != null && methodHandle.isMethodRef() && invokeExpr.getArgs().isEmpty()) {
+            MethodSignature methodSignature = (MethodSignature) methodHandle.getReferenceSignature();
+            if (methodHandle.getKind().equals(REF_INVOKE_STATIC)) {
+                lambdaClass = methodSignature.getDeclClassType().getFullyQualifiedName().equals(className) ?
+                        getSimpleLambdaClass(methodSignature, udfType) : getStaticMethodRefClass(methodSignature, udfType);
+            } else {
+                lambdaClass = getMethodRefClass(methodSignature,udfType);
+            }
+        }
+
+        if (lambdaClass.isPresent()) {
+            return lambdaClass.get();
+        } else {
+            throw new TranslatorException("unsupported flink udf with dynamic invoke \n" + invokeExpr);
+        }
+    }
+
+    private Optional<JavaClass> getMethodRefClass(MethodSignature methodSignature, UDFType udfType) {
+        return Optional.of(new JavaClass(methodSignature, udfType, INSTANCE_METHOD_REF));
+    }
+
+    private Optional<JavaClass> getStaticMethodRefClass(MethodSignature methodSignature, UDFType udfType) {
+        return Optional.of(new JavaClass(methodSignature, udfType, STATIC_METHOD_REF));
+    }
+
+    private Optional<JavaClass> getSimpleLambdaClass(MethodSignature methodSignature, UDFType udfType) {
+
+        List<String> paramTypes = methodSignature.getParameterTypes().stream()
+                .map(Type::toString).collect(Collectors.toList());
+
+        String className = methodSignature.getDeclClassType().getFullyQualifiedName();
+        Optional<JavaSootMethod> method = jarHandler.tryGetMethod(
+                className,
+                methodSignature.getName(),
+                methodSignature.getType().toString(),
+                paramTypes);
+
+        String outputClassName = className + "$" + methodSignature.getName();
+
+        if (method.isPresent()) {
+            JavaClass lambdaClass = new JavaClass(outputClassName, udfType, method.get());
+            lambdaClass.addIncludes(udfType.getRequiredIncludes());
+            return Optional.of(lambdaClass);
+        }
+        return Optional.empty();
     }
 
     private Optional<UDFType> getUDFType(JavaSootClass javaClass, EngineType type) {

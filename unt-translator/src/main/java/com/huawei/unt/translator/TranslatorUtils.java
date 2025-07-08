@@ -32,6 +32,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.stream.Collectors;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -42,7 +43,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.StringJoiner;
-import java.util.stream.Collectors;
 
 /**
  * TranslatorUtils
@@ -180,6 +180,11 @@ public class TranslatorUtils {
             }
         }
         return true;
+    }
+
+    public static String formatMethodRefUdfClassName(MethodSignature methodSignature) {
+        // todo: shi yin
+        return "shiyin";
     }
 
     private static class LocalComparator implements Comparator<Local> {

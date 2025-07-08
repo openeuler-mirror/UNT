@@ -13,9 +13,11 @@ import com.huawei.unt.type.UDFType;
 
 import com.google.common.collect.ImmutableSet;
 
+import java.util.List;
 import sootup.core.jimple.basic.Local;
 import sootup.core.model.MethodModifier;
 import sootup.core.types.ClassType;
+import sootup.core.types.Type;
 import sootup.core.types.VoidType;
 import sootup.java.core.JavaIdentifierFactory;
 import sootup.java.core.JavaSootMethod;
@@ -165,6 +167,37 @@ public class FlinkFlatMapFunction implements UDFType {
                 .append(NEW_LINE);
 
         return headBuilder.append(NEW_LINE).toString();
+    }
+
+    @Override
+    public String printMethodRefHeadAndParams(String className, List<Type> paramTypes) {
+        StringBuilder headBuilder = new StringBuilder("void ")
+                .append(className)
+                .append("::flatMap(Object *obj, Collector *collector) {")
+                .append(NEW_LINE);
+
+
+        String typeString = TranslatorUtils.formatType(paramTypes.get(0));
+
+        headBuilder.append(TAB)
+                .append(typeString).append(" *")
+                .append("in0")
+                .append(" = reinterpret_cast<")
+                .append(typeString).append(" *>(obj);")
+                .append(NEW_LINE);
+
+        headBuilder.append(TAB)
+                .append("Collector *")
+                .append("in1")
+                .append(" = collector;")
+                .append(NEW_LINE);
+
+        return headBuilder.append(NEW_LINE).toString();
+    }
+
+    @Override
+    public boolean refLambdaReturn() {
+        return false;
     }
 
     @Override

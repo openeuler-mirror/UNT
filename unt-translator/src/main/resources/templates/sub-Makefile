@@ -7,7 +7,7 @@ TARGET := $(OUTPUT_DIR)/$(lib_name).so
 all: $(TARGET)
 $(TARGET):$(OBJS) $(json_lib) $(third_lib) $(function_lib) $(basic_lib) $(regex_lib)
 	@mkdir -p $(@D)
-	$(CXX) $(LDFLAGS) -o $@ $^
+	$(CXX) -o $@ $^ $(LDFLAGS)
 	@echo "Built $@"
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@

@@ -9,9 +9,11 @@ import com.huawei.unt.translator.TranslatorException;
 import com.huawei.unt.translator.TranslatorUtils;
 
 import sootup.core.types.ClassType;
+import sootup.core.types.Type;
 import sootup.java.core.JavaSootMethod;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -103,6 +105,14 @@ public interface UDFType {
      * @return lambda head and params code string
      */
     default String printLambdaHeadAndParams(MethodContext methodContext) {
+        throw new TranslatorException("This kind of udf does not support lambda function");
+    }
+
+    default String printMethodRefHeadAndParams(String className, List<Type> paramTypes) {
+        throw new TranslatorException("This kind of udf does not support method ref function");
+    }
+
+    default boolean refLambdaReturn() {
         throw new TranslatorException("This kind of udf does not support lambda function");
     }
 }

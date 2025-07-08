@@ -16,11 +16,13 @@ import com.google.common.collect.ImmutableSet;
 import sootup.core.jimple.basic.Local;
 import sootup.core.model.MethodModifier;
 import sootup.core.types.ClassType;
+import sootup.core.types.Type;
 import sootup.java.core.JavaIdentifierFactory;
 import sootup.java.core.JavaSootMethod;
 
 import org.apache.flink.api.java.functions.KeySelector;
 
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -145,6 +147,31 @@ public class FlinkKeySelector implements UDFType {
                 .append(NEW_LINE);
 
         return headBuilder.append(NEW_LINE).toString();
+    }
+
+    @Override
+    public String printMethodRefHeadAndParams(String className, List<Type> paramTypes) {
+        StringBuilder headBuilder = new StringBuilder();
+
+        headBuilder.append("Object *")
+                .append(className)
+                .append("::")
+                .append("getKey(Object *obj) {")
+                .append(NEW_LINE);
+
+        String typeString = TranslatorUtils.formatType(paramTypes.get(0));
+
+        headBuilder.append(TAB)
+                .append(typeString).append(" *").append("in0")
+                .append(" = reinterpret_cast<").append(typeString).append(" *>(obj);")
+                .append(NEW_LINE);
+
+        return headBuilder.append(NEW_LINE).toString();
+    }
+
+    @Override
+    public boolean refLambdaReturn() {
+        return true;
     }
 
     @Override
