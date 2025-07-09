@@ -126,14 +126,15 @@ public class FlinkReduceFunction implements UDFType {
 
     @Override
     public String printLambdaHeadAndParams(MethodContext methodContext) {
-        String declClassName = TranslatorUtils.formatClassName(
-                methodContext.getJavaMethod().getDeclClassType().getFullyQualifiedName());
-        String methodName = TranslatorUtils.formatClassName(methodContext.getJavaMethod().getName());
-        String className = declClassName + "_" + methodName;
+        String className = TranslatorUtils.formatClassName(
+                TranslatorUtils.formatLambdaUdfClassName(
+                        methodContext.getJavaMethod().getSignature(),
+                        methodContext.getUdfType())
+        );
 
         StringBuilder headBuilder = new StringBuilder()
                 .append("Object *")
-                .append(className)
+                .append(TranslatorUtils.formatClassName(className))
                 .append("::")
                 .append("reduce(Object *input0, Object *input1)")
                 .append(NEW_LINE)

@@ -137,10 +137,11 @@ public class FlinkFlatMapFunction implements UDFType {
 
     @Override
     public String printLambdaHeadAndParams(MethodContext methodContext) {
-        String declClassName = TranslatorUtils.formatClassName(
-                methodContext.getJavaMethod().getDeclClassType().getFullyQualifiedName());
-        String methodName = TranslatorUtils.formatClassName(methodContext.getJavaMethod().getName());
-        String className = declClassName + "_" + methodName;
+        String className = TranslatorUtils.formatClassName(
+                TranslatorUtils.formatLambdaUdfClassName(
+                        methodContext.getJavaMethod().getSignature(),
+                        methodContext.getUdfType())
+        );
 
         StringBuilder headBuilder = new StringBuilder("void ")
                 .append(className)
@@ -172,7 +173,7 @@ public class FlinkFlatMapFunction implements UDFType {
     @Override
     public String printMethodRefHeadAndParams(String className, List<Type> paramTypes) {
         StringBuilder headBuilder = new StringBuilder("void ")
-                .append(className)
+                .append(TranslatorUtils.formatClassName(className))
                 .append("::flatMap(Object *obj, Collector *collector) {")
                 .append(NEW_LINE);
 

@@ -123,10 +123,11 @@ public class FlinkKeySelector implements UDFType {
 
     @Override
     public String printLambdaHeadAndParams(MethodContext methodContext) {
-        String declClassName = TranslatorUtils.formatClassName(
-                methodContext.getJavaMethod().getDeclClassType().getFullyQualifiedName());
-        String methodName = TranslatorUtils.formatClassName(methodContext.getJavaMethod().getName());
-        String className = declClassName + "_" + methodName;
+        String className = TranslatorUtils.formatClassName(
+                TranslatorUtils.formatLambdaUdfClassName(
+                        methodContext.getJavaMethod().getSignature(),
+                        methodContext.getUdfType())
+        );
 
         StringBuilder headBuilder = new StringBuilder();
 
@@ -154,7 +155,7 @@ public class FlinkKeySelector implements UDFType {
         StringBuilder headBuilder = new StringBuilder();
 
         headBuilder.append("Object *")
-                .append(className)
+                .append(TranslatorUtils.formatClassName(className))
                 .append("::")
                 .append("getKey(Object *obj) {")
                 .append(NEW_LINE);

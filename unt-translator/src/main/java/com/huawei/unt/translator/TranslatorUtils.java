@@ -282,7 +282,7 @@ public class TranslatorUtils {
             return TranslatorContext.getStringMap().get(className);
         }
 
-        return className.replace('.', '_').replace('$', '_');
+        return className.replace('.', '_').replace('$', '_').replace('#', '_');
     }
 
     /**

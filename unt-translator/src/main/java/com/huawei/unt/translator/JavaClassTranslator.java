@@ -342,8 +342,8 @@ public class JavaClassTranslator {
         cppBuilder.append(javaClass.getType()
                 .printMethodRefHeadAndParams(javaClass.getClassName(), refMethod.getParameterTypes()));
         cppBuilder.append(TAB);
-        if (!(refMethod.getType() instanceof VoidType)) {
-            cppBuilder.append("tmp = ");
+        if (!(refMethod.getType() instanceof VoidType) && !(refMethod.getType() instanceof PrimitiveType)) {
+            cppBuilder.append("Object *tmp = ");
         }
         StringJoiner params = new StringJoiner(", ");
         for (int i = 0; i < refMethod.getParameterCount(); i++) {
@@ -362,11 +362,11 @@ public class JavaClassTranslator {
         cppBuilder.append(javaClass.getType()
                 .printMethodRefHeadAndParams(javaClass.getClassName(), ImmutableList.of(refMethod.getDeclClassType())));
         cppBuilder.append(TAB);
-        if (!(refMethod.getType() instanceof VoidType)) {
-            cppBuilder.append("tmp = ");
+        if (!(refMethod.getType() instanceof VoidType) && !(refMethod.getType() instanceof PrimitiveType)) {
+            cppBuilder.append("Object *tmp = ");
         }
         cppBuilder.append(String.format(INSTANCE_METHOD_INVOKE,
-                TranslatorUtils.formatClassName(refMethod.getDeclClassType().getFullyQualifiedName()),
+                "in0",
                 refMethod.getName()));
         printMethodRefUdfReturn(cppBuilder, javaClass, refCount);
     }
