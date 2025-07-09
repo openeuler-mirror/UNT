@@ -222,6 +222,10 @@ public class DependencyAnalyzer {
 
             dependencies.remove(thisClassType);
 
+            if (javaClass.getRefMethod() != null) {
+                dependencies.add(javaClass.getRefMethod().getDeclClassType());
+            }
+
             Set<ClassType> includes = dependencies.stream()
                     .filter(c -> !TranslatorContext.getIgnoredClasses().contains(c.getFullyQualifiedName()))
                     .collect(Collectors.toSet());
