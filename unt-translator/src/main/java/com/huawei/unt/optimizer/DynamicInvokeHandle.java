@@ -5,10 +5,14 @@
 package com.huawei.unt.optimizer;
 
 import static com.huawei.unt.translator.TranslatorContext.NEW_LINE;
+import static com.huawei.unt.translator.TranslatorContext.NEW_OBJ;
 import static com.huawei.unt.translator.TranslatorContext.TAB;
+
+import static sootup.core.jimple.common.constant.MethodHandle.Kind.REF_INVOKE_CONSTRUCTOR;
 import static sootup.core.jimple.common.constant.MethodHandle.Kind.REF_INVOKE_STATIC;
 
 import com.huawei.unt.model.MethodContext;
+import com.huawei.unt.translator.TranslatorContext;
 import com.huawei.unt.optimizer.stmts.OptimizedJAssignStmt;
 import com.huawei.unt.optimizer.stmts.OptimizedValue;
 import com.huawei.unt.translator.TranslatorException;
@@ -23,6 +27,7 @@ import sootup.core.jimple.common.stmt.JAssignStmt;
 import sootup.core.jimple.common.stmt.Stmt;
 import sootup.core.signatures.MethodSignature;
 import sootup.core.types.ClassType;
+import sootup.core.types.PrimitiveType;
 import sootup.core.types.Type;
 import sootup.core.types.VoidType;
 
@@ -35,14 +40,17 @@ import java.util.stream.Collectors;
  *
  * @since 2025-06-30
  */
-public class DynamicInvokeHandle implements Optimizer {
-    private static final String NEW_OBJ = "new %s(%s)";
+public class DynamicInvokeHandle implements Optimizer{
     private static final String TAB_INLINE = TAB + TAB + TAB;
     private static final String OBJ_TRANS = TAB_INLINE+ "%1$s *in%2$d = (%1$s*) %3$s;" + NEW_LINE;
-
+    private static final String UNKNOWN_PUT_REF = TAB_INLINE + "if (%1$s != nullptr) {" + NEW_LINE
+            + TAB_INLINE + TAB + "%1$s->putRefCount();" + NEW_LINE
+            + TAB_INLINE + "}" + NEW_LINE;
+    private static final String GET_REF = TAB_INLINE + "if (%1$s != nullptr) {" + NEW_LINE
+            + TAB_INLINE + TAB + "%1$s->getRefCount();" + NEW_LINE + TAB + "}" + NEW_LINE;
     private ClassType declClassType;
     private TranslatorValueVisitor valueVisitor;
-    private boolean elemIsCaller = false;
+    private CallerKind callerKind;
 
     @Override
     public boolean fetch(MethodContext methodContext) {
@@ -111,7 +119,7 @@ public class DynamicInvokeHandle implements Optimizer {
         }
 
         MethodSignature signature = (MethodSignature) methodHandle.getReferenceSignature();
-        for (int j = elemIsCaller ? 1 : 0; j < methodType.getParameterTypes().size(); j++) {
+        for (int j = callerKind.equals(CallerKind.INPUT) ? 1 : 0; j < methodType.getParameterTypes().size(); j++) {
             Type declParamterType = methodType.getParameterTypes().get(j);
             int paramIndex = args.size() + j;
             Type paramType = signature.getParameterType(paramIndex);
@@ -128,18 +136,46 @@ public class DynamicInvokeHandle implements Optimizer {
         if (! (methodType.getReturnType() instanceof VoidType)) {
             stmts.append("return ");
         }
-        stmts.append(caller).append(signature.getName()).append("(")
-                .append(params).append(");").append(NEW_LINE);
+        if (! (signature.getType() instanceof VoidType)) {
+            stmts.append(TranslatorUtils.formatParamType(signature.getType())).append("tmp = ");
+        }
+        if (callerKind.equals(CallerKind.CONSTRUCTOR)) {
+            stmts.append(String.format(NEW_OBJ,
+                    TranslatorUtils.formatClassName(signature.getDeclClassType().getFullyQualifiedName()),
+                    params)).append(";").append(NEW_LINE);
+        } else {
+            stmts.append(caller).append(signature.getName()).append("(")
+                    .append(params).append(");").append(NEW_LINE);
+        }
+
+        memoryManageBeforeReturn(methodType, signature, stmts);
+        if (!(methodType.getReturnType() instanceof VoidType)) {
+            stmts.append(TAB_INLINE).append("return tmp;").append(NEW_LINE);
+        }
         return stmts.toString();
     }
 
+    private void memoryManageBeforeReturn(MethodType methodType, MethodSignature signature, StringBuilder stmts) {
+        int refCount = TranslatorContext.getRefCount(signature);
+
+        if (refCount == 1 && methodType.getReturnType() instanceof VoidType) {
+            stmts.append(String.format(UNKNOWN_PUT_REF, "tmp"));
+        }
+
+        if (refCount == 0 && !(methodType.getReturnType() instanceof VoidType || methodType.getReturnType() instanceof PrimitiveType)) {
+            stmts.append(String.format(GET_REF, "tmp"));
+        }
+    }
+
     private String getCaller(MethodHandle methodHandle, List<Immediate> args, MethodType methodType, StringBuilder stmts) {
-        String caller;
-        elemIsCaller = false;
+        String caller = "";
         if (methodHandle.getKind().equals(REF_INVOKE_STATIC)) {
             ClassType callerClassType = methodHandle.getReferenceSignature().getDeclClassType();
             caller = callerClassType.equals(declClassType) ?
                     "" : TranslatorUtils.formatClassName(callerClassType.getFullyQualifiedName()) + "::";
+            callerKind = CallerKind.CLASS;
+        } else if (methodHandle.getKind().equals(REF_INVOKE_CONSTRUCTOR)) {
+            callerKind = CallerKind.CONSTRUCTOR;
         } else if (args.isEmpty()){
             if (!methodHandle.getReferenceSignature().getDeclClassType()
                     .equals(methodType.getParameterTypes().get(0))) {
@@ -150,11 +186,12 @@ public class DynamicInvokeHandle implements Optimizer {
             } else {
                 caller = "param0->";
             }
-            elemIsCaller = true;
+            callerKind = CallerKind.INPUT;
         } else {
             args.remove(0).accept(valueVisitor);
             caller = valueVisitor.toCode() + "->";
             valueVisitor.clear();
+            callerKind = CallerKind.OBJ;
         }
         return caller;
     }
@@ -165,5 +202,33 @@ public class DynamicInvokeHandle implements Optimizer {
             joiner.add(TranslatorUtils.formatParamType(parameterTypes.get(i)) + "param" + i);
         }
         return "[&](" + joiner + ")";
+    }
+
+    public enum CallerKind {
+        CLASS(1, "CLASS"),
+        INPUT(2, "INPUT"),
+        OBJ(3, "OBJ"),
+        CONSTRUCTOR(4, "CONSTRUCTOR");
+
+        private final int val;
+        private final String valStr;
+
+        private CallerKind(int val, String valStr) {
+            this.val = val;
+            this.valStr = valStr;
+        }
+
+        public String toString() {
+            return this.valStr;
+        }
+
+        public int getValue() {
+            return this.val;
+        }
+
+        public String getValueName() {
+            return this.valStr;
+        }
+
     }
 }

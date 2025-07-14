@@ -7,6 +7,7 @@ package com.huawei.unt.translator;
 import static com.huawei.unt.model.JavaClass.Kind.INSTANCE_METHOD_REF;
 import static com.huawei.unt.model.JavaClass.Kind.STATIC_METHOD_REF;
 import static com.huawei.unt.translator.TranslatorContext.NEW_LINE;
+import static com.huawei.unt.translator.TranslatorContext.NEW_OBJ;
 import static com.huawei.unt.translator.TranslatorContext.TAB;
 
 import com.huawei.unt.model.JavaClass;
@@ -362,12 +363,26 @@ public class JavaClassTranslator {
         cppBuilder.append(javaClass.getType()
                 .printMethodRefHeadAndParams(javaClass.getClassName(), ImmutableList.of(refMethod.getDeclClassType())));
         cppBuilder.append(TAB);
-        if (!(refMethod.getType() instanceof VoidType) && !(refMethod.getType() instanceof PrimitiveType)) {
-            cppBuilder.append("Object *tmp = ");
+
+        if (refMethod.getName().equals("<init>")) {
+            StringJoiner params = new StringJoiner(", ");
+            for (int i = 0; i < refMethod.getParameterCount(); i++) {
+                params.add("in" + i);
+            }
+            cppBuilder.append(TranslatorUtils.formatParamType(refMethod.getDeclClassType())).append("tmp = ")
+                    .append(String.format(NEW_OBJ,
+                            TranslatorUtils.formatClassName(refMethod.getDeclClassType().getFullyQualifiedName()),
+                            params))
+                    .append(";");
+        } else {
+            if (!(refMethod.getType() instanceof VoidType) && !(refMethod.getType() instanceof PrimitiveType)) {
+                cppBuilder.append(TranslatorUtils.formatParamType(refMethod.getType())).append("tmp = ");
+            }
+            cppBuilder.append(String.format(INSTANCE_METHOD_INVOKE,
+                    "in0",
+                    refMethod.getName()));
         }
-        cppBuilder.append(String.format(INSTANCE_METHOD_INVOKE,
-                "in0",
-                refMethod.getName()));
+
         printMethodRefUdfReturn(cppBuilder, javaClass, refCount);
     }
 

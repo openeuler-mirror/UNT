@@ -253,7 +253,7 @@ public class JavaClass {
         STATIC_METHOD_REF(1, "STATIC_METHOD_REF"),
         INSTANCE_METHOD_REF(2, "INSTANCE_METHOD_REF"),
         LAMBDA_CLASS(3, "LAMBDA_CLASS"),
-        SIMPLE_CLASS(2, "SIMPLE_CLASS");
+        SIMPLE_CLASS(4, "SIMPLE_CLASS");
 
         private final int val;
         private final String valStr;

@@ -65,6 +65,11 @@ public class TranslatorContext {
     public static final String TAB = "    ";
 
     /**
+     * new object expression
+     */
+    public static final String NEW_OBJ = "new %s(%s)";
+
+    /**
      * unknown put ref cpp code string
      */
     public static final String UNKNOWN_PUT_REF = TAB + "if (%1$s != nullptr) {" + NEW_LINE
