@@ -27,9 +27,9 @@ import sootup.core.jimple.common.stmt.JAssignStmt;
 import sootup.core.jimple.common.stmt.Stmt;
 import sootup.core.signatures.MethodSignature;
 import sootup.core.types.ClassType;
-import sootup.core.types.PrimitiveType;
 import sootup.core.types.Type;
 import sootup.core.types.VoidType;
+import sootup.java.core.types.JavaClassType;
 
 import java.util.List;
 import java.util.StringJoiner;
@@ -51,6 +51,7 @@ public class DynamicInvokeHandle implements Optimizer{
     private ClassType declClassType;
     private TranslatorValueVisitor valueVisitor;
     private CallerKind callerKind;
+    private MethodSignature implementedInterfaceSignature;
 
     @Override
     public boolean fetch(MethodContext methodContext) {
@@ -70,7 +71,7 @@ public class DynamicInvokeHandle implements Optimizer{
                     OptimizedValue optimizedValue = new OptimizedValue(
                             String.format(NEW_OBJ,
                                     TranslatorUtils.formatType(((JAssignStmt) stmt).getLeftOp().getType()),
-                                    getLambdaCodes(dynamicInvokeExpr.getBootstrapArgs(), args)),
+                                    getLambdaCodes(dynamicInvokeExpr, args)),
                             dynamicInvokeExpr);
                     methodContext.getStmts().set(i,
                             new OptimizedJAssignStmt(
@@ -85,11 +86,17 @@ public class DynamicInvokeHandle implements Optimizer{
         }
     }
 
-    private String getLambdaCodes(List<Immediate> bootstrapArgs, List<Immediate> args) {
+    private String getLambdaCodes(JDynamicInvokeExpr expr, List<Immediate> args) {
         StringBuilder lambdaCodes = new StringBuilder();
+        List<Immediate> bootstrapArgs = expr.getBootstrapArgs();
         try {
             MethodType declMethodType = (MethodType) bootstrapArgs.get(0);
             MethodHandle invokeMethod = (MethodHandle) bootstrapArgs.get(1);
+
+            implementedInterfaceSignature = new MethodSignature((JavaClassType) expr.getMethodSignature().getType(),
+                    expr.getMethodSignature().getName(),
+                    declMethodType.getParameterTypes(),
+                    declMethodType.getReturnType());
 
             if (bootstrapArgs.size() < 3 || invokeMethod.isFieldRef()) {
                 throw new TranslatorException("not supported dynamic invoke stmts");
@@ -148,21 +155,22 @@ public class DynamicInvokeHandle implements Optimizer{
                     .append(params).append(");").append(NEW_LINE);
         }
 
-        memoryManageBeforeReturn(methodType, signature, stmts);
+        memoryManageBeforeReturn(signature, stmts);
         if (!(methodType.getReturnType() instanceof VoidType)) {
             stmts.append(TAB_INLINE).append("return tmp;").append(NEW_LINE);
         }
         return stmts.toString();
     }
 
-    private void memoryManageBeforeReturn(MethodType methodType, MethodSignature signature, StringBuilder stmts) {
-        int refCount = TranslatorContext.getRefCount(signature);
+    private void memoryManageBeforeReturn(MethodSignature signature, StringBuilder stmts) {
+        int refMethodRefCount = TranslatorContext.getRefCount(signature);
+        int refCount = TranslatorContext.getRefCount(implementedInterfaceSignature);
 
-        if (refCount == 1 && methodType.getReturnType() instanceof VoidType) {
+        if (refMethodRefCount == 1 && refCount == 0) {
             stmts.append(String.format(UNKNOWN_PUT_REF, "tmp"));
         }
 
-        if (refCount == 0 && !(methodType.getReturnType() instanceof VoidType || methodType.getReturnType() instanceof PrimitiveType)) {
+        if (refMethodRefCount == 0 && refCount == 1) {
             stmts.append(String.format(GET_REF, "tmp"));
         }
     }
@@ -213,7 +221,7 @@ public class DynamicInvokeHandle implements Optimizer{
         private final int val;
         private final String valStr;
 
-        private CallerKind(int val, String valStr) {
+        CallerKind(int val, String valStr) {
             this.val = val;
             this.valStr = valStr;
         }

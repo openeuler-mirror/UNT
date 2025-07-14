@@ -83,7 +83,7 @@ public class RefAnalyzer {
                 if (! searched.contains(subclass)) {
                     String tmpSignature = methodSignatureStr.replace(interfaceName, subclass);
                     if (REF_MAP.containsKey(tmpSignature)) {
-                        REF_MAP.put(methodSignature.toString(), REF_MAP.get(tmpSignature));
+                        REF_MAP.put(methodSignatureStr, REF_MAP.get(tmpSignature));
                         break;
                     }
                     if (SUBCLASS_MAP.containsKey(subclass)) {
@@ -92,6 +92,11 @@ public class RefAnalyzer {
                     searched.add(subclass);
                 }
             }
+        }
+        if (!REF_MAP.containsKey(methodSignatureStr)) {
+            int refCount = methodSignature.getType() instanceof VoidType
+                    || methodSignature.getType() instanceof PrimitiveType ? 0 : 1;
+            REF_MAP.put(methodSignatureStr, refCount);
         }
     }
 
