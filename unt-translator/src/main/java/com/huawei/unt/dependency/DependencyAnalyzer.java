@@ -8,10 +8,13 @@ import com.huawei.unt.loader.JarHandler;
 import com.huawei.unt.loader.LoaderException;
 import com.huawei.unt.model.JavaClass;
 import com.huawei.unt.translator.TranslatorContext;
+import com.huawei.unt.translator.TranslatorException;
 import com.huawei.unt.type.NoneUDF;
 
 import sootup.core.jimple.basic.Immediate;
 import sootup.core.jimple.basic.Local;
+import sootup.core.jimple.common.constant.MethodHandle;
+import sootup.core.jimple.common.expr.JDynamicInvokeExpr;
 import sootup.core.jimple.common.expr.JStaticInvokeExpr;
 import sootup.core.jimple.common.ref.JStaticFieldRef;
 import sootup.core.jimple.common.stmt.JAssignStmt;
@@ -341,6 +344,24 @@ public class DependencyAnalyzer {
             if (ref.getType() instanceof ClassType && !TranslatorContext.getIgnoredClasses()
                     .contains(((ClassType) ref.getType()).getFullyQualifiedName())) {
                 classes.add(ref.getFieldSignature().getDeclClassType());
+            }
+        }
+
+        @Override
+        public void caseDynamicInvokeExpr(@Nonnull JDynamicInvokeExpr expr) {
+            List<Immediate> bootstrapArgs = expr.getBootstrapArgs();
+            try {
+                MethodHandle invokeMethod = (MethodHandle) bootstrapArgs.get(1);
+
+                if (bootstrapArgs.size() < 3 || invokeMethod.isFieldRef()) {
+                    throw new TranslatorException("not supported dynamic invoke stmts");
+                }
+
+                if (invokeMethod.getKind().equals(MethodHandle.Kind.REF_INVOKE_STATIC)) {
+                    classes.add(invokeMethod.getReferenceSignature().getDeclClassType());
+                }
+            } catch (Exception e) {
+                throw new TranslatorException(e.getMessage());
             }
         }
     }
