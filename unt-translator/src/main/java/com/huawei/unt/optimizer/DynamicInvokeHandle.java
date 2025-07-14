@@ -27,6 +27,7 @@ import sootup.core.jimple.common.stmt.JAssignStmt;
 import sootup.core.jimple.common.stmt.Stmt;
 import sootup.core.signatures.MethodSignature;
 import sootup.core.types.ClassType;
+import sootup.core.types.PrimitiveType;
 import sootup.core.types.Type;
 import sootup.core.types.VoidType;
 import sootup.java.core.types.JavaClassType;
@@ -163,6 +164,16 @@ public class DynamicInvokeHandle implements Optimizer{
     }
 
     private void memoryManageBeforeReturn(MethodSignature signature, StringBuilder stmts) {
+        if ((implementedInterfaceSignature.getType() instanceof PrimitiveType
+                && signature.getType() instanceof ClassType)
+                || (implementedInterfaceSignature.getType() instanceof ClassType
+                && signature.getType() instanceof PrimitiveType)) {
+            throw new TranslatorException(String.format(
+                    "ref method %s return type doesn't match it's implemented interfaces %s",
+                    signature, implementedInterfaceSignature
+            ));
+        }
+
         int refMethodRefCount = TranslatorContext.getRefCount(signature);
         int refCount = TranslatorContext.getRefCount(implementedInterfaceSignature);
 
