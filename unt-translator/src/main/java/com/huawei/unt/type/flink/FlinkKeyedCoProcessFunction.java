@@ -60,7 +60,7 @@ public class FlinkKeyedCoProcessFunction implements UDFType {
 
     @Override
     public String getSoPrefix() {
-        return "libcoprocess";
+        return "libkeyedcoprocess";
     }
 
     @Override

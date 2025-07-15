@@ -13,7 +13,6 @@ import com.huawei.unt.type.UDFType;
 
 import com.google.common.collect.ImmutableSet;
 
-import java.util.List;
 import sootup.core.jimple.basic.Local;
 import sootup.core.model.MethodModifier;
 import sootup.core.types.ClassType;
@@ -26,6 +25,7 @@ import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.util.Collector;
 
 import java.util.Set;
+import java.util.List;
 
 /**
  * Flink dataStream FlatMapFunction

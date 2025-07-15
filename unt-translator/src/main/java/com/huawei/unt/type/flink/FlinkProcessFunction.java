@@ -1,7 +1,3 @@
-/*
- * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
- */
-
 package com.huawei.unt.type.flink;
 
 import static com.huawei.unt.translator.TranslatorContext.NEW_LINE;
@@ -20,44 +16,35 @@ import sootup.core.types.VoidType;
 import sootup.java.core.JavaIdentifierFactory;
 import sootup.java.core.JavaSootMethod;
 
-import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
+import org.apache.flink.streaming.api.functions.ProcessFunction;
 
 import java.util.Set;
 
-/**
- * Flink dataStream FlinkKeyedProcessFunction
- *
- * @since 2025-06-30
- */
-public class FlinkKeyedProcessFunction implements UDFType {
-    /**
-     * Flink KeyedProcessFunction instance
-     */
-    public static final FlinkKeyedProcessFunction INSTANCE = new FlinkKeyedProcessFunction();
+public class FlinkProcessFunction implements UDFType {
+    public static final FlinkProcessFunction INSTANCE = new FlinkProcessFunction();
 
     @Override
     public Class<?> getBaseClass() {
-        return KeyedProcessFunction.class;
+        return ProcessFunction.class;
     }
 
     @Override
     public String getCppFileString(String className) {
         return "#include \"../" + className + ".h\"\n\n"
-        + "extern \"C\" std::unique_ptr<KeyedProcessFunction<Object*, Object*, Object*>> "
-        + "NewInstance(nlohmann::json jsonObj) {\n"
-        + "    return std::make_unique<" + className + ">(jsonObj);\n"
-        + "}";
+                + "extern \"C\" std::unique_ptr<ProcessFunction<Object*, Object*>> NewInstance(nlohmann::json jsonObj) {\n"
+                + "    return std::make_unique<" + className + ">(jsonObj);\n"
+                + "}";
     }
 
     @Override
     public Set<ClassType> getRequiredIncludes() {
         JavaIdentifierFactory factory = JavaIdentifierFactory.getInstance();
-        return ImmutableSet.of(factory.getClassType(KeyedProcessFunction.class.getName()));
+        return ImmutableSet.of(factory.getClassType(ProcessFunction.class.getName()));
     }
 
     @Override
     public String getSoPrefix() {
-        return "libkeyedprocess";
+        return "libprocess";
     }
 
     @Override
@@ -74,21 +61,21 @@ public class FlinkKeyedProcessFunction implements UDFType {
             return false;
         }
 
-        if ("processElement".equals(method.getName())) {
+        if (method.getName().equals("processElement")) {
             return method.getParameterCount() == 3
                     && method.getReturnType() instanceof VoidType
                     && method.getParameterType(0) instanceof ClassType
                     && method.getParameterType(1) instanceof ClassType
-                    && "KeyedProcessFunction$Context".equals(((ClassType) method.getParameterType(1)).getClassName())
+                    && ((ClassType) method.getParameterType(1)).getClassName().equals("ProcessFunction$Context")
                     && method.getParameterType(2) instanceof ClassType
-                    && "Collector".equals(((ClassType) method.getParameterType(2)).getClassName());
+                    && ((ClassType) method.getParameterType(2)).getClassName().equals("Collector");
         }
 
-        if ("open".equals(method.getName())) {
+        if (method.getName().equals("open")) {
             return method.getParameterCount() == 1
                     && method.getReturnType() instanceof VoidType
                     && method.getParameterType(0) instanceof ClassType
-                    && "Configuration".equals(((ClassType) method.getParameterType(0)).getClassName());
+                    && ((ClassType) method.getParameterType(0)).getClassName().equals("Configuration");
         }
 
         return false;
@@ -96,9 +83,9 @@ public class FlinkKeyedProcessFunction implements UDFType {
 
     @Override
     public String printDeclareMethod(JavaSootMethod method) {
-        if (isUdfFunction(method) && "processElement".equals(method.getName())) {
+        if (isUdfFunction(method) && method.getName().equals("processElement")) {
             return "    void processElement("
-                    + "Object *obj, KeyedProcessFunction<Object*, Object*, Object*>::Context *ctx, Collector *collector"
+                    + "Object *obj, ProcessFunction<Object*, Object*>::Context *ctx, Collector *collector"
                     + ") override;" + NEW_LINE;
         }
 
@@ -113,14 +100,13 @@ public class FlinkKeyedProcessFunction implements UDFType {
     public String printHeadAndParams(MethodContext methodContext) {
         String className = TranslatorUtils.formatClassName(
                 methodContext.getJavaMethod().getDeclClassType().getFullyQualifiedName());
-        if ("processElement".equals(methodContext.getJavaMethod().getName())
+        if (methodContext.getJavaMethod().getName().equals("processElement")
                 && isUdfFunction(methodContext.getJavaMethod())) {
 
             StringBuilder headBuilder = new StringBuilder("void ")
                     .append(className)
                     .append("::processElement(")
-                    .append("Object *obj, KeyedProcessFunction<Object*, Object*, Object*>"
-                            + "::Context *ctx, Collector *collector) {")
+                    .append("Object *obj, ProcessFunction<Object*, Object*>::Context *ctx, Collector *collector) {")
                     .append(NEW_LINE);
 
             Local param1 = methodContext.getParams().get(0);
@@ -137,7 +123,7 @@ public class FlinkKeyedProcessFunction implements UDFType {
             Local param2 = methodContext.getParams().get(1);
             methodContext.removeLocal(param2);
             headBuilder.append(TAB)
-                    .append("KeyedProcessFunction<Object*, Object*, Object*>::Context *")
+                    .append("ProcessFunction<Object*, Object*>::Context *")
                     .append(TranslatorUtils.formatLocalName(param2))
                     .append(" = ctx;")
                     .append(NEW_LINE);
