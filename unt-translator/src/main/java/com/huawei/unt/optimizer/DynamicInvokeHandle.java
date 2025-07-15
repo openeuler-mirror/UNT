@@ -135,6 +135,13 @@ public class DynamicInvokeHandle implements Optimizer{
                 params.add("param" + j);
             } else {
                 String requiredType = TranslatorUtils.formatType(paramType);
+                if ((declParamterType instanceof PrimitiveType && !(paramType instanceof PrimitiveType))
+                        || (!(declParamterType instanceof PrimitiveType) && paramType instanceof PrimitiveType)) {
+                    throw new TranslatorException(String.format(
+                            "ref method %s input param type doesn't match it's implemented interfaces %s",
+                            signature, implementedInterfaceSignature
+                    ));
+                }
                 stmts.append(String.format(OBJ_TRANS, requiredType, paramIndex, "param" + j));
                 params.add("in" + paramIndex);
             }

@@ -93,11 +93,6 @@ public class RefAnalyzer {
                 }
             }
         }
-        if (!REF_MAP.containsKey(methodSignatureStr)) {
-            int refCount = methodSignature.getType() instanceof VoidType
-                    || methodSignature.getType() instanceof PrimitiveType ? 0 : 1;
-            REF_MAP.put(methodSignatureStr, refCount);
-        }
     }
 
     private static boolean isSimpleGet(List<Stmt> stmts) {
