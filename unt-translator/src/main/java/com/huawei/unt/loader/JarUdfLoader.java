@@ -6,6 +6,8 @@ package com.huawei.unt.loader;
 
 import static com.huawei.unt.model.JavaClass.Kind.INSTANCE_METHOD_REF;
 import static com.huawei.unt.model.JavaClass.Kind.STATIC_METHOD_REF;
+import java.util.Arrays;
+import java.util.StringJoiner;
 import static sootup.core.jimple.common.constant.MethodHandle.Kind.REF_INVOKE_STATIC;
 
 import com.huawei.unt.model.JavaClass;
@@ -58,11 +60,27 @@ public class JarUdfLoader {
     private final JarHandler jarHandler;
     private final EngineType engineType;
 
+    private final Set<String> requiredUdf = new HashSet<>();
+
     private final Map<UDFType, List<JavaClass>> classUdfMap = new HashMap<>();
 
     public JarUdfLoader(JarHandler jarHandler, EngineType engineType) {
         this.jarHandler = jarHandler;
         this.engineType = engineType;
+
+        if (!TranslatorContext.getUdfMap().containsKey("required_udf")
+                || "".equals(TranslatorContext.getUdfMap().get("required_udf"))) {
+            EngineType.getFunctions(engineType).forEach(e -> {
+                requiredUdf.add(e.getBaseClass().getName());
+            });
+            LOGGER.info("default translate all {} udf", engineType);
+        } else {
+            String requiredUdfConfig = TranslatorContext.getUdfMap().get("required_udf");
+            requiredUdf.addAll(Arrays.asList(requiredUdfConfig.split(",")));
+            StringJoiner loadRequiredUdfList = new StringJoiner(",");
+            requiredUdf.forEach(loadRequiredUdfList::add);
+            LOGGER.info("load required udf: {}", loadRequiredUdfList);
+        }
     }
 
     public Map<UDFType, List<JavaClass>> getClassUdfMap() {
@@ -89,8 +107,7 @@ public class JarUdfLoader {
             }
 
             Optional<UDFType> udfType = getUDFType(javaClass, engineType);
-
-            if (udfType.isPresent()) {
+            if (udfType.isPresent() && requiredUdf.contains(udfType.get().getBaseClass().getName())) {
                 JavaClass udfClz = new JavaClass(javaClass, udfType.get());
                 udfClz.addIncludes(udfType.get().getRequiredIncludes());
 
@@ -110,9 +127,11 @@ public class JarUdfLoader {
 
             if (lambdaClasses != null && !lambdaClasses.isEmpty()) {
                 for (JavaClass lambdaClass : lambdaClasses) {
-                    List<JavaClass> udfClasses = classUdfMap.getOrDefault(lambdaClass.getType(), new ArrayList<>());
-                    udfClasses.add(lambdaClass);
-                    classUdfMap.put(lambdaClass.getType(), udfClasses);
+                    if (requiredUdf.contains(lambdaClass.getType().getBaseClass().getName())) {
+                        List<JavaClass> udfClasses = classUdfMap.getOrDefault(lambdaClass.getType(), new ArrayList<>());
+                        udfClasses.add(lambdaClass);
+                        classUdfMap.put(lambdaClass.getType(), udfClasses);
+                    }
                 }
             }
         }
@@ -224,7 +243,6 @@ public class JarUdfLoader {
 
     private Optional<UDFType> getUDFType(JavaSootClass javaClass, EngineType type) {
         for (UDFType udfType : EngineType.getFunctions(type)) {
-            udfType.getBaseClass();
             if (jarHandler.isSubClass(javaClass.getName(),
                     JavaIdentifierFactory.getInstance().getClassType(udfType.getBaseClass().getName()))) {
                 return Optional.of(udfType);
