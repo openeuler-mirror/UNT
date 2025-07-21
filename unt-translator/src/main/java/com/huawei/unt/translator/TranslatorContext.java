@@ -183,6 +183,7 @@ public class TranslatorContext {
     private static boolean isHwAccTune;
     private static boolean isRegexAcc;
     private static String compileOption;
+    private static String udfPackage;
 
     private TranslatorContext() {
     }
@@ -257,6 +258,14 @@ public class TranslatorContext {
         } else {
             compileOption = getUdfMap().get("compile_option");
             LOGGER.info("use compile_option: {}", getCompileOption());
+        }
+
+        if (!getUdfMap().containsKey("udf_package") || "".equals(getUdfMap().get("udf_package"))) {
+            udfPackage = null;
+            LOGGER.warn("default scan all package in jar");
+        } else {
+            udfPackage = getUdfMap().get("udf_package");
+            LOGGER.info("scan package: {}", udfPackage);
         }
 
         String basicDir = getUdfMap().get("basic_lib_path").endsWith(File.separator)
@@ -522,6 +531,9 @@ public class TranslatorContext {
 
     public static String getCompileOption() {
         return compileOption;
+    }
+    public static String getUdfPackage() {
+        return udfPackage;
     }
 
     public static Map<String, Set<String>> getSuperclassMap() {
