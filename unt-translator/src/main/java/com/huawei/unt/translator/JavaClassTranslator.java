@@ -312,7 +312,7 @@ public class JavaClassTranslator {
                     if (!TranslatorContext.PRIMITIVE_TYPE_STRING_MAP.containsKey(javaSootField.getType())){
                         throw new TranslatorException("no support "
                                 + ((PrimitiveType) javaSootField.getType()).getName()
-                                + "primitive type");
+                                + " primitive type");
                     }
                     String type = TranslatorContext.PRIMITIVE_TYPE_STRING_MAP.get(javaSootField.getType());
                     cppBuilder.append("REGISTER_PRIMITIVE_FIELD(")

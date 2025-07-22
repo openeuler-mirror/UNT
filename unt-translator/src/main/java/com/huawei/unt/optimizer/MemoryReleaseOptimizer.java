@@ -260,22 +260,20 @@ public class MemoryReleaseOptimizer implements Optimizer {
         int j = i;
         Set<Integer> targets = new HashSet<>();
         while (j < stmts.size()) {
-            if (methodContext.isRemoved(j)) {
-                j++;
-                continue;
-            }
-            Stmt stmt = stmts.get(j);
-            if (stmt.branches()) {
-                for (Integer branchTarget : methodContext.getBranchTargets(stmt)) {
-                    if (branchTarget > i) {
-                        targets.add(branchTarget);
-                    } else {
-                        backupPoints.put(j, i);
+            if (!methodContext.isRemoved(j)) {
+                Stmt stmt = stmts.get(j);
+                if (stmt.branches()) {
+                    for (Integer branchTarget : methodContext.getBranchTargets(stmt)) {
+                        if (branchTarget > i) {
+                            targets.add(branchTarget);
+                        } else {
+                            backupPoints.put(j, i);
+                        }
                     }
                 }
-            }
-            if (stmt instanceof JGotoStmt || stmt instanceof JReturnStmt || stmt instanceof JReturnVoidStmt) {
-                break;
+                if (stmt instanceof JGotoStmt || stmt instanceof JReturnStmt || stmt instanceof JReturnVoidStmt) {
+                    break;
+                }
             }
             j++;
             if (methodContext.containsLabel(j)) {
@@ -406,7 +404,7 @@ public class MemoryReleaseOptimizer implements Optimizer {
                     getRefs = getRef.getOrDefault(location, new HashMap<>());
                     getRefs.put(leftOp, AFTER);
                     getRef.put(location, getRefs);
-                    reassignStmts.add(j);
+                    reassignStmts.add(location);
                 }
                 locals.put(leftOp, 1);
             }

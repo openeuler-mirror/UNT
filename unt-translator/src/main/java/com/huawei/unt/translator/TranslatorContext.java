@@ -329,7 +329,7 @@ public class TranslatorContext {
 
             String dependInterface;
             while ((dependInterface = dependInterfacesReader.readLine()) != null) {
-                if (dependInterface.startsWith("%")) {
+                if (dependInterface.startsWith("%") || dependInterface.isEmpty()) {
                     continue;
                 }
                 String[] ref = dependInterface.trim().split(", ");
