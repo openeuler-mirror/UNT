@@ -35,6 +35,8 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.Arrays;
+import java.util.StringJoiner;
 
 /**
  * TranslatorContext
@@ -183,7 +185,7 @@ public class TranslatorContext {
     private static boolean isHwAccTune;
     private static boolean isRegexAcc;
     private static String compileOption;
-    private static String udfPackage;
+    private static Set<String> udfPackages;
 
     private TranslatorContext() {
     }
@@ -261,11 +263,13 @@ public class TranslatorContext {
         }
 
         if (!getUdfMap().containsKey("udf_package") || "".equals(getUdfMap().get("udf_package"))) {
-            udfPackage = null;
+            udfPackages = null;
             LOGGER.warn("default scan all package in jar");
         } else {
-            udfPackage = getUdfMap().get("udf_package");
-            LOGGER.info("scan package: {}", udfPackage);
+            udfPackages = new HashSet<>(Arrays.asList(getUdfMap().get("udf_package").split(",")));
+            StringJoiner loadUdfPackages = new StringJoiner(",");
+            udfPackages.forEach(loadUdfPackages::add);
+            LOGGER.info("scan package: {}", loadUdfPackages);
         }
 
         String basicDir = getUdfMap().get("basic_lib_path").endsWith(File.separator)
@@ -532,8 +536,18 @@ public class TranslatorContext {
     public static String getCompileOption() {
         return compileOption;
     }
-    public static String getUdfPackage() {
-        return udfPackage;
+    public static boolean isInUdfPackage(String className) {
+        if (udfPackages == null) {
+            return true;
+        }
+
+        for (String udfPackage : udfPackages) {
+            if (className.startsWith(udfPackage)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public static Map<String, Set<String>> getSuperclassMap() {

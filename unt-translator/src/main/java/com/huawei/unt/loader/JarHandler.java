@@ -61,8 +61,7 @@ public class JarHandler {
             JavaView view = getJavaView(jarPath);
             this.typeHierarchy = view.getTypeHierarchy();
             for (JavaSootClass javaSootClass : view.getClasses().collect(Collectors.toList())) {
-                if (TranslatorContext.getUdfPackage() == null
-                        || javaSootClass.getName().startsWith(TranslatorContext.getUdfPackage())) {
+                if (TranslatorContext.isInUdfPackage(javaSootClass.getName())) {
                     allJavaClass.put(javaSootClass.getName(), javaSootClass);
                 }
             }
