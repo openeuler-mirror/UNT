@@ -5,6 +5,7 @@
 package com.huawei.unt.optimizer;
 
 import com.huawei.unt.model.MethodContext;
+import com.huawei.unt.optimizer.stmts.OptimizedDirectStmt;
 import com.huawei.unt.optimizer.stmts.OptimizedJAssignStmt;
 import com.huawei.unt.optimizer.stmts.OptimizedValue;
 import com.huawei.unt.translator.visitor.TranslatorValueVisitor;
@@ -12,6 +13,7 @@ import com.huawei.unt.translator.visitor.TranslatorValueVisitor;
 import sootup.core.jimple.common.constant.StringConstant;
 import sootup.core.jimple.common.expr.JVirtualInvokeExpr;
 import sootup.core.jimple.common.stmt.JAssignStmt;
+import sootup.core.jimple.common.stmt.JReturnStmt;
 import sootup.core.jimple.common.stmt.Stmt;
 import sootup.core.types.ClassType;
 import sootup.java.core.JavaIdentifierFactory;
@@ -40,6 +42,11 @@ public class StringPacking implements Optimizer {
         TranslatorValueVisitor valueVisitor = new TranslatorValueVisitor(methodContext);
         for (int i = 0; i < stmts.size(); i++) {
             Stmt stmt = stmts.get(i);
+            if (stmt instanceof JReturnStmt && ((JReturnStmt) stmt).getOp() instanceof StringConstant) {
+                String res = "new String(" + ((JReturnStmt) stmt).getOp().toString() + ")";
+                OptimizedDirectStmt optimizedDirectStmt = new OptimizedDirectStmt("return " + res, stmt);
+                methodContext.getStmts().set(i, optimizedDirectStmt);
+            }
             if (stmt instanceof JAssignStmt
                     && (STRING_CLASS_TYPE.equals(((JAssignStmt) stmt).getLeftOp().getType())
                     || OBJECT_CLASS_TYPE.equals(((JAssignStmt) stmt).getLeftOp().getType()))
