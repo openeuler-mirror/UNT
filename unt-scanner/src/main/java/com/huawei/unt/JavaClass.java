@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025-2025. Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
  */
 
 package com.huawei.unt;
@@ -15,6 +15,11 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
+/**
+ * JavaClass
+ *
+ * @since 2025-05-19
+ */
 public class JavaClass {
     private final Set<JavaSootField> fields = new HashSet<>();
     private final Set<JavaSootMethod> methods = new HashSet<>();
@@ -48,8 +53,12 @@ public class JavaClass {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         JavaClass javaClass = (JavaClass) o;
         return Objects.equals(className, javaClass.className);
     }

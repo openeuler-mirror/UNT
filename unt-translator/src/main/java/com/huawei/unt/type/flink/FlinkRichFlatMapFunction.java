@@ -1,13 +1,18 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
+ */
+
 package com.huawei.unt.type.flink;
 
-import com.google.common.collect.ImmutableSet;
+import static com.huawei.unt.translator.TranslatorContext.NEW_LINE;
+import static com.huawei.unt.translator.TranslatorContext.TAB;
+
 import com.huawei.unt.model.MethodContext;
-import com.huawei.unt.translator.TranslatorContext;
 import com.huawei.unt.translator.TranslatorUtils;
 import com.huawei.unt.type.UDFType;
-import org.apache.flink.api.common.functions.RichFlatMapFunction;
-import org.apache.flink.configuration.Configuration;
-import org.apache.flink.util.Collector;
+
+import com.google.common.collect.ImmutableSet;
+
 import sootup.core.jimple.basic.Local;
 import sootup.core.model.MethodModifier;
 import sootup.core.types.ClassType;
@@ -15,12 +20,21 @@ import sootup.core.types.VoidType;
 import sootup.java.core.JavaIdentifierFactory;
 import sootup.java.core.JavaSootMethod;
 
+import org.apache.flink.api.common.functions.RichFlatMapFunction;
+import org.apache.flink.configuration.Configuration;
+import org.apache.flink.util.Collector;
+
 import java.util.Set;
 
-import static com.huawei.unt.translator.TranslatorContext.NEW_LINE;
-import static com.huawei.unt.translator.TranslatorContext.TAB;
-
+/**
+ * Flink RichFlatMapFunction
+ *
+ * @since 2025-05-19
+ */
 public class FlinkRichFlatMapFunction implements UDFType {
+    /**
+     * Flink RichFlatMapFunction instance
+     */
     public static final FlinkRichFlatMapFunction INSTANCE = new FlinkRichFlatMapFunction();
 
     @Override
@@ -74,30 +88,31 @@ public class FlinkRichFlatMapFunction implements UDFType {
 
     @Override
     public String printDeclareMethod(JavaSootMethod method) {
-        if (isUdfFunction(method) &&
-                method.getName().equals("flatMap")) {
+        if (isUdfFunction(method) && "flatMap".equals(method.getName())) {
             return "    void flatMap(Object *obj, Collector *collector) override;" + NEW_LINE;
-        } else if (isUdfFunction(method) &&
-                method.getName().equals("open")) {
+        } else if (isUdfFunction(method) && "open".equals(method.getName())) {
             return "    void open(const Configuration& conf) override;" + NEW_LINE;
+        } else {
+            return TranslatorUtils.printDeclareMethod(method);
         }
-
-        return TranslatorUtils.printDeclareMethod(method);
     }
-
 
     @Override
     public String printHeadAndParams(MethodContext methodContext) {
         String className = TranslatorUtils.formatType(methodContext.getJavaMethod().getDeclClassType());
 
-        if (methodContext.getJavaMethod().getName().equals("flatMap") &&
-                isUdfFunction(methodContext.getJavaMethod())) {
+        if ("flatMap".equals(methodContext.getJavaMethod().getName())
+                && isUdfFunction(methodContext.getJavaMethod())) {
             StringBuilder headBuilder = new StringBuilder("void ")
                     .append(className)
                     .append("::flatMap(Object *obj, Collector *collector)")
                     .append(NEW_LINE)
                     .append("{")
                     .append(NEW_LINE);
+
+            if (methodContext.isIgnore()) {
+                return headBuilder.toString();
+            }
 
             Local param1 = methodContext.getParams().get(0);
             methodContext.removeLocal(param1);
@@ -118,8 +133,8 @@ public class FlinkRichFlatMapFunction implements UDFType {
                     .append(NEW_LINE);
 
             return headBuilder.append(NEW_LINE).toString();
-        } else if (methodContext.getJavaMethod().getName().equals("open") &&
-                isUdfFunction(methodContext.getJavaMethod())) {
+        } else if ("open".equals(methodContext.getJavaMethod().getName())
+                && isUdfFunction(methodContext.getJavaMethod())) {
             StringBuilder headBuilder = new StringBuilder()
                     .append("void ")
                     .append(className)

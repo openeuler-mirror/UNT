@@ -1,6 +1,11 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
+ */
+
 package com.huawei.unt.translator;
 
 import com.huawei.unt.model.JavaClass;
+
 import sootup.core.jimple.basic.LValue;
 import sootup.core.jimple.basic.Local;
 import sootup.core.jimple.basic.Value;
@@ -24,18 +29,28 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Use for analyze ref use for memory free
+ *
+ * @since 2025-05-19
+ */
 public class RefAnalyzer {
-    private static Map<String, Integer> refMap = TranslatorContext.LIB_INTERFACE_REF;
-    private static Map<String, Set<String>> subclassMap = TranslatorContext.SUBCLASS_MAP;
-    private static Set<JavaSootMethod> abstractMethods = new HashSet<>();
+    private static final Map<String, Integer> REF_MAP = TranslatorContext.getLibInterfaceRef();
+    private static final Map<String, Set<String>> SUBCLASS_MAP = TranslatorContext.getSubclassMap();
+    private static final Set<JavaSootMethod> ABSTRACT_METHODS = new HashSet<>();
 
+    /**
+     * Analyze java classes
+     *
+     * @param javaClasses javaClasses
+     */
     public static void analyse(Collection<JavaClass> javaClasses) {
         for (JavaClass javaClass : javaClasses) {
             for (JavaSootMethod method : javaClass.getMethods()) {
                 analyse(method);
             }
         }
-        for (JavaSootMethod method : abstractMethods) {
+        for (JavaSootMethod method : ABSTRACT_METHODS) {
             analyseAbstractMethod(method);
         }
     }
@@ -44,37 +59,35 @@ public class RefAnalyzer {
         String signature = method.getSignature().toString();
         Type returnType = method.getReturnType();
         if (! method.hasBody()) {
-            abstractMethods.add(method);
+            ABSTRACT_METHODS.add(method);
         } else if (returnType instanceof VoidType
                 || returnType instanceof PrimitiveType
                 || isSimpleGet(method.getBody().getStmts())
-        || TranslatorContext.IGNORED_METHODS.contains(method.getSignature().toString())) {
-            refMap.put(signature, 0);
+        || TranslatorContext.getIgnoredMethods().contains(method.getSignature().toString())) {
+            REF_MAP.put(signature, 0);
         } else {
-            refMap.put(signature, 1);
+            REF_MAP.put(signature, 1);
         }
     }
 
-    private static LinkedList<String> subclassQueue;
-    private static Set<String> searched;
     private static void analyseAbstractMethod(JavaSootMethod method) {
         MethodSignature methodSignature = method.getSignature();
         String interfaceName = methodSignature.getDeclClassType().getFullyQualifiedName();
         String methodSignatureStr = methodSignature.toString();
-        if (subclassMap.containsKey(interfaceName)) {
-            subclassQueue = new LinkedList<>();
-            searched = new HashSet<>();
-            subclassQueue.addAll(subclassMap.get(interfaceName));
+        if (SUBCLASS_MAP.containsKey(interfaceName)) {
+            LinkedList<String> subclassQueue = new LinkedList<>();
+            Set<String> searched = new HashSet<>();
+            subclassQueue.addAll(SUBCLASS_MAP.get(interfaceName));
             while (! subclassQueue.isEmpty()) {
                 String subclass = subclassQueue.poll();
                 if (! searched.contains(subclass)) {
                     String tmpSignature = methodSignatureStr.replace(interfaceName, subclass);
-                    if (refMap.containsKey(tmpSignature)) {
-                        refMap.put(methodSignature.toString(), refMap.get(tmpSignature));
+                    if (REF_MAP.containsKey(tmpSignature)) {
+                        REF_MAP.put(methodSignature.toString(), REF_MAP.get(tmpSignature));
                         break;
                     }
-                    if (subclassMap.containsKey(subclass)) {
-                        subclassQueue.addAll(subclassMap.get(subclass));
+                    if (SUBCLASS_MAP.containsKey(subclass)) {
+                        subclassQueue.addAll(SUBCLASS_MAP.get(subclass));
                     }
                     searched.add(subclass);
                 }

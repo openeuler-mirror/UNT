@@ -1,10 +1,16 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
+ */
+
 package com.huawei.unt.optimizer;
 
-import com.google.common.collect.ImmutableList;
 import com.huawei.unt.model.MethodContext;
 import com.huawei.unt.optimizer.stmts.OptimizedLinesStmt;
 import com.huawei.unt.translator.TranslatorContext;
 import com.huawei.unt.translator.TranslatorUtils;
+
+import com.google.common.collect.ImmutableList;
+
 import sootup.core.jimple.basic.Local;
 import sootup.core.jimple.common.expr.JCastExpr;
 import sootup.core.jimple.common.expr.JNewExpr;
@@ -17,6 +23,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * deal with new statements
+ *
+ * @since 2025-05-23
+ */
 public class NewRefOptimizer implements Optimizer {
     @Override
     public boolean fetch(MethodContext methodContext) {
@@ -30,6 +41,8 @@ public class NewRefOptimizer implements Optimizer {
      * 2、has one new  and one init function and two cast
      *
      * skip first init and two cast
+     *
+     * @param methodContext methodContext
      */
     @Override
     public void optimize(MethodContext methodContext) {
@@ -38,6 +51,9 @@ public class NewRefOptimizer implements Optimizer {
         for (int i = 0; i < stmts.size(); i++) {
             Stmt stmt = stmts.get(i);
             if (stmt instanceof JAssignStmt && ((JAssignStmt) stmt).getRightOp() instanceof JNewExpr) {
+                if (!(((JAssignStmt) stmt).getLeftOp() instanceof Local)) {
+                    continue;
+                }
                 Local newLocal = (Local) ((JAssignStmt) stmt).getLeftOp();
                 boolean isInit = false;
                 Set<Local> initLocals = new HashSet<>();
@@ -58,8 +74,7 @@ public class NewRefOptimizer implements Optimizer {
                                 .equals(TranslatorContext.INIT_FUNCTION_NAME)
                             && initLocals.contains(((JSpecialInvokeExpr) (((JInvokeStmt) stmtJ).getInvokeExpr()
                                 .get())).getBase())) {
-
-                        if (TranslatorContext.IGNORED_CLASSES.contains(((JInvokeStmt) stmtJ).getInvokeExpr().get()
+                        if (TranslatorContext.getIgnoredClasses().contains(((JInvokeStmt) stmtJ).getInvokeExpr().get()
                                 .getMethodSignature().getDeclClassType().getFullyQualifiedName())) {
                             methodContext.getStmts().set(j, Optimizers.getEmptyOptimizedStmt(stmtJ));
                             methodContext.addRemovedStmt(j);
@@ -102,10 +117,10 @@ public class NewRefOptimizer implements Optimizer {
 
     private static List<String> getInitFunction(Local newLocal, JSpecialInvokeExpr expr, MethodContext methodContext) {
         String initStmt = TranslatorUtils.formatLocalName(newLocal)
-                 + " = new "
-                 + TranslatorUtils.formatType(expr.getBase().getType())
-                 + TranslatorUtils.paramsToString(expr.getMethodSignature(), expr.getArgs(), methodContext)
-                 + ";";
+                + " = new "
+                + TranslatorUtils.formatType(expr.getBase().getType())
+                + TranslatorUtils.paramsToString(expr.getMethodSignature(), expr.getArgs(), methodContext)
+                + ";";
 
         return ImmutableList.of(initStmt);
     }

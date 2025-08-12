@@ -1,9 +1,14 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
+ */
+
 package com.huawei.unt.model;
 
 import com.huawei.unt.loader.LoaderException;
 import com.huawei.unt.translator.TranslatorContext;
 import com.huawei.unt.translator.TranslatorUtils;
 import com.huawei.unt.type.UDFType;
+
 import sootup.core.model.MethodModifier;
 import sootup.core.types.ClassType;
 import sootup.core.types.Type;
@@ -19,6 +24,11 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * JavaClass
+ *
+ * @since 2025-05-19
+ */
 public class JavaClass {
     private final String className;
     private final UDFType type;
@@ -31,9 +41,7 @@ public class JavaClass {
     private final Set<ClassType> loopIncludes = new HashSet<>();
 
     private boolean hasArray = false;
-
     private boolean hasObjectField = false;
-
     private boolean isJsonConstructor = false;
 
     // use for lambda function
@@ -44,7 +52,7 @@ public class JavaClass {
         ClassType udfClassType = TranslatorUtils.getClassTypeFromClassName(udfType.getBaseClass().getName());
         this.supperClasses.add(udfClassType);
         this.isLambda = true;
-        TranslatorContext.SUPERCLASS_MAP.put(className, supperClasses.stream()
+        TranslatorContext.getSuperclassMap().put(className, supperClasses.stream()
                 .map(ClassType::toString)
                 .collect(Collectors.toSet()));
     }
@@ -54,8 +62,9 @@ public class JavaClass {
         this.type = type;
 
         for (JavaSootField field : javaSootClass.getFields()) {
-            if (field.getType() instanceof ClassType &&
-                    TranslatorContext.IGNORED_CLASSES.contains(((ClassType) field.getType()).getFullyQualifiedName())) {
+            if (field.getType() instanceof ClassType
+                    && TranslatorContext.getIgnoredClasses().contains(
+                            ((ClassType) field.getType()).getFullyQualifiedName())) {
                 continue;
             }
             this.fields.add(field);
@@ -65,30 +74,25 @@ public class JavaClass {
             if (method.isNative()) {
                 throw new LoaderException("Not support native method now");
             }
-            if (method.getModifiers().contains(MethodModifier.BRIDGE)) {
-                continue;
-            }
-            if (method.isMain(JavaIdentifierFactory.getInstance())) {
-                continue;
-            }
-            if (TranslatorUtils.isIgnoredMethod(method)) {
-                continue;
-            }
-            if (method.getReturnType() instanceof ClassType &&
-                    TranslatorContext.IGNORED_CLASSES.contains(((ClassType) method.getReturnType()).getFullyQualifiedName())){
+            if (method.getModifiers().contains(MethodModifier.BRIDGE)
+                    || method.isMain(JavaIdentifierFactory.getInstance())
+                    || TranslatorUtils.isIgnoredMethod(method)
+                    || (method.getReturnType() instanceof ClassType
+                        && TranslatorContext.getIgnoredClasses().contains(
+                            ((ClassType) method.getReturnType()).getFullyQualifiedName()))) {
                 continue;
             }
 
             boolean isIgnoreParam = false;
-
             for (Type parameterType : method.getParameterTypes()) {
-                if (parameterType instanceof ClassType &&
-                        TranslatorContext.IGNORED_CLASSES.contains(((ClassType) parameterType).getFullyQualifiedName())){
+                if (parameterType instanceof ClassType
+                        && TranslatorContext.getIgnoredClasses().contains(
+                                ((ClassType) parameterType).getFullyQualifiedName())) {
                     isIgnoreParam = true;
                     break;
                 }
             }
-            if (isIgnoreParam){
+            if (isIgnoreParam) {
                 continue;
             }
             this.methods.add(method);
@@ -96,16 +100,16 @@ public class JavaClass {
 
         Optional<JavaClassType> superClass = javaSootClass.getSuperclass();
 
-        if (superClass.isPresent() &&
-                !TranslatorContext.IGNORED_CLASSES.contains(superClass.get().getFullyQualifiedName())) {
+        if (superClass.isPresent()
+                && !TranslatorContext.getIgnoredClasses().contains(superClass.get().getFullyQualifiedName())) {
             supperClasses.add(superClass.get());
         }
 
         supperClasses.addAll(javaSootClass.getInterfaces().stream()
-                .filter(c -> !TranslatorContext.IGNORED_CLASSES.contains(c.getFullyQualifiedName()))
+                .filter(c -> !TranslatorContext.getIgnoredClasses().contains(c.getFullyQualifiedName()))
                 .collect(Collectors.toList()));
 
-        TranslatorContext.SUPERCLASS_MAP.put(className, supperClasses.stream()
+        TranslatorContext.getSuperclassMap().put(className, supperClasses.stream()
                 .map(ClassType::toString)
                 .collect(Collectors.toSet()));
 
@@ -124,16 +128,22 @@ public class JavaClass {
         return loopIncludes;
     }
 
-    public void addLoopInclude(ClassType classType){
+    /**
+     * add loop include
+     *
+     * @param classType loop include
+     */
+    public void addLoopInclude(ClassType classType) {
         this.loopIncludes.add(classType);
     }
 
+    /**
+     * add extra includes
+     *
+     * @param includes extra includes
+     */
     public void addIncludes(Set<ClassType> includes) {
         this.includes.addAll(includes);
-    }
-
-    public void addMethods(Set<JavaSootMethod> javaMethods) {
-        methods.addAll(javaMethods);
     }
 
     public UDFType getType() {
@@ -164,26 +174,30 @@ public class JavaClass {
         return hasArray;
     }
 
-    public void setHasObjectField(){
+    public void setHasObjectField() {
         hasObjectField = true;
     }
 
-    public boolean isHasObjectField(){
+    public boolean isHasObjectField() {
         return hasObjectField;
     }
 
-    public void setJsonConstructor(){
+    public void setJsonConstructor() {
         isJsonConstructor = true;
     }
 
-    public boolean isJsonConstructor(){
+    public boolean isJsonConstructor() {
         return isJsonConstructor;
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         JavaClass javaClass = (JavaClass) o;
         return Objects.equals(className, javaClass.className) && Objects.equals(type, javaClass.type);
     }

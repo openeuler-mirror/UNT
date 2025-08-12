@@ -1,4 +1,10 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
+ */
+
 package com.huawei.unt.optimizer.stmts;
+
+import static com.huawei.unt.translator.TranslatorContext.NEW_LINE;
 
 import sootup.core.jimple.basic.JimpleComparator;
 import sootup.core.jimple.common.stmt.AbstractStmt;
@@ -6,15 +12,17 @@ import sootup.core.jimple.common.stmt.Stmt;
 import sootup.core.jimple.visitor.StmtVisitor;
 import sootup.core.util.printer.StmtPrinter;
 
-import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.Objects;
 
-import static com.huawei.unt.translator.TranslatorContext.NEW_LINE;
+import javax.annotation.Nonnull;
 
-
+/**
+ * OptimizedLineStmt used for multi new Stmt create by optimizers
+ *
+ * @since 2025-05-19
+ */
 public class OptimizedLinesStmt extends AbstractStmt {
-
     private final Stmt originalStmt;
     private final List<String> optimizedCodes;
 
@@ -59,6 +67,7 @@ public class OptimizedLinesStmt extends AbstractStmt {
                 && optimizedCodes.equals(other.optimizedCodes);
     }
 
+    @Override
     public <V extends StmtVisitor> V accept(@Nonnull V v) {
         v.defaultCaseStmt(this);
         return v;

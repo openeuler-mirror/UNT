@@ -1,0 +1,46 @@
+[#ifndef TESTFIELDTRANSLATE_H
+#define TESTFIELDTRANSLATE_H
+
+#include "basictypes/ClassConstant.h"
+#include "basictypes/StringConstant.h"
+#include "nlohmann/json.hpp"
+
+#include "java_lang_Object.h"
+#include "java_lang_String.h"
+
+class TestFieldTranslate : public java_lang_Object {
+public:
+    TestFieldTranslate();
+
+    TestFieldTranslate(nlohmann::json jsonObj);
+    ~TestFieldTranslate();
+
+private:
+    java_lang_String *name = nullptr;
+
+};
+
+#endif
+, #include "TestFieldTranslate.h"
+
+
+TestFieldTranslate::TestFieldTranslate()
+{
+
+    return;
+}
+
+TestFieldTranslate::~TestFieldTranslate() {
+    if (name) {
+        name->putRefCount();
+    }
+}
+
+TestFieldTranslate::TestFieldTranslate(nlohmann::json jsonObj) : java_lang_Object(jsonObj)
+ {
+    if(!jsonObj["name"].empty()) {
+        this->name = new java_lang_String(jsonObj["name"]);
+    }
+}
+
+]
