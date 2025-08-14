@@ -1,12 +1,18 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
+ */
+
 package com.huawei.unt.type.flink;
 
-import com.google.common.collect.ImmutableSet;
+import static com.huawei.unt.translator.TranslatorContext.NEW_LINE;
+import static com.huawei.unt.translator.TranslatorContext.TAB;
+
 import com.huawei.unt.model.MethodContext;
-import com.huawei.unt.translator.TranslatorContext;
 import com.huawei.unt.translator.TranslatorUtils;
 import com.huawei.unt.type.UDFType;
-import org.apache.flink.api.common.functions.RichFilterFunction;
-import org.apache.flink.configuration.Configuration;
+
+import com.google.common.collect.ImmutableSet;
+
 import sootup.core.jimple.basic.Local;
 import sootup.core.model.MethodModifier;
 import sootup.core.types.ClassType;
@@ -14,12 +20,20 @@ import sootup.core.types.PrimitiveType;
 import sootup.java.core.JavaIdentifierFactory;
 import sootup.java.core.JavaSootMethod;
 
+import org.apache.flink.api.common.functions.RichFilterFunction;
+import org.apache.flink.configuration.Configuration;
+
 import java.util.Set;
 
-import static com.huawei.unt.translator.TranslatorContext.NEW_LINE;
-import static com.huawei.unt.translator.TranslatorContext.TAB;
-
+/**
+ * Flink RichFilterFunction
+ *
+ * @since 2025-05-19
+ */
 public class FlinkRichFilterFunction implements UDFType {
+    /**
+     * Flink RichFilterFunction instance
+     */
     public static final FlinkRichFilterFunction INSTANCE = new FlinkRichFilterFunction();
 
     @Override
@@ -30,9 +44,9 @@ public class FlinkRichFilterFunction implements UDFType {
     @Override
     public String getCppFileString(String className) {
         return "#include \"../" + className + ".h\"" + NEW_LINE + NEW_LINE
-                + "extern \"C\" std::unique_ptr<FilterFunction<Object>> NewInstance(nlohmann::json jsonObj) {" + NEW_LINE
-                + "    return std::make_unique<" + className + ">(jsonObj);" + NEW_LINE
-                + "}";
+                + "extern \"C\" std::unique_ptr<FilterFunction<Object>> NewInstance(nlohmann::json jsonObj) {"
+                + NEW_LINE
+                + "    return std::make_unique<" + className + ">(jsonObj);" + NEW_LINE + "}";
     }
 
     @Override
@@ -74,9 +88,6 @@ public class FlinkRichFilterFunction implements UDFType {
         if (isUdfFunction(method) && method.getName().equals("filter")) {
             return "    bool filter(Object *obj) override;" + NEW_LINE;
         }
-//        else if (isUdfFunction(method) && method.getName().equals("open")) {
-//            return "    void open(const Configuration& conf) override;" + NEW_LINE;
-//        }
 
         return TranslatorUtils.printDeclareMethod(method);
     }
@@ -97,6 +108,10 @@ public class FlinkRichFilterFunction implements UDFType {
                     .append("{")
                     .append(NEW_LINE);
 
+            if (methodContext.isIgnore()) {
+                return headBuilder.toString();
+            }
+
             Local paramLocal = methodContext.getParams().get(0);
             methodContext.removeLocal(paramLocal);
 
@@ -108,26 +123,6 @@ public class FlinkRichFilterFunction implements UDFType {
                     .append(NEW_LINE);
 
             return headBuilder.append(NEW_LINE).toString();
-//        } else if (methodContext.getJavaMethod().getName().equals("open")
-//                && isUdfFunction(methodContext.getJavaMethod())) {
-//            StringBuilder headBuilder = new StringBuilder()
-//                    .append("void ")
-//                    .append(className)
-//                    .append("::open(const Configuration& conf)")
-//                    .append(NEW_LINE)
-//                    .append("{")
-//                    .append(NEW_LINE);
-//
-//            Local paramLocal = methodContext.getParams().get(0);
-//            methodContext.removeLocal(paramLocal);
-//
-//            headBuilder.append(TAB)
-//                    .append("Configuration *")
-//                    .append(TranslatorUtils.formatLocalName(paramLocal))
-//                    .append(" = const_cast<Configuration *>(&conf);")
-//                    .append(NEW_LINE);
-//
-//            return headBuilder.append(NEW_LINE).toString();
         } else {
             return TranslatorUtils.printHeadAndParams(methodContext);
         }

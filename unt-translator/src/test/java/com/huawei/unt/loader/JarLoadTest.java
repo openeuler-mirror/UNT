@@ -1,21 +1,32 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
+ */
+
 package com.huawei.unt.loader;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.huawei.unt.BaseTest;
 import com.huawei.unt.type.EngineType;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+
 import sootup.core.inputlocation.AnalysisInputLocation;
 import sootup.core.model.SourceType;
 import sootup.java.bytecode.frontend.inputlocation.PathBasedAnalysisInputLocation;
 import sootup.java.core.views.JavaView;
 
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
+/**
+ * JarLoad test
+ *
+ * @since 2025-05-19
+ */
 public class JarLoadTest extends BaseTest {
-    private static JarHandler JAR_HANDLER;
+    private static JarHandler jarHandler;
 
     @BeforeAll
     public static void initJarHandler() {
@@ -23,22 +34,20 @@ public class JarLoadTest extends BaseTest {
         AnalysisInputLocation inputLocation =
                 PathBasedAnalysisInputLocation.create(jarPath, SourceType.Library, INTERCEPTORS);
         JavaView javaView = new JavaView(inputLocation);
-        JAR_HANDLER = new JarHandler(javaView);
+        jarHandler = new JarHandler(javaView);
     }
 
     @Test
     public void testLoad() {
-        assertEquals(3, JAR_HANDLER.getAllJavaClasses().size());
+        assertEquals(3, jarHandler.getAllJavaClasses().size());
     }
 
     @Test
     public void testLoadUDF() {
-        JarUdfLoader jarUdfLoader = new JarUdfLoader(JAR_HANDLER, EngineType.FLINK);
+        JarUdfLoader jarUdfLoader = new JarUdfLoader(jarHandler, EngineType.FLINK);
 
         jarUdfLoader.loadUdfClasses();
 
         assertEquals(2, jarUdfLoader.getClassUdfMap().size());
     }
-
-
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025-2025. Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
  */
 
 package com.huawei.unt;
@@ -31,13 +31,18 @@ import java.util.Set;
 import java.util.StringJoiner;
 import java.util.stream.Collectors;
 
+/**
+ * DependencyScanner use for scan all dependency class used in udf
+ *
+ * @since 2025-05-19
+ */
 public class DependencyScanner {
+    private static final String NEW_LINE = System.lineSeparator();
     private static final String TAB = "    ";
     private static final String ARRAY_TYPE = "Array";
     private static final String FLINK_PREFIX = "org.apache.flink";
 
-    private static JarHandler JAR_HANDLER;
-
+    private static JarHandler jarHandler;
     private static Set<String> depClasses;
     private static Set<String> missingClasses;
     private static Set<String> flinkClasses;
@@ -47,8 +52,15 @@ public class DependencyScanner {
 
     private static Queue<String> queue = new ArrayDeque<>();
 
+    /**
+     * scan dependency of udf in jar, write to file
+     *
+     * @param jarHandler jarHandler
+     * @param writer fileWriter
+     * @throws IOException IOException
+     */
     public static void dependencyScan(JarHandler jarHandler, FileWriter writer) throws IOException {
-        JAR_HANDLER = jarHandler;
+        DependencyScanner.jarHandler = jarHandler;
         Set<JavaClass> udfClasses = jarHandler.loadUdfClasses();
         Set<String> udfClassNames = udfClasses.stream().map(JavaClass::getClassName).collect(Collectors.toSet());
 
@@ -58,12 +70,12 @@ public class DependencyScanner {
         }
 
         for (JavaClass udfClass : udfClasses) {
-            writer.write("====================================================\n");
-            writer.write("Find udf class: [" + udfClass.getClassName() + "]\n");
-            writer.write("UDF extends:\n");
+            writer.write("====================================================" + NEW_LINE);
+            writer.write("Find udf class: [" + udfClass.getClassName() + "]" + NEW_LINE);
+            writer.write("UDF extends:" + NEW_LINE);
             for (ClassType classType : udfClass.getSupperClasses()) {
                 if (jarHandler.isUdfType(classType.getFullyQualifiedName())) {
-                    writer.write(TAB + formatType(classType) + "\n");
+                    writer.write(TAB + formatType(classType) + "" + NEW_LINE);
                 }
             }
 
@@ -77,7 +89,7 @@ public class DependencyScanner {
             queue.add(udfClass.getClassName());
 
             while (!queue.isEmpty()) {
-                JavaClass clz = JAR_HANDLER.getJavaClassByName(queue.poll());
+                JavaClass clz = DependencyScanner.jarHandler.getJavaClassByName(queue.poll());
 
                 try {
                     // scan supper classes
@@ -133,49 +145,50 @@ public class DependencyScanner {
                         }
                     }
                 } catch (Exception e) {
-                    writer.write("Analyze class " + clz.getClassName() + " failed, " + e.getMessage() + "\n");
+                    writer.write("Analyze class " + clz.getClassName() + " failed, " + e.getMessage() + ""
+                            + NEW_LINE);
                 }
             }
 
             // print scan result
             printResult(writer);
-            writer.write("====================================================\n\n");
+            writer.write("====================================================" + NEW_LINE + NEW_LINE);
         }
     }
 
     private static void printResult(FileWriter writer) throws IOException {
         if (!flinkClasses.isEmpty()) {
-            writer.write("Required Flink classes:\n");
+            writer.write("Required Flink classes:" + NEW_LINE);
 
             for (String clz : flinkClasses) {
-                writer.write(TAB + clz + "\n");
+                writer.write(TAB + clz + "" + NEW_LINE);
             }
         }
 
         if (!nativeMethods.isEmpty()) {
-            writer.write("Has native methods:\n");
+            writer.write("Has native methods:" + NEW_LINE);
 
             for (Map.Entry<String, Set<String>> entry : nativeMethods.entrySet()) {
                 for (String method : entry.getValue()) {
-                    writer.write(TAB + entry.getKey() + "::" + method + "\n");
+                    writer.write(TAB + entry.getKey() + "::" + method + "" + NEW_LINE);
                 }
             }
         }
 
         if (!missingClasses.isEmpty()) {
-            writer.write("Missing classes:\n");
+            writer.write("Missing classes:" + NEW_LINE);
             for (String missingClz : missingClasses) {
-                writer.write(missingClz + "\n");
+                writer.write(missingClz + "" + NEW_LINE);
                 if (missingFields.containsKey(missingClz) && !missingFields.get(missingClz).isEmpty()) {
-                    writer.write("Fields:" + "\n");
+                    writer.write("Fields:" + "" + NEW_LINE);
                     for (String field : missingFields.get(missingClz)) {
-                        writer.write(TAB + field + "\n");
+                        writer.write(TAB + field + "" + NEW_LINE);
                     }
                 }
                 if (missingMethods.containsKey(missingClz) && !missingMethods.get(missingClz).isEmpty()) {
-                    writer.write("Methods:" + "\n");
+                    writer.write("Methods:" + "" + NEW_LINE);
                     for (String method : missingMethods.get(missingClz)) {
-                        writer.write(TAB + method + "\n");
+                        writer.write(TAB + method + "" + NEW_LINE);
                     }
                 }
             }
@@ -207,10 +220,14 @@ public class DependencyScanner {
 
         if (className.startsWith(FLINK_PREFIX)) {
             flinkClasses.add(className);
-        } else if (JAR_HANDLER.containsClass(className)) {
+            return;
+        }
+        if (jarHandler.containsClass(className)) {
             depClasses.add(className);
             queue.add(className);
-        } else if (!missingClasses.contains(className)) {
+            return;
+        }
+        if (!missingClasses.contains(className)) {
             missingClasses.add(className);
             missingFields.put(className, new HashSet<>());
             missingMethods.put(className, new HashSet<>());
@@ -262,7 +279,7 @@ public class DependencyScanner {
         return returnType + " " + signature.getName() + "(" + joiner + ")";
     }
 
-    public static String formatType(Type type) {
+    private static String formatType(Type type) {
         if (type instanceof ArrayType) {
             return ARRAY_TYPE;
         }

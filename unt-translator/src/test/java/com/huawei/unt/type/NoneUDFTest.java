@@ -1,12 +1,21 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
+ */
+
 package com.huawei.unt.type;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertNull;
-
+/**
+ * Test NoneUDF
+ *
+ * @since 2025-05-19
+ */
 public class NoneUDFTest {
     @Test
     public void testGetBaseClass() {
-        assertNull(NoneUDF.INSTANCE.getBaseClass());
+        assertEquals(NoneUDF.INSTANCE.getBaseClass(), Object.class);
     }
 }

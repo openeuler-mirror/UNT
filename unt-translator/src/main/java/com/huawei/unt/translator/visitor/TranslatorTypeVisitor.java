@@ -1,21 +1,36 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
+ */
+
 package com.huawei.unt.translator.visitor;
 
-import com.huawei.unt.translator.TranslatorContext;
 import com.huawei.unt.translator.TranslatorException;
 import com.huawei.unt.translator.TranslatorUtils;
+
 import sootup.core.jimple.visitor.AbstractTypeVisitor;
-import sootup.core.types.ArrayType;
 import sootup.core.types.ClassType;
-import sootup.core.types.PrimitiveType;
 import sootup.core.types.Type;
 
 import javax.annotation.Nonnull;
 
+/**
+ * Translator Type visitor
+ *
+ * @since 2025-05-19
+ */
 public class TranslatorTypeVisitor extends AbstractTypeVisitor {
-    private final StringBuilder typeBuilder = new StringBuilder();
-
     private static final TranslatorTypeVisitor INSTANCE = new TranslatorTypeVisitor();
 
+    private final StringBuilder typeBuilder = new StringBuilder();
+
+    private TranslatorTypeVisitor() {}
+
+    /**
+     * Get type cpp string from java type
+     *
+     * @param type java type
+     * @return cpp type string
+     */
     public static String getTypeString(Type type) {
         type.accept(INSTANCE);
         String typeString = INSTANCE.toCode();
@@ -67,7 +82,6 @@ public class TranslatorTypeVisitor extends AbstractTypeVisitor {
     @Override
     public void caseArrayType() {
         typeBuilder.append("Array");
-//        throw new DependencyException("Array type need special handle now.");
     }
 
     @Override
@@ -77,7 +91,7 @@ public class TranslatorTypeVisitor extends AbstractTypeVisitor {
 
     @Override
     public void caseNullType() {
-        typeBuilder.append("null_ptr");
+        typeBuilder.append("nullptr");
     }
 
     @Override
@@ -102,6 +116,4 @@ public class TranslatorTypeVisitor extends AbstractTypeVisitor {
     private String toCode() {
         return typeBuilder.toString();
     }
-
-    private TranslatorTypeVisitor() {}
 }
