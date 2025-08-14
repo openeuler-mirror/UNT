@@ -1,13 +1,17 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
+ */
+
 package com.huawei.unt.loader;
 
-import com.google.common.collect.ImmutableList;
 import com.huawei.unt.model.JavaClass;
 import com.huawei.unt.translator.TranslatorContext;
 import com.huawei.unt.translator.TranslatorUtils;
 import com.huawei.unt.type.EngineType;
 import com.huawei.unt.type.UDFType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import com.google.common.collect.ImmutableList;
+
 import sootup.core.jimple.basic.Local;
 import sootup.core.jimple.common.constant.MethodHandle;
 import sootup.core.jimple.common.expr.JDynamicInvokeExpr;
@@ -21,6 +25,9 @@ import sootup.java.core.JavaIdentifierFactory;
 import sootup.java.core.JavaSootClass;
 import sootup.java.core.JavaSootMethod;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.lang.invoke.SerializedLambda;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -31,6 +38,11 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * JarUdfLoader use for load udf classes from jar file
+ *
+ * @since 2025-05-19
+ */
 public class JarUdfLoader {
     private static final Logger LOGGER = LoggerFactory.getLogger(JarUdfLoader.class);
 
@@ -52,12 +64,15 @@ public class JarUdfLoader {
         return classUdfMap;
     }
 
+    /**
+     * load udf classes from jar
+     */
     public void loadUdfClasses() {
         for (JavaSootClass javaClass : jarHandler.getAllJavaClasses()) {
             // skip ignored class
             boolean skip = false;
 
-            for (String skipPackage : TranslatorContext.FILTER_PACKAGES) {
+            for (String skipPackage : TranslatorContext.getFilterPackages()) {
                 if (javaClass.getName().startsWith(skipPackage)) {
                     skip = true;
                     break;
@@ -80,11 +95,21 @@ public class JarUdfLoader {
                 classUdfMap.get(udfType.get()).add(udfClz);
             }
 
-            for (JavaClass lambdaClass : loadLambdaUdfFunction(javaClass, engineType, jarHandler)) {
-                if (!classUdfMap.containsKey(lambdaClass.getType())) {
-                    classUdfMap.put(lambdaClass.getType(), new ArrayList<>());
+            List<JavaClass> lambdaClasses = null;
+
+            try {
+                lambdaClasses = loadLambdaUdfFunction(javaClass, engineType, jarHandler);
+            } catch (Exception e) {
+                LOGGER.warn("Load lambda classes from class {} failed, {}", javaClass.getName(), e.getMessage());
+            }
+
+            if (lambdaClasses != null && !lambdaClasses.isEmpty()) {
+                for (JavaClass lambdaClass : lambdaClasses) {
+                    if (!classUdfMap.containsKey(lambdaClass.getType())) {
+                        classUdfMap.put(lambdaClass.getType(), new ArrayList<>());
+                    }
+                    classUdfMap.get(lambdaClass.getType()).add(lambdaClass);
                 }
-                classUdfMap.get(lambdaClass.getType()).add(lambdaClass);
             }
         }
 
@@ -96,7 +121,8 @@ public class JarUdfLoader {
         }
     }
 
-    private List<JavaClass> loadLambdaUdfFunction(JavaSootClass javaClass, EngineType engineType, JarHandler jarHandler) {
+    private List<JavaClass> loadLambdaUdfFunction(JavaSootClass javaClass,
+            EngineType engineType, JarHandler jarHandler) {
         List<JavaClass> lambdaUdfFunctions = new ArrayList<>();
 
         // scan all methods in class find lambda function
@@ -123,12 +149,23 @@ public class JarUdfLoader {
 
         for (Stmt stmt : body.getStmts()) {
             if (stmt instanceof JAssignStmt && ((JAssignStmt) stmt).getLeftOp() instanceof Local
-                    && udfTypeMap.containsKey((Local) ((JAssignStmt)stmt).getLeftOp())
+                    && udfTypeMap.containsKey((Local) ((JAssignStmt) stmt).getLeftOp())
                     && ((JAssignStmt) stmt).getRightOp() instanceof JDynamicInvokeExpr) {
                 JDynamicInvokeExpr invokeExpr = (JDynamicInvokeExpr) ((JAssignStmt) stmt).getRightOp();
-                MethodHandle methodHandle = (MethodHandle) invokeExpr.getBootstrapArg(1);
-                MethodSubSignature signature = (MethodSubSignature) methodHandle.getReferenceSignature()
-                        .getSubSignature();
+                MethodHandle methodHandle;
+                if (invokeExpr.getBootstrapArgCount() > 2
+                        && invokeExpr.getBootstrapArg(1) instanceof MethodHandle) {
+                    methodHandle = (MethodHandle) invokeExpr.getBootstrapArg(1);
+                } else {
+                    continue;
+                }
+
+                MethodSubSignature signature;
+                if (methodHandle.getReferenceSignature().getSubSignature() instanceof MethodSubSignature) {
+                    signature = (MethodSubSignature) methodHandle.getReferenceSignature().getSubSignature();
+                } else {
+                    continue;
+                }
 
                 List<String> paramTypes = signature.getParameterTypes().stream()
                         .map(Type::toString).collect(Collectors.toList());
@@ -136,10 +173,10 @@ public class JarUdfLoader {
                 Optional<JavaSootMethod> method = jarHandler.tryGetMethod(className, signature.getName(),
                         signature.getType().toString(), paramTypes);
 
-                String outputClassName = className + "$" +signature.getName();
+                String outputClassName = className + "$" + signature.getName();
 
                 if (method.isPresent()) {
-                    UDFType udfType = udfTypeMap.get((Local) ((JAssignStmt)stmt).getLeftOp());
+                    UDFType udfType = udfTypeMap.get((Local) ((JAssignStmt) stmt).getLeftOp());
                     JavaClass lambdaClass = new JavaClass(outputClassName, udfType, method.get());
                     lambdaClass.addIncludes(udfType.getRequiredIncludes());
                     lambdaFunctions.add(lambdaClass);

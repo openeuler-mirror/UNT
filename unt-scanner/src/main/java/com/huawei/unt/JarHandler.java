@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025-2025. Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
  */
 
 package com.huawei.unt;
@@ -18,6 +18,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * Handle all java classes in jar
+ *
+ * @since 2025-05-19
+ */
 public class JarHandler {
     private static final String FLINK_PREFIX = "org.apache.flink";
 
@@ -30,15 +35,27 @@ public class JarHandler {
         }
     }
 
+    /**
+     * check class is in jar or not
+     *
+     * @param className className
+     * @return class in jar or not
+     */
     public boolean containsClass(String className) {
         return allJavaClass.containsKey(className);
     }
 
+    /**
+     * Get JavaClass from jar by className
+     *
+     * @param className className
+     * @return JavaClass
+     */
     public JavaClass getJavaClassByName(String className) {
         return new JavaClass(allJavaClass.get(className));
     }
 
-    private static JavaView getJavaView(String jarPath){
+    private static JavaView getJavaView(String jarPath) {
         if (jarPath.endsWith(".jar")) {
             File file = new File(jarPath);
             if (file.exists()) {
@@ -53,6 +70,11 @@ public class JarHandler {
         }
     }
 
+    /**
+     * load udf classes form jar
+     *
+     * @return udf classes in jar
+     */
     public Set<JavaClass> loadUdfClasses() {
         Set<JavaClass> udfClasses = new HashSet<>();
 
@@ -69,9 +91,9 @@ public class JarHandler {
         return udfClasses;
     }
 
-    public boolean isUdfType(JavaSootClass clz) {
-        if (clz.getSuperclass().isPresent() &&
-                UNTConstant.FLINK_UDF_CLASSES.contains(clz.getSuperclass().get().getFullyQualifiedName())) {
+    private boolean isUdfType(JavaSootClass clz) {
+        if (clz.getSuperclass().isPresent()
+                && UNTConstant.FLINK_UDF_CLASSES.contains(clz.getSuperclass().get().getFullyQualifiedName())) {
             return true;
         }
 
@@ -84,6 +106,12 @@ public class JarHandler {
         return false;
     }
 
+    /**
+     * check if class is udf class or not
+     *
+     * @param clz class name
+     * @return class is udf class or not
+     */
     public boolean isUdfType(String clz) {
         return UNTConstant.FLINK_UDF_CLASSES.contains(clz);
     }

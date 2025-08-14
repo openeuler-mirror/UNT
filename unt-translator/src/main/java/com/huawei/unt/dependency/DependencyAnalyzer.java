@@ -1,12 +1,15 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
+ */
+
 package com.huawei.unt.dependency;
 
-import com.huawei.unt.loader.LoaderException;
-import com.huawei.unt.translator.TranslatorContext;
 import com.huawei.unt.loader.JarHandler;
+import com.huawei.unt.loader.LoaderException;
 import com.huawei.unt.model.JavaClass;
+import com.huawei.unt.translator.TranslatorContext;
 import com.huawei.unt.type.NoneUDF;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 import sootup.core.jimple.basic.Immediate;
 import sootup.core.jimple.basic.Local;
 import sootup.core.jimple.common.expr.JStaticInvokeExpr;
@@ -24,7 +27,9 @@ import sootup.java.core.JavaIdentifierFactory;
 import sootup.java.core.JavaSootField;
 import sootup.java.core.JavaSootMethod;
 
-import javax.annotation.Nonnull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -36,6 +41,13 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import javax.annotation.Nonnull;
+
+/**
+ * Analyze dependency
+ *
+ * @since 2025-05-19
+ */
 public class DependencyAnalyzer {
     private static final Logger LOGGER = LoggerFactory.getLogger(DependencyAnalyzer.class);
     private final JarHandler jarHandler;
@@ -54,24 +66,28 @@ public class DependencyAnalyzer {
         }
     }
 
-    public void loopIncludeAnalyzer(){
-        for (JavaClass allDependencyClass_outer : allClasses.values()) {
-            Set<ClassType> include_outer = allDependencyClass_outer.getIncludes();
-            for (JavaClass allDependencyClass_inner : allClasses.values()) {
-                if (allDependencyClass_outer == allDependencyClass_inner){
+    /**
+     * Analyze loop include
+     */
+    public void loopIncludeAnalyzer() {
+        for (JavaClass allDependencyClassOuter : allClasses.values()) {
+            Set<ClassType> includeOuter = allDependencyClassOuter.getIncludes();
+            for (JavaClass allDependencyClassInner : allClasses.values()) {
+                if (allDependencyClassOuter == allDependencyClassInner) {
                     continue;
                 }
-                String class_outer = allDependencyClass_outer.getClassName();
-                String class_inner = allDependencyClass_inner.getClassName();
-                Set<ClassType> include_inner = allDependencyClass_inner.getIncludes();
-                for (ClassType classType : include_inner) {
-                    if (class_outer.equals(classType.getFullyQualifiedName())){
-                        for (ClassType include : include_outer) {
-                            if (include.getFullyQualifiedName().equals(class_inner)){
-                                //loopInclude
-                                allDependencyClass_inner.addLoopInclude(classType);
-                                allDependencyClass_outer.addLoopInclude(include);
-                                LOGGER.info(allDependencyClass_inner.getClassName() + " and " + allDependencyClass_outer + " loop include");
+                String classOuter = allDependencyClassOuter.getClassName();
+                String classInner = allDependencyClassInner.getClassName();
+                Set<ClassType> includeInner = allDependencyClassInner.getIncludes();
+                for (ClassType classType : includeInner) {
+                    if (classOuter.equals(classType.getFullyQualifiedName())) {
+                        for (ClassType include : includeOuter) {
+                            if (include.getFullyQualifiedName().equals(classInner)) {
+                                // loopInclude
+                                allDependencyClassInner.addLoopInclude(classType);
+                                allDependencyClassOuter.addLoopInclude(include);
+                                LOGGER.info("{} and {} loop include", allDependencyClassInner.getClassName(),
+                                        allDependencyClassOuter);
                             }
                         }
                     }
@@ -80,21 +96,22 @@ public class DependencyAnalyzer {
         }
     }
 
-    public void addJsonConstructorFlag(){
+    private void addJsonConstructorFlag() {
         Map<ClassType, JavaClass> addJsonConstructorMap = new HashMap<>();
         Queue<JavaClass> addJsonConstructorQueue = new ArrayDeque<>();
         for (JavaClass javaClass : udfClasses) {
-            addJsonConstructorMap.put(JavaIdentifierFactory.getInstance().getClassType(javaClass.getClassName()), javaClass);
+            addJsonConstructorMap.put(JavaIdentifierFactory.getInstance().getClassType(
+                    javaClass.getClassName()), javaClass);
             addJsonConstructorQueue.add(javaClass);
         }
-        while (!addJsonConstructorQueue.isEmpty()){
+        while (!addJsonConstructorQueue.isEmpty()) {
             JavaClass javaClass = addJsonConstructorQueue.poll();
             boolean hasObjectField = false;
 
             HashSet<ClassType> needToJsonConstruct = new HashSet<>();
 
             Set<ClassType> supperClasses = javaClass.getSupperClasses().stream()
-                    .filter(c -> !TranslatorContext.CLASS_MAP.containsKey(c.getFullyQualifiedName()))
+                    .filter(c -> !TranslatorContext.getStringMap().containsKey(c.getFullyQualifiedName()))
                     .collect(Collectors.toSet());
 
             needToJsonConstruct.addAll(supperClasses);
@@ -103,12 +120,12 @@ public class DependencyAnalyzer {
             for (JavaSootField field : fields) {
                 Type fieldType = field.getType();
 
-                if (fieldType instanceof ClassType){
+                if (fieldType instanceof ClassType) {
                     ClassType fieldClassType = (ClassType) fieldType;
-                    if (fieldClassType.getFullyQualifiedName().equals("java.lang.Object")){
+                    if ("java.lang.Object".equals(fieldClassType.getFullyQualifiedName())) {
                         hasObjectField = true;
                     }
-                    if (TranslatorContext.CLASS_MAP.containsKey(fieldClassType.getFullyQualifiedName())){
+                    if (TranslatorContext.getStringMap().containsKey(fieldClassType.getFullyQualifiedName())) {
                         continue;
                     }
                     needToJsonConstruct.add(fieldClassType);
@@ -120,25 +137,31 @@ public class DependencyAnalyzer {
                     .collect(Collectors.toSet());
 
             for (ClassType classType : newJsonConstruct) {
-                try{
+                try {
                     JavaClass newJsonjavaClass = allClasses.get(classType);
-                    addJsonConstructorMap.put(JavaIdentifierFactory.getInstance().getClassType(newJsonjavaClass.getClassName()), newJsonjavaClass);
+                    addJsonConstructorMap.put(JavaIdentifierFactory.getInstance().getClassType(
+                            newJsonjavaClass.getClassName()), newJsonjavaClass);
                     addJsonConstructorQueue.add(newJsonjavaClass);
-                }catch (Exception e){
+                } catch (Exception e) {
                     LOGGER.error("fieldClassType {} not found in allNeedTransClasses ", classType.getClassName());
                 }
             }
 
-            if (hasObjectField){
+            if (hasObjectField) {
                 javaClass.setHasObjectField();
             }
         }
         for (JavaClass value : addJsonConstructorMap.values()) {
             value.setJsonConstructor();
-            LOGGER.info(value.getClassName() + " need to construct using json");
+            LOGGER.info("{} need to construct using json", value.getClassName());
         }
     }
 
+    /**
+     * Get all dependency classes
+     *
+     * @return all dependency classes
+     */
     public Collection<JavaClass> getAllDependencyClasses() {
         while (!classQueue.isEmpty()) {
             JavaClass javaClass = classQueue.poll();
@@ -164,11 +187,11 @@ public class DependencyAnalyzer {
 
             for (JavaSootMethod method : javaClass.getMethods()) {
                 LOGGER.info("Start analyze method: {}", method);
-                if (method.isMain(JavaIdentifierFactory.getInstance())){
+                if (method.isMain(JavaIdentifierFactory.getInstance())) {
                     continue;
                 }
-                if (TranslatorContext.IGNORED_METHODS.contains(method.getSignature().toString()) ||
-                        method.isAbstract()) {
+                if (TranslatorContext.getIgnoredMethods().contains(method.getSignature().toString())
+                        || !method.hasBody()) {
                     // abstract method && ignored method analyze param
                     for (Type paramType : method.getParameterTypes()) {
                         if (paramType instanceof ClassType) {
@@ -200,14 +223,14 @@ public class DependencyAnalyzer {
             dependencies.remove(thisClassType);
 
             Set<ClassType> includes = dependencies.stream()
-                    .filter(c -> !TranslatorContext.IGNORED_CLASSES.contains(c.getFullyQualifiedName()))
+                    .filter(c -> !TranslatorContext.getIgnoredClasses().contains(c.getFullyQualifiedName()))
                     .collect(Collectors.toSet());
 
             javaClass.addIncludes(includes);
 
             Set<ClassType> newDependencies = includes.stream()
                     .filter(c -> !allClasses.containsKey(c))
-                    .filter(c -> !TranslatorContext.CLASS_MAP.containsKey(c.getFullyQualifiedName()))
+                    .filter(c -> !TranslatorContext.getStringMap().containsKey(c.getFullyQualifiedName()))
                     .collect(Collectors.toSet());
 
             for (ClassType classType : newDependencies) {
@@ -227,7 +250,6 @@ public class DependencyAnalyzer {
                 for (ClassType missingClass : missingClasses) {
                     LOGGER.error("Missing: {}", missingClass.getFullyQualifiedName());
                 }
-//                allClasses.remove(thisClassType);
                 continue;
             }
 
@@ -245,13 +267,21 @@ public class DependencyAnalyzer {
         private final DependencyValueVisitor valueVisitor;
 
         public DependencyStmtVisitor() {
-             this.valueVisitor = new DependencyValueVisitor();
+            this.valueVisitor = new DependencyValueVisitor();
         }
 
+        /**
+         * Get Scan result
+         *
+         * @return classes
+         */
         public Set<ClassType> getClasses() {
             return valueVisitor.getClasses();
         }
 
+        /**
+         * clear valueVisitor
+         */
         public void clear() {
             valueVisitor.clear();
         }
@@ -273,27 +303,28 @@ public class DependencyAnalyzer {
     private static class DependencyValueVisitor extends AbstractValueVisitor {
         private final Set<ClassType> classes;
 
-        public DependencyValueVisitor() {
+        DependencyValueVisitor() {
             this.classes = new HashSet<>();
         }
 
-        public Set<ClassType> getClasses() {
+        Set<ClassType> getClasses() {
             return classes;
         }
 
-        public void clear() {
+        void clear() {
             this.classes.clear();
         }
 
         @Override
         public void caseStaticInvokeExpr(@Nonnull JStaticInvokeExpr expr) {
-            if (expr.getType() instanceof ClassType &&
-                    TranslatorContext.IGNORED_CLASSES.contains(((ClassType) expr.getType()).getFullyQualifiedName())) {
+            if (expr.getType() instanceof ClassType
+                    && TranslatorContext.getIgnoredClasses().contains(
+                            ((ClassType) expr.getType()).getFullyQualifiedName())) {
                 return;
             }
             for (Immediate immediate : expr.getArgs()) {
-                if (immediate.getType() instanceof ClassType &&
-                        TranslatorContext.IGNORED_CLASSES.contains(
+                if (immediate.getType() instanceof ClassType
+                        && TranslatorContext.getIgnoredClasses().contains(
                                 ((ClassType) immediate.getType()).getFullyQualifiedName())) {
                     return;
                 }
@@ -303,7 +334,7 @@ public class DependencyAnalyzer {
 
         @Override
         public void caseStaticFieldRef(@Nonnull JStaticFieldRef ref) {
-            if (ref.getType() instanceof ClassType && TranslatorContext.IGNORED_CLASSES
+            if (ref.getType() instanceof ClassType && TranslatorContext.getIgnoredClasses()
                     .contains(((ClassType) ref.getType()).getFullyQualifiedName())) {
                 classes.add(ref.getFieldSignature().getDeclClassType());
             }

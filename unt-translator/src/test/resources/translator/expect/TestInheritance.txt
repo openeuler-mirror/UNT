@@ -1,0 +1,52 @@
+[#ifndef TESTINHERITANCE_H
+#define TESTINHERITANCE_H
+
+#include "basictypes/ClassConstant.h"
+#include "basictypes/StringConstant.h"
+#include "nlohmann/json.hpp"
+
+#include "java_lang_Object.h"
+#include "java_lang_String.h"
+#include "org_apache_flink_api_common_functions_MapFunction.h"
+
+class TestInheritance : public org_apache_flink_api_common_functions_MapFunction, public java_lang_Object {
+public:
+    TestInheritance();
+
+    TestInheritance(nlohmann::json jsonObj);
+    ~TestInheritance();
+
+    java_lang_String *map(java_lang_String *param0);
+
+};
+
+#endif
+, #include "TestInheritance.h"
+
+
+TestInheritance::TestInheritance()
+{
+
+    return;
+}
+
+TestInheritance::~TestInheritance() {
+}
+
+TestInheritance::TestInheritance(nlohmann::json jsonObj) : org_apache_flink_api_common_functions_MapFunction(jsonObj), java_lang_Object(jsonObj)
+ {
+}
+
+
+java_lang_String *TestInheritance::map(java_lang_String *l1)
+{
+    java_lang_String *stack2 = nullptr;
+
+    stack2 = l1->replace((char) 46, (char) 95);
+    if (stack2 != nullptr) {
+        stack2->getRefCount();
+    }
+
+    return stack2;
+}
+]

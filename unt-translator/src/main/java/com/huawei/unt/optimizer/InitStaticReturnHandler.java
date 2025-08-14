@@ -1,9 +1,15 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
+ */
+
 package com.huawei.unt.optimizer;
 
-import com.google.common.collect.ImmutableList;
 import com.huawei.unt.model.MethodContext;
 import com.huawei.unt.optimizer.stmts.OptimizedLinesStmt;
 import com.huawei.unt.translator.TranslatorContext;
+
+import com.google.common.collect.ImmutableList;
+
 import sootup.core.jimple.common.stmt.JReturnVoidStmt;
 import sootup.core.jimple.common.stmt.Stmt;
 
@@ -11,6 +17,8 @@ import java.util.List;
 
 /**
  * static init return an int constant (1), handle it
+ *
+ * @since 2025-05-19
  */
 public class InitStaticReturnHandler implements Optimizer {
     @Override

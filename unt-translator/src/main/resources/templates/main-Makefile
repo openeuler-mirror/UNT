@@ -7,7 +7,7 @@ json_lib := $(basic_dir)lib/libkaccgson.a
 regex_lib := /usr/local/ksl/lib/libKHSEL_ops.a
 
 CXX := g++
-CXXFLAGS := -o3 -std=c++17 -fPIC -I$(basic_inc)
+CXXFLAGS := -O3 -std=c++17 -fPIC -I$(basic_inc)
 LDFLAGS := -shared
 
 SRC_DIR := $(CURDIR)

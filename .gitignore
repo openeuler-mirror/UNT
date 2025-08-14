@@ -26,3 +26,6 @@ build-target
 out/
 *.ipr
 *.iws
+*.patch
+src/test/resources/binary/*
+src/test/java/com/huawei/unt/TranslatorTest.java

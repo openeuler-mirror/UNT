@@ -1,11 +1,16 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
+ */
+
 package com.huawei.unt.translator.visitor;
 
+import com.huawei.unt.model.MethodContext;
 import com.huawei.unt.optimizer.stmts.OptimizedValue;
 import com.huawei.unt.translator.TranslatorContext;
 import com.huawei.unt.translator.TranslatorException;
 import com.huawei.unt.translator.TranslatorUtils;
-import com.huawei.unt.model.MethodContext;
-import org.apache.commons.lang3.StringEscapeUtils;
+
+import sootup.core.jimple.basic.Immediate;
 import sootup.core.jimple.basic.Local;
 import sootup.core.jimple.basic.Value;
 import sootup.core.jimple.common.constant.BooleanConstant;
@@ -63,11 +68,20 @@ import sootup.core.jimple.visitor.AbstractValueVisitor;
 import sootup.core.types.PrimitiveType;
 import sootup.core.types.Type;
 
+import org.apache.commons.lang3.StringEscapeUtils;
+
 import javax.annotation.Nonnull;
 
+/**
+ * TranslatorValueVisitor
+ *
+ * @since 2025-05-19
+ */
 public class TranslatorValueVisitor extends AbstractValueVisitor {
-    protected StringBuilder valueBuilder = new StringBuilder();
-    protected final MethodContext methodContext;
+    private static final String ARRAY_ELEM_GET = "%s->get(%s)";
+
+    private final StringBuilder valueBuilder = new StringBuilder();
+    private final MethodContext methodContext;
 
     public TranslatorValueVisitor(MethodContext methodContext) {
         this.methodContext = methodContext;
@@ -80,7 +94,6 @@ public class TranslatorValueVisitor extends AbstractValueVisitor {
             return;
         }
 
-//        Local baseLocal = methodContext.getMergedLocal(local);
         valueBuilder.append(TranslatorUtils.formatLocalName(local));
     }
 
@@ -129,20 +142,16 @@ public class TranslatorValueVisitor extends AbstractValueVisitor {
     @Override
     public void caseClassConstant(@Nonnull ClassConstant constant) {
         valueBuilder.append("ClassConstant::getInstance().get(\"").append(constant.getValue()).append("\")");
-//        throw new TranslatorException("ClassConstant is not supported yet");
-//        valueBuilder.append(constant.getValue().replaceAll("/", "."));
     }
 
     @Override
     public void caseMethodHandle(@Nonnull MethodHandle v) {
         throw new TranslatorException("MethodHandle is not supported yet");
-//        super.caseMethodHandle(v);
     }
 
     @Override
     public void caseMethodType(@Nonnull MethodType v) {
         throw new TranslatorException("MethodType is not supported yet");
-//        super.caseMethodType(v);
     }
 
     @Override
@@ -154,10 +163,17 @@ public class TranslatorValueVisitor extends AbstractValueVisitor {
     public void caseArrayRef(@Nonnull JArrayRef ref) {
         TranslatorValueVisitor valueVisitor = new TranslatorValueVisitor(methodContext);
         ref.getBase().accept(valueVisitor);
-        valueBuilder.append(valueVisitor.toCode()).append("->get(");
+        String base = valueVisitor.toCode();
         valueVisitor.clear();
         ref.getIndex().accept(valueVisitor);
-        valueBuilder.append(valueVisitor.toCode()).append(")");
+        String index = valueVisitor.toCode();
+        valueBuilder.append(String.format(ARRAY_ELEM_GET, base, index));
+        if (!(ref.getType() instanceof PrimitiveType)) {
+            String typeStr = TranslatorTypeVisitor.getTypeString(ref.getType());
+            String valueStr = valueBuilder.toString();
+            clear();
+            valueBuilder.append(String.format("reinterpret_cast<%s *>(%s)", typeStr, valueStr));
+        }
     }
 
     @Override
@@ -258,7 +274,7 @@ public class TranslatorValueVisitor extends AbstractValueVisitor {
 
     @Override
     public void caseEqExpr(@Nonnull JEqExpr expr) {
-         TranslatorValueVisitor valueVisitor = new TranslatorValueVisitor(methodContext);
+        TranslatorValueVisitor valueVisitor = new TranslatorValueVisitor(methodContext);
         expr.getOp1().accept(valueVisitor);
         valueBuilder.append(valueVisitor.toCode()).append(" == ");
         valueVisitor.clear();
@@ -268,7 +284,7 @@ public class TranslatorValueVisitor extends AbstractValueVisitor {
 
     @Override
     public void caseNeExpr(@Nonnull JNeExpr expr) {
-         TranslatorValueVisitor valueVisitor = new TranslatorValueVisitor(methodContext);
+        TranslatorValueVisitor valueVisitor = new TranslatorValueVisitor(methodContext);
         expr.getOp1().accept(valueVisitor);
         valueBuilder.append(valueVisitor.toCode()).append(" != ");
         valueVisitor.clear();
@@ -278,7 +294,7 @@ public class TranslatorValueVisitor extends AbstractValueVisitor {
 
     @Override
     public void caseGeExpr(@Nonnull JGeExpr expr) {
-         TranslatorValueVisitor valueVisitor = new TranslatorValueVisitor(methodContext);
+        TranslatorValueVisitor valueVisitor = new TranslatorValueVisitor(methodContext);
         expr.getOp1().accept(valueVisitor);
         valueBuilder.append(valueVisitor.toCode()).append(" >= ");
         valueVisitor.clear();
@@ -288,7 +304,7 @@ public class TranslatorValueVisitor extends AbstractValueVisitor {
 
     @Override
     public void caseGtExpr(@Nonnull JGtExpr expr) {
-         TranslatorValueVisitor valueVisitor = new TranslatorValueVisitor(methodContext);
+        TranslatorValueVisitor valueVisitor = new TranslatorValueVisitor(methodContext);
         expr.getOp1().accept(valueVisitor);
         valueBuilder.append(valueVisitor.toCode()).append(" > ");
         valueVisitor.clear();
@@ -298,7 +314,7 @@ public class TranslatorValueVisitor extends AbstractValueVisitor {
 
     @Override
     public void caseLeExpr(@Nonnull JLeExpr expr) {
-         TranslatorValueVisitor valueVisitor = new TranslatorValueVisitor(methodContext);
+        TranslatorValueVisitor valueVisitor = new TranslatorValueVisitor(methodContext);
         expr.getOp1().accept(valueVisitor);
         valueBuilder.append(valueVisitor.toCode()).append(" <= ");
         valueVisitor.clear();
@@ -308,7 +324,7 @@ public class TranslatorValueVisitor extends AbstractValueVisitor {
 
     @Override
     public void caseLtExpr(@Nonnull JLtExpr expr) {
-         TranslatorValueVisitor valueVisitor = new TranslatorValueVisitor(methodContext);
+        TranslatorValueVisitor valueVisitor = new TranslatorValueVisitor(methodContext);
         expr.getOp1().accept(valueVisitor);
         valueBuilder.append(valueVisitor.toCode()).append(" < ");
         valueVisitor.clear();
@@ -318,7 +334,7 @@ public class TranslatorValueVisitor extends AbstractValueVisitor {
 
     @Override
     public void caseMulExpr(@Nonnull JMulExpr expr) {
-         TranslatorValueVisitor valueVisitor = new TranslatorValueVisitor(methodContext);
+        TranslatorValueVisitor valueVisitor = new TranslatorValueVisitor(methodContext);
         expr.getOp1().accept(valueVisitor);
         valueBuilder.append(valueVisitor.toCode()).append(" * ");
         valueVisitor.clear();
@@ -328,7 +344,7 @@ public class TranslatorValueVisitor extends AbstractValueVisitor {
 
     @Override
     public void caseOrExpr(@Nonnull JOrExpr expr) {
-         TranslatorValueVisitor valueVisitor = new TranslatorValueVisitor(methodContext);
+        TranslatorValueVisitor valueVisitor = new TranslatorValueVisitor(methodContext);
         expr.getOp1().accept(valueVisitor);
         valueBuilder.append(valueVisitor.toCode()).append(" | ");
         valueVisitor.clear();
@@ -338,7 +354,7 @@ public class TranslatorValueVisitor extends AbstractValueVisitor {
 
     @Override
     public void caseRemExpr(@Nonnull JRemExpr expr) {
-         TranslatorValueVisitor valueVisitor = new TranslatorValueVisitor(methodContext);
+        TranslatorValueVisitor valueVisitor = new TranslatorValueVisitor(methodContext);
         expr.getOp1().accept(valueVisitor);
         valueBuilder.append(valueVisitor.toCode()).append(" % ");
         valueVisitor.clear();
@@ -348,7 +364,7 @@ public class TranslatorValueVisitor extends AbstractValueVisitor {
 
     @Override
     public void caseShlExpr(@Nonnull JShlExpr expr) {
-         TranslatorValueVisitor valueVisitor = new TranslatorValueVisitor(methodContext);
+        TranslatorValueVisitor valueVisitor = new TranslatorValueVisitor(methodContext);
         expr.getOp1().accept(valueVisitor);
         valueBuilder.append(valueVisitor.toCode()).append(" << ");
         valueVisitor.clear();
@@ -358,7 +374,7 @@ public class TranslatorValueVisitor extends AbstractValueVisitor {
 
     @Override
     public void caseShrExpr(@Nonnull JShrExpr expr) {
-         TranslatorValueVisitor valueVisitor = new TranslatorValueVisitor(methodContext);
+        TranslatorValueVisitor valueVisitor = new TranslatorValueVisitor(methodContext);
         expr.getOp1().accept(valueVisitor);
         valueBuilder.append(valueVisitor.toCode()).append(" >> ");
         valueVisitor.clear();
@@ -370,7 +386,7 @@ public class TranslatorValueVisitor extends AbstractValueVisitor {
     public void caseUshrExpr(@Nonnull JUshrExpr expr) {
         String bits = expr.getOp1().getType().equals(PrimitiveType.getLong()) ? "64" : "32";
 
-         TranslatorValueVisitor valueVisitor = new TranslatorValueVisitor(methodContext);
+        TranslatorValueVisitor valueVisitor = new TranslatorValueVisitor(methodContext);
 
         expr.getOp1().accept(valueVisitor);
         String op1 = valueVisitor.toCode();
@@ -378,12 +394,13 @@ public class TranslatorValueVisitor extends AbstractValueVisitor {
         expr.getOp2().accept(valueVisitor);
         String op2 = valueVisitor.toCode();
 
-        valueBuilder.append(String.format("static_cast<int%1$s_t>(static_cast<uint%1$s_t>(%2$s) >> %3$s)", bits, op1, op2));
+        valueBuilder.append(String.format("static_cast<int%1$s_t>(static_cast<uint%1$s_t>(%2$s) >> %3$s)",
+                bits, op1, op2));
     }
 
     @Override
     public void caseSubExpr(@Nonnull JSubExpr expr) {
-         TranslatorValueVisitor valueVisitor = new TranslatorValueVisitor(methodContext);
+        TranslatorValueVisitor valueVisitor = new TranslatorValueVisitor(methodContext);
         expr.getOp1().accept(valueVisitor);
         valueBuilder.append(valueVisitor.toCode()).append(" - ");
         valueVisitor.clear();
@@ -393,7 +410,7 @@ public class TranslatorValueVisitor extends AbstractValueVisitor {
 
     @Override
     public void caseXorExpr(@Nonnull JXorExpr expr) {
-         TranslatorValueVisitor valueVisitor = new TranslatorValueVisitor(methodContext);
+        TranslatorValueVisitor valueVisitor = new TranslatorValueVisitor(methodContext);
         expr.getOp1().accept(valueVisitor);
         valueBuilder.append(valueVisitor.toCode()).append(" ^ ");
         valueVisitor.clear();
@@ -435,7 +452,7 @@ public class TranslatorValueVisitor extends AbstractValueVisitor {
                 .append(valueVisitor.toCode())
                 .append(") != nullptr");
     }
-    
+
     @Override
     public void caseVirtualInvokeExpr(@Nonnull JVirtualInvokeExpr expr) {
         TranslatorValueVisitor valueVisitor = new TranslatorValueVisitor(methodContext);
@@ -446,7 +463,14 @@ public class TranslatorValueVisitor extends AbstractValueVisitor {
         if (expr.getMethodSignature().toString().equals("<java.lang.String: int lastIndexOf(int)>")) {
             valueBuilder.append(base);
             valueBuilder.append("->lastIndexOf(std::string {(char) ");
-            valueBuilder.append(((IntConstant) expr.getArgs().get(0)).getValue());
+            Immediate param = expr.getArgs().get(0);
+            if (param instanceof IntConstant) {
+                valueBuilder.append(((IntConstant) param).getValue());
+            } else if (param instanceof Local) {
+                valueBuilder.append(TranslatorUtils.formatLocalName((Local) param));
+            } else {
+                throw new TranslatorException("String::lastIndexOf(int) only support intConstant or local");
+            }
             valueBuilder.append("})");
             return;
         }
@@ -454,11 +478,15 @@ public class TranslatorValueVisitor extends AbstractValueVisitor {
         valueBuilder.append(base);
         valueBuilder.append("->");
         valueBuilder.append(expr.getMethodSignature().getName());
-        if (TranslatorContext.ISREGEXACC&&
-                expr.getMethodSignature().toString().equals("<java.lang.String: java.lang.String replaceAll(java.lang.String,java.lang.String)>")){
+        if (TranslatorContext.isIsRegexAcc()
+                && "<java.lang.String: java.lang.String replaceAll(java.lang.String,java.lang.String)>"
+                    .equals(expr.getMethodSignature().toString())) {
             valueBuilder.append("_tune");
+            if ("\"[^A-Za-z0-9_/.]+\"".equals(expr.getArgs().get(0).toString())) {
+                valueBuilder.append("(").append(expr.getArgs().get(1)).append(")");
+                return;
+            }
         }
-
         valueBuilder.append(TranslatorUtils.paramsToString(expr.getMethodSignature(), expr.getArgs(), methodContext));
     }
 
@@ -474,7 +502,7 @@ public class TranslatorValueVisitor extends AbstractValueVisitor {
 
     @Override
     public void caseInterfaceInvokeExpr(@Nonnull JInterfaceInvokeExpr expr) {
-         TranslatorValueVisitor valueVisitor = new TranslatorValueVisitor(methodContext);
+        TranslatorValueVisitor valueVisitor = new TranslatorValueVisitor(methodContext);
         expr.getBase().accept(valueVisitor);
         valueBuilder.append(valueVisitor.toCode());
         valueVisitor.clear();
@@ -482,13 +510,13 @@ public class TranslatorValueVisitor extends AbstractValueVisitor {
         valueBuilder.append(expr.getMethodSignature().getName())
                 .append(TranslatorUtils.paramsToString(expr.getMethodSignature(), expr.getArgs(), methodContext));
     }
-    
+
     @Override
     public void caseStaticInvokeExpr(@Nonnull JStaticInvokeExpr expr) {
         String staticFunction = TranslatorTypeVisitor.getTypeString(expr.getMethodSignature().getDeclClassType())
                 + "::" + expr.getMethodSignature().getName();
-        if (TranslatorContext.ISMEMTUNE &&
-                staticFunction.equals("Long::valueOf")){
+        if (TranslatorContext.isIsMemTune()
+                && "Long::valueOf".equals(staticFunction)) {
             staticFunction = staticFunction + "_tune";
         }
         valueBuilder.append(TranslatorUtils.formatFunctionName(staticFunction))
@@ -498,7 +526,6 @@ public class TranslatorValueVisitor extends AbstractValueVisitor {
     @Override
     public void caseDynamicInvokeExpr(@Nonnull JDynamicInvokeExpr expr) {
         throw new TranslatorException("DynamicInvokeExpr is not supported yet");
-//        super.caseDynamicInvokeExpr(expr);
     }
 
     @Override
@@ -525,8 +552,13 @@ public class TranslatorValueVisitor extends AbstractValueVisitor {
     public void caseNewArrayExpr(@Nonnull JNewArrayExpr expr) {
         TranslatorValueVisitor visitor = new TranslatorValueVisitor(methodContext);
         expr.getSize().accept(visitor);
-
-        valueBuilder.append("new Array()");
+        String size = visitor.toCode();
+        Type baseType = expr.getBaseType();
+        if (baseType instanceof PrimitiveType) {
+            valueBuilder.append(String.format("new JavaArray<%s>(%s)", baseType, size));
+        } else {
+            valueBuilder.append("new Array()");
+        }
     }
 
     @Override
@@ -534,6 +566,7 @@ public class TranslatorValueVisitor extends AbstractValueVisitor {
         throw new TranslatorException("NewMultiArrayExpr is not supported now.");
     }
 
+    @Override
     public void defaultCaseValue(@Nonnull Value v) {
         if (v instanceof OptimizedValue) {
             valueBuilder.append(((OptimizedValue) v).getCode());
@@ -543,10 +576,18 @@ public class TranslatorValueVisitor extends AbstractValueVisitor {
         throw new TranslatorException("Unsupported value: " + v);
     }
 
+    /**
+     * clear translate string
+     */
     public void clear() {
         valueBuilder.delete(0, valueBuilder.length());
     }
 
+    /**
+     * Return translate result string
+     *
+     * @return cpp code
+     */
     public String toCode() {
         return valueBuilder.toString();
     }

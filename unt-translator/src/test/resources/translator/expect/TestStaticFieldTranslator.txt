@@ -1,0 +1,41 @@
+[#ifndef TESTSTATICFIELDTRANSLATOR_H
+#define TESTSTATICFIELDTRANSLATOR_H
+
+#include "basictypes/ClassConstant.h"
+#include "basictypes/StringConstant.h"
+#include "nlohmann/json.hpp"
+
+#include "java_lang_Object.h"
+#include "java_lang_String.h"
+
+class TestStaticFieldTranslator : public java_lang_Object {
+public:
+    TestStaticFieldTranslator();
+
+    TestStaticFieldTranslator(nlohmann::json jsonObj);
+    ~TestStaticFieldTranslator();
+
+private:
+    thread_local static java_lang_String *STRING1;
+
+};
+
+#endif
+, #include "TestStaticFieldTranslator.h"
+
+thread_local java_lang_String *TestStaticFieldTranslator::STRING1 = nullptr;
+
+TestStaticFieldTranslator::TestStaticFieldTranslator()
+{
+
+    return;
+}
+
+TestStaticFieldTranslator::~TestStaticFieldTranslator() {
+}
+
+TestStaticFieldTranslator::TestStaticFieldTranslator(nlohmann::json jsonObj) : java_lang_Object(jsonObj)
+ {
+}
+
+]
