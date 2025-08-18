@@ -1,11 +1,14 @@
 package com.huawei.unt.type.flink;
 
-import com.google.common.collect.ImmutableSet;
+import static com.huawei.unt.translator.TranslatorContext.NEW_LINE;
+
 import com.huawei.unt.model.MethodContext;
 import com.huawei.unt.translator.TranslatorContext;
 import com.huawei.unt.translator.TranslatorUtils;
 import com.huawei.unt.type.UDFType;
-import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
+
+import com.google.common.collect.ImmutableSet;
+
 import sootup.core.jimple.basic.Local;
 import sootup.core.model.MethodModifier;
 import sootup.core.types.ClassType;
@@ -13,11 +16,19 @@ import sootup.core.types.VoidType;
 import sootup.java.core.JavaIdentifierFactory;
 import sootup.java.core.JavaSootMethod;
 
+import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
+
 import java.util.Set;
 
-import static com.huawei.unt.translator.TranslatorContext.NEW_LINE;
-
+/**
+ * Flink dataStream FlinkKeyedProcessFunction
+ *
+ * @since 2025-06-30
+ */
 public class FlinkKeyedProcessFunction implements UDFType {
+    /**
+     * Flink KeyedProcessFunction instance
+     */
     public static final FlinkKeyedProcessFunction INSTANCE = new FlinkKeyedProcessFunction();
 
     @Override
@@ -28,7 +39,8 @@ public class FlinkKeyedProcessFunction implements UDFType {
     @Override
     public String getCppFileString(String className) {
         return "#include \"../" + className + ".h\"\n\n"
-        + "extern \"C\" std::unique_ptr<KeyedProcessFunction<Object, Object*, Object*>> NewInstance(nlohmann::json jsonObj) {\n"
+        + "extern \"C\" std::unique_ptr<KeyedProcessFunction<Object, Object*, Object*>> "
+        + "NewInstance(nlohmann::json jsonObj) {\n"
         + "    return std::make_unique<" + className + ">(jsonObj);\n"
         + "}";
     }
@@ -58,7 +70,7 @@ public class FlinkKeyedProcessFunction implements UDFType {
             return false;
         }
 
-        if (method.getName().equals("processElement")) {
+        if ("processElement".equals(method.getName())) {
             return method.getParameterCount() == 3
                     && method.getReturnType() instanceof VoidType
                     && method.getParameterType(0) instanceof ClassType
@@ -73,7 +85,7 @@ public class FlinkKeyedProcessFunction implements UDFType {
 
     @Override
     public String printDeclareMethod(JavaSootMethod method) {
-        if (isUdfFunction(method) && method.getName().equals("processElement")) {
+        if (isUdfFunction(method) && "processElement".equals(method.getName())) {
             return "    void processElement("
             + "Object *obj, KeyedProcessFunction<Object, Object*, Object*>::Context *ctx, Collector *collector"
             + ") override;" + NEW_LINE;
@@ -84,7 +96,7 @@ public class FlinkKeyedProcessFunction implements UDFType {
 
     @Override
     public String printHeadAndParams(MethodContext methodContext) {
-        if (methodContext.getJavaMethod().getName().equals("processElement")
+        if ("processElement".equals(methodContext.getJavaMethod().getName())
                 && isUdfFunction(methodContext.getJavaMethod())) {
             String className = TranslatorUtils.formatClassName(
                     methodContext.getJavaMethod().getDeclClassType().getFullyQualifiedName());
@@ -92,7 +104,8 @@ public class FlinkKeyedProcessFunction implements UDFType {
             StringBuilder headBuilder = new StringBuilder("void ")
                     .append(className)
                     .append("::processElement(")
-                    .append("Object *obj, KeyedProcessFunction<Object, Object*, Object*>::Context *ctx, Collector *collector) {")
+                    .append("Object *obj, KeyedProcessFunction<Object, Object*, Object*>"
+                            + "::Context *ctx, Collector *collector) {")
                     .append(NEW_LINE);
 
             Local param1 = methodContext.getParams().get(0);
@@ -145,7 +158,8 @@ public class FlinkKeyedProcessFunction implements UDFType {
         StringBuilder headBuilder = new StringBuilder("void ")
                 .append(className)
                 .append("::processElement(")
-                .append("Object *obj, KeyedProcessFunction<Object, Object*, Object*>::Context *ctx, Collector *collector) {")
+                .append("Object *obj, KeyedProcessFunction<Object, Object*, Object*>"
+                        + "::Context *ctx, Collector *collector) {")
                 .append(NEW_LINE);
 
         Local param1 = methodContext.getParams().get(0);

@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
+ */
+
 package com.huawei.unt.optimizer;
 
 import com.huawei.unt.model.MethodContext;
@@ -7,6 +11,7 @@ import com.huawei.unt.translator.TranslatorContext;
 import com.huawei.unt.translator.TranslatorException;
 import com.huawei.unt.translator.TranslatorUtils;
 import com.huawei.unt.translator.visitor.TranslatorValueVisitor;
+
 import sootup.core.jimple.basic.Immediate;
 import sootup.core.jimple.common.constant.MethodHandle;
 import sootup.core.jimple.common.constant.MethodType;
@@ -20,12 +25,18 @@ import java.util.List;
 import java.util.StringJoiner;
 import java.util.stream.Collectors;
 
-public class DynamicInvokeHandle implements Optimizer{
+/**
+ * DynamicInvoke stmt translator
+ *
+ * @since 2025-06-30
+ */
+public class DynamicInvokeHandle implements Optimizer {
     private static final String NEW_OBJ = "new %s(%s)";
     private static final String TAB_INLINE = TranslatorContext.TAB + TranslatorContext.TAB + TranslatorContext.TAB;
     private static final String OBJ_TRANS = TAB_INLINE + "%1$s *in%2$d = (%1$s*) %3$s;" + TranslatorContext.NEW_LINE;
 
     private TranslatorValueVisitor valueVisitor;
+
     @Override
     public boolean fetch(MethodContext methodContext) {
         return !methodContext.getStmts().isEmpty();

@@ -1,12 +1,14 @@
 package com.huawei.unt.type.flink;
 
-import com.google.common.collect.ImmutableSet;
+import static com.huawei.unt.translator.TranslatorContext.NEW_LINE;
+
 import com.huawei.unt.model.MethodContext;
 import com.huawei.unt.translator.TranslatorContext;
 import com.huawei.unt.translator.TranslatorUtils;
 import com.huawei.unt.type.UDFType;
-import org.apache.flink.streaming.api.functions.co.KeyedCoProcessFunction;
-import org.apache.flink.util.Collector;
+
+import com.google.common.collect.ImmutableSet;
+
 import sootup.core.jimple.basic.Local;
 import sootup.core.model.MethodModifier;
 import sootup.core.types.ClassType;
@@ -14,11 +16,20 @@ import sootup.core.types.VoidType;
 import sootup.java.core.JavaIdentifierFactory;
 import sootup.java.core.JavaSootMethod;
 
+import org.apache.flink.streaming.api.functions.co.KeyedCoProcessFunction;
+import org.apache.flink.util.Collector;
+
 import java.util.Set;
 
-import static com.huawei.unt.translator.TranslatorContext.NEW_LINE;
-
+/**
+ * Flink dataStream FlinkKeyedCoProcessFunction
+ *
+ * @since 2025-06-30
+ */
 public class FlinkKeyedCoProcessFunction implements UDFType {
+    /**
+     * Flink KeyedCoProcessFunction instance
+     */
     public static final FlinkKeyedCoProcessFunction INSTANCE = new FlinkKeyedCoProcessFunction();
 
     @Override
@@ -29,7 +40,8 @@ public class FlinkKeyedCoProcessFunction implements UDFType {
     @Override
     public String getCppFileString(String className) {
         return "#include \"../" + className + ".h\"\n\n"
-        + "extern \"C\" std::unique_ptr<KeyedCoProcessFunction<Object, Object*, Object*, Object*>> NewInstance(nlohmann::json jsonObj) {\n"
+        + "extern \"C\" std::unique_ptr<KeyedCoProcessFunction<Object, Object*, Object*, Object*>> "
+        + "NewInstance(nlohmann::json jsonObj) {\n"
         + "    return std::make_unique<" + className + ">(jsonObj);\n"
         + "}";
     }
@@ -60,14 +72,14 @@ public class FlinkKeyedCoProcessFunction implements UDFType {
             return false;
         }
 
-        if (method.getName().equals("processElement1") || method.getName().equals("processElement2")) {
+        if ("processElement1".equals(method.getName()) || "processElement2".equals(method.getName())) {
             return method.getParameterCount() == 3
                     && method.getReturnType() instanceof VoidType
                     && method.getParameterType(0) instanceof ClassType
                     && method.getParameterType(1) instanceof ClassType
-                    && ((ClassType) method.getParameterType(1)).getClassName().equals("KeyedCoProcessFunction$Context")
+                    && "KeyedCoProcessFunction$Context".equals(((ClassType) method.getParameterType(1)).getClassName())
                     && method.getParameterType(2) instanceof ClassType
-                    && ((ClassType) method.getParameterType(2)).getClassName().equals("Collector");
+                    && "Collector".equals(((ClassType) method.getParameterType(2)).getClassName());
         }
 
         return false;
@@ -75,10 +87,10 @@ public class FlinkKeyedCoProcessFunction implements UDFType {
 
     @Override
     public String printDeclareMethod(JavaSootMethod method) {
-        if (isUdfFunction(method) && method.getName().equals("processElement1")) {
+        if (isUdfFunction(method) && "processElement1".equals(method.getName())) {
             return "    void processElement1(Object *obj, Context *ctx, Collector *collector) override;" + NEW_LINE;
         }
-        if (isUdfFunction(method) && method.getName().equals("processElement2")) {
+        if (isUdfFunction(method) && "processElement2".equals(method.getName())) {
             return "    void processElement2(Object *obj, Context *ctx, Collector *collector) override;" + NEW_LINE;
         }
         return TranslatorUtils.printDeclareMethod(method);
@@ -86,8 +98,8 @@ public class FlinkKeyedCoProcessFunction implements UDFType {
 
     @Override
     public String printHeadAndParams(MethodContext methodContext) {
-        if ((methodContext.getJavaMethod().getName().equals("processElement1")
-                || methodContext.getJavaMethod().getName().equals("processElement2"))
+        if (("processElement1".equals(methodContext.getJavaMethod().getName())
+                || "processElement2".equals(methodContext.getJavaMethod().getName()))
                 && isUdfFunction(methodContext.getJavaMethod())) {
             String className = TranslatorUtils.formatClassName(
                     methodContext.getJavaMethod().getDeclClassType().getFullyQualifiedName());
@@ -96,7 +108,8 @@ public class FlinkKeyedCoProcessFunction implements UDFType {
                     .append(className)
                     .append("::")
                     .append(methodContext.getJavaMethod().getName())
-                    .append("(Object *obj, KeyedCoProcessFunction<Object, Object*, Object*, Object*>::Context *ctx, Collector *collector) {")
+                    .append("(Object *obj, KeyedCoProcessFunction<Object, Object*, Object*, Object*>"
+                            + "::Context *ctx, Collector *collector) {")
                     .append(NEW_LINE);
 
             Local param1 = methodContext.getParams().get(0);
@@ -131,5 +144,4 @@ public class FlinkKeyedCoProcessFunction implements UDFType {
             return TranslatorUtils.printHeadAndParams(methodContext);
         }
     }
-
 }
