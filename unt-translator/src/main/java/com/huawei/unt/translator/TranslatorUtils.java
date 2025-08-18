@@ -112,7 +112,7 @@ public class TranslatorUtils {
             Type[] params = new Type[javaMethod.getParameterCount()];
             for (Stmt stmt : javaMethod.getBody().getStmts()) {
                 if (stmt instanceof JIdentityStmt && ((JIdentityStmt) stmt).getRightOp() instanceof JParameterRef) {
-                    JParameterRef parameterRef = (JParameterRef)((JIdentityStmt) stmt).getRightOp();
+                    JParameterRef parameterRef = (JParameterRef) ((JIdentityStmt) stmt).getRightOp();
                     params[parameterRef.getIndex()] = ((JIdentityStmt) stmt).getLeftOp().getType();
                 }
             }

@@ -135,7 +135,6 @@ public class MemoryReleaseOptimizer implements Optimizer {
 
             Stmt stmt = stmts.get(i);
 
-            // todo: delete it, put it in the removedStmt before
             if (isInit && stmt instanceof JInvokeStmt && ((JInvokeStmt) stmt).getInvokeExpr().isPresent()
                     && ((JInvokeStmt) stmt).getInvokeExpr().get() instanceof JSpecialInvokeExpr
             && ((JSpecialInvokeExpr) ((JInvokeStmt) stmt).getInvokeExpr().get()).getBase()
@@ -663,8 +662,8 @@ public class MemoryReleaseOptimizer implements Optimizer {
 
     private boolean isObjInit(Value value) {
         return value instanceof JSpecialInvokeExpr
-                && ((JSpecialInvokeExpr) value).getMethodSignature().getName()
-                .equals(TranslatorContext.INIT_FUNCTION_NAME);
+                && TranslatorContext.INIT_FUNCTION_NAME
+                .equals(((JSpecialInvokeExpr) value).getMethodSignature().getName());
     }
 
     private boolean isNewExpr(Value value) {

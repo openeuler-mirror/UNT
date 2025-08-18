@@ -64,7 +64,7 @@ public class DynamicInvokeHandle implements Optimizer {
                 } catch (TranslatorException e) {
                     throw new TranslatorException(String.format(
                             "the dynamic invoke stmt is limited supported now,"
-                                    +" the method %s has unsupported dynamic invoke stmt! ",
+                                    + " the method %s has unsupported dynamic invoke stmt! ",
                             methodContext.getJavaMethod().getSignature()) + e.getMessage());
                 }
             }
@@ -88,7 +88,7 @@ public class DynamicInvokeHandle implements Optimizer {
                             getMethodBody(invokeMethodReferenceSignature, args, declMethodType.getParameterTypes()))
                     .append(TranslatorContext.TAB).append(TranslatorContext.TAB).append("}");
             return lambdaCodes.toString();
-        } catch (Exception e) {
+        } catch (ClassCastException e) {
             throw new TranslatorException(e.getMessage());
         }
     }
@@ -127,5 +127,4 @@ public class DynamicInvokeHandle implements Optimizer {
         }
         return "[&](" + joiner + ")";
     }
-
 }

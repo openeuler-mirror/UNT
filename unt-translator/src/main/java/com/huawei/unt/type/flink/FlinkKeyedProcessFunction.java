@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
+ */
+
 package com.huawei.unt.type.flink;
 
 import static com.huawei.unt.translator.TranslatorContext.NEW_LINE;
@@ -75,9 +79,9 @@ public class FlinkKeyedProcessFunction implements UDFType {
                     && method.getReturnType() instanceof VoidType
                     && method.getParameterType(0) instanceof ClassType
                     && method.getParameterType(1) instanceof ClassType
-                    && ((ClassType) method.getParameterType(1)).getClassName().equals("KeyedProcessFunction$Context")
+                    && "KeyedProcessFunction$Context".equals(((ClassType) method.getParameterType(1)).getClassName())
                     && method.getParameterType(2) instanceof ClassType
-                    && ((ClassType) method.getParameterType(2)).getClassName().equals("Collector");
+                    && "Collector".equals(((ClassType) method.getParameterType(2)).getClassName());
         }
 
         return false;

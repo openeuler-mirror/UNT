@@ -110,9 +110,9 @@ public class JavaClassTranslator {
                 String formatType = TranslatorUtils.formatType(superClassType);
                 String templates = "";
                 if (TranslatorContext.getGenericFunction().contains(formatType)) {
-                    if (formatType.equals("KeyedCoProcessFunction")) {
+                    if ("KeyedCoProcessFunction".equals(formatType)) {
                         templates = "<Object, Object*, Object*, Object*>";
-                    } else if (formatType.equals("KeyedProcessFunction")) {
+                    } else if ("KeyedProcessFunction".equals(formatType)) {
                         templates = "<Object, Object*, Object*>";
                     } else {
                         templates = "<Object>";
