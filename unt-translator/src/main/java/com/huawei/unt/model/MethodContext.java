@@ -229,8 +229,10 @@ public class MethodContext {
     }
 
     /**
-     * @param local
-     * @param type
+     * put param local
+     *
+     * @param local local
+     * @param type type
      */
     public void putParamLocal(Local local, Type type) {
         paramLocals.put(local, type);

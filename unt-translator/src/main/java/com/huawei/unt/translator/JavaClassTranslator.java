@@ -289,25 +289,25 @@ public class JavaClassTranslator {
                             .append(TranslatorUtils.formatFieldName(javaSootField.getName())).append(", ")
                             .append(TranslatorUtils.formatParamType(javaSootField.getType())).append(", ").append("\"")
                             .append(TranslatorUtils.parseSignature(
-                                    fieldNode.signature == null ? fieldNode.desc : fieldNode.signature)
+                                            fieldNode.signature == null ? fieldNode.desc : fieldNode.signature)
                                     .replace('.', '_').replace('$', '_')).append("\"")
                             .append(")");
                 } else if (javaSootField.getType() instanceof PrimitiveType) {
-                    if (!TranslatorContext.PRIMITIVE_TYPE_STRING_MAP.containsKey(javaSootField.getType())) {
+                    if (!TranslatorContext.getPrimitiveTypeStringMap().containsKey(javaSootField.getType())) {
                         throw new TranslatorException("no support "
                                 + ((PrimitiveType) javaSootField.getType()).getName()
                                 + "primitive type");
                     }
-                    String type = TranslatorContext.PRIMITIVE_TYPE_STRING_MAP.get(javaSootField.getType());
+                    String type = TranslatorContext.getPrimitiveTypeStringMap().get(javaSootField.getType());
                     cppBuilder.append("REGISTER_PRIMITIVE_FIELD(")
                             .append(TranslatorUtils.formatClassName(javaClass.getClassName())).append(", ")
                             .append(TranslatorUtils.formatFieldName(javaSootField.getName())).append(", ")
                             .append(type).append(", ").append("\"")
                             .append(TranslatorUtils.parseSignature(
-                                    fieldNode.signature == null ? fieldNode.desc : fieldNode.signature)
+                                            fieldNode.signature == null ? fieldNode.desc : fieldNode.signature)
                                     .replace('.', '_').replace('$', '_')).append("\"")
                             .append(")");
-                }else {
+                } else {
                     throw new TranslatorException("no support type");
                 }
                 cppBuilder.append(NEW_LINE);

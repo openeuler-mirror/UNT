@@ -118,7 +118,7 @@ public class FlinkKeyedProcessFunction implements UDFType {
             StringBuilder headBuilder = getProcessElementHead(methodContext, className);
 
             return headBuilder.append(NEW_LINE).toString();
-        }  else if ("open".equals(methodContext.getJavaMethod().getName())
+        } else if ("open".equals(methodContext.getJavaMethod().getName())
                 && isUdfFunction(methodContext.getJavaMethod())) {
             StringBuilder headBuilder = new StringBuilder()
                     .append("void ")

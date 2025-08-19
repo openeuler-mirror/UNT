@@ -125,23 +125,24 @@ public class TranslatorContext {
     /**
      *
      */
-    public static Map<PrimitiveType, String> PRIMITIVE_TYPE_STRING_MAP = new HashMap<PrimitiveType, String>() {{
-        put(PrimitiveType.BooleanType.getInstance(), "Boolean");
-        put(PrimitiveType.IntType.getInstance(), "Integer");
-        put(PrimitiveType.DoubleType.getInstance(), "Double");
-        put(PrimitiveType.LongType.getInstance(), "Long");
-    }};
+    private static Map<PrimitiveType, String> PrimitiveTypeStringMap =
+            new HashMap<PrimitiveType, String>() {{
+                put(PrimitiveType.BooleanType.getInstance(), "Boolean");
+                put(PrimitiveType.IntType.getInstance(), "Integer");
+                put(PrimitiveType.DoubleType.getInstance(), "Double");
+                put(PrimitiveType.LongType.getInstance(), "Long");
+            }};
 
     /**
      *
      */
-    public static Map<PrimitiveType, String> PRIMITIVE_TYPE_INCLUDESTRING_MAP =
+    private static Map<PrimitiveType, String> PrimitiveTypeIncludeStringMap =
             new HashMap<PrimitiveType, String>() {{
-        put(PrimitiveType.BooleanType.getInstance(), "basictypes/java_lang_Boolean.h");
-        put(PrimitiveType.IntType.getInstance(), "basictypes/Integer.h");
-        put(PrimitiveType.DoubleType.getInstance(), "basictypes/Double.h");
-        put(PrimitiveType.LongType.getInstance(), "basictypes/Long.h");
-    }};
+                put(PrimitiveType.BooleanType.getInstance(), "basictypes/java_lang_Boolean.h");
+                put(PrimitiveType.IntType.getInstance(), "basictypes/Integer.h");
+                put(PrimitiveType.DoubleType.getInstance(), "basictypes/Double.h");
+                put(PrimitiveType.LongType.getInstance(), "basictypes/Long.h");
+            }};
 
     private static Map<String, Set<String>> superclassMap = new HashMap<>();
     private static Map<String, Set<String>> subclassMap = new HashMap<>();
@@ -163,7 +164,8 @@ public class TranslatorContext {
     private static boolean isRegexAcc;
     private static String compileOption;
 
-    private TranslatorContext() {}
+    private TranslatorContext() {
+    }
 
     /**
      * init translator config
@@ -264,14 +266,14 @@ public class TranslatorContext {
         Map<String, String> genericFunctionsMap = new HashMap<>();
 
         try (BufferedReader ignoredPackageReader = Files.newBufferedReader(Paths.get(ignorePackageProfile));
-                BufferedReader ignoredClassReader = Files.newBufferedReader(Paths.get(ignoreClassProfile));
-                BufferedReader ignoredMethodReader = Files.newBufferedReader(Paths.get(ignoredMethodsProfile));
-                BufferedReader stdStringMethodReader = Files.newBufferedReader(Paths.get(stdStringMethodsProfile));
-                BufferedReader dependInterfacesReader = Files.newBufferedReader(Paths.get(dependInterfaceInfo));
-                BufferedReader genericFunctionReader = Files.newBufferedReader(Paths.get(genericFunctionInfo));
-                InputStream dependClassStream = Files.newInputStream(Paths.get(dependClassProfile));
-                InputStream functionStream = Files.newInputStream(Paths.get(functionProfile));
-                InputStream includeStream = Files.newInputStream(Paths.get(dependIncludeProfile))) {
+             BufferedReader ignoredClassReader = Files.newBufferedReader(Paths.get(ignoreClassProfile));
+             BufferedReader ignoredMethodReader = Files.newBufferedReader(Paths.get(ignoredMethodsProfile));
+             BufferedReader stdStringMethodReader = Files.newBufferedReader(Paths.get(stdStringMethodsProfile));
+             BufferedReader dependInterfacesReader = Files.newBufferedReader(Paths.get(dependInterfaceInfo));
+             BufferedReader genericFunctionReader = Files.newBufferedReader(Paths.get(genericFunctionInfo));
+             InputStream dependClassStream = Files.newInputStream(Paths.get(dependClassProfile));
+             InputStream functionStream = Files.newInputStream(Paths.get(functionProfile));
+             InputStream includeStream = Files.newInputStream(Paths.get(dependIncludeProfile))) {
             classProperties.load(dependClassStream);
             functionProperties.load(functionStream);
             includeProperties.load(includeStream);
@@ -298,7 +300,7 @@ public class TranslatorContext {
 
             String dependInterface;
             while ((dependInterface = dependInterfacesReader.readLine()) != null) {
-                if(dependInterface.startsWith("%")) {
+                if (dependInterface.startsWith("%")) {
                     continue;
                 }
                 String[] ref = dependInterface.trim().split(", ");
@@ -307,7 +309,7 @@ public class TranslatorContext {
 
             String grcFunction;
             while ((grcFunction = genericFunctionReader.readLine()) != null) {
-                if(grcFunction.startsWith("%")) {
+                if (grcFunction.startsWith("%")) {
                     continue;
                 }
                 String[] ref = grcFunction.trim().split(": ");
@@ -455,5 +457,13 @@ public class TranslatorContext {
 
     public static Map<String, String> getGenericFunction() {
         return genericFunction;
+    }
+
+    public static Map<PrimitiveType, String> getPrimitiveTypeStringMap() {
+        return PrimitiveTypeStringMap;
+    }
+
+    public static Map<PrimitiveType, String> getPrimitiveTypeIncludeStringMap() {
+        return PrimitiveTypeIncludeStringMap;
     }
 }

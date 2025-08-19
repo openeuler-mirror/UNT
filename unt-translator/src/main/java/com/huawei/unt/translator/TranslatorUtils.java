@@ -57,7 +57,8 @@ public class TranslatorUtils {
     private static final String CLASSCONSTANT_HEAD = "basictypes/ClassRegistry.h";
     private static final String STRINGCONSTANT_HEAD = "basictypes/StringConstant.h";
 
-    private TranslatorUtils() {}
+    private TranslatorUtils() {
+    }
 
     /**
      * Return formatted local name
@@ -129,8 +130,8 @@ public class TranslatorUtils {
     /**
      * Get params to String
      *
-     * @param signature methodSignature
-     * @param args methodArgs
+     * @param signature     methodSignature
+     * @param args          methodArgs
      * @param methodContext methodContext
      * @return params code String
      */
@@ -216,7 +217,7 @@ public class TranslatorUtils {
         for (Local local : sortedLocals) {
             if (local.getType() instanceof ClassType
                     && TranslatorContext.getIgnoredClasses().contains(
-                            ((ClassType) local.getType()).getFullyQualifiedName())) {
+                    ((ClassType) local.getType()).getFullyQualifiedName())) {
                 continue;
             }
 
@@ -241,7 +242,7 @@ public class TranslatorUtils {
     private static String printLocalWithType(Local local) {
         StringBuilder localDeclare = new StringBuilder();
         localDeclare.append(formatParamType(local.getType())).append(formatLocalName(local));
-        if (! (local.getType() instanceof PrimitiveType)) {
+        if (!(local.getType() instanceof PrimitiveType)) {
             localDeclare.append(" = nullptr");
         }
         return localDeclare.toString();
@@ -250,7 +251,7 @@ public class TranslatorUtils {
     /**
      * try to Get UdfType from classType and engineType
      *
-     * @param classType classType
+     * @param classType  classType
      * @param engineType enginType
      * @return Optional udfType
      */
@@ -336,7 +337,9 @@ public class TranslatorUtils {
         return getIncludeStr(javaClass, knownIncludes, translatedIncludes);
     }
 
-    private static String getIncludeStr(JavaClass javaClass, Set<String> knownIncludes, Set<String> translatedIncludes) {
+    private static String getIncludeStr(JavaClass javaClass,
+                                        Set<String> knownIncludes,
+                                        Set<String> translatedIncludes) {
         StringBuilder includeBuilder = new StringBuilder();
         knownIncludes.stream().sorted().forEach(include -> includeBuilder
                 .append("#include \"")
@@ -355,16 +358,18 @@ public class TranslatorUtils {
         Set<PrimitiveType> primitiveTypeSet = new HashSet<>();
         for (JavaSootField field : javaClass.getFields()) {
             if (field.getType() instanceof PrimitiveType) {
-                if (!TranslatorContext.PRIMITIVE_TYPE_INCLUDESTRING_MAP.containsKey(field.getType())) {
-                    throw new TranslatorException("no support " + ((PrimitiveType) field.getType()).getName() + "primitive type");
-                }else {
+                if (!TranslatorContext.getPrimitiveTypeIncludeStringMap().containsKey(field.getType())) {
+                    throw new TranslatorException("no support "
+                            + ((PrimitiveType) field.getType()).getName()
+                            + "primitive type");
+                } else {
                     primitiveTypeSet.add((PrimitiveType) field.getType());
                 }
             }
         }
         for (PrimitiveType primitiveType : primitiveTypeSet) {
             includeBuilder.append("#include \"")
-                    .append(TranslatorContext.PRIMITIVE_TYPE_INCLUDESTRING_MAP.get(primitiveType))
+                    .append(TranslatorContext.getPrimitiveTypeIncludeStringMap().get(primitiveType))
                     .append("\"")
                     .append(NEW_LINE);
         }
@@ -573,16 +578,18 @@ public class TranslatorUtils {
                 sb.append(hex);
             }
             return sb.toString();
-        } catch (NoSuchAlgorithmException|IOException e) {
+        } catch (NoSuchAlgorithmException | IOException e) {
             throw new TranslatorException("Failed to get jar hash path");
         }
     }
 
     /**
-     * @param signature
-     * @return
+     * parse signature
+     *
+     * @param signature signature
+     * @return signature string
      */
-    public static String parseSignature(String signature){
+    public static String parseSignature(String signature) {
         if (signature == null || signature.isEmpty()) {
             return "";
         }
@@ -592,6 +599,7 @@ public class TranslatorUtils {
         result.append(parseType(signature, pos));
         return result.toString();
     }
+
     private static String parseType(String sig, int[] pos) {
         if (pos[0] >= sig.length()) {
             return "";
@@ -606,40 +614,56 @@ public class TranslatorUtils {
             pos[0]++;
             StringBuilder className = new StringBuilder();
 
-            while (pos[0] < sig.length()) {
-                char c = sig.charAt(pos[0]);
-
-                if (c == '<') {
-                    pos[0]++; //  '<'
-                    List<String> typeArgs = new ArrayList<>();
-                    while (sig.charAt(pos[0]) != '>') {
-                        typeArgs.add(parseType(sig, pos));
-                    }
-                    pos[0]++; //  '>'
-                    String qualified = className.toString().replace('/', '.');
-                    return qualified + "<" + String.join(",", typeArgs) + ">";
-                } else if (c == ';') {
-                    pos[0]++;
-                    return className.toString().replace('/', '.');
-                } else {
-                    className.append(c);
-                    pos[0]++;
-                }
-            }
+            String qualified = getClassSignatureStr(sig, pos, className);
+            if (qualified != null) return qualified;
         }
 
         pos[0]++;
         switch (ch) {
-            case 'Z': return "boolean";
-            case 'B': return "byte";
-            case 'C': return "char";
-            case 'S': return "short";
-            case 'I': return "int";
-            case 'J': return "long";
-            case 'F': return "float";
-            case 'D': return "double";
-            case 'V': return "void";
-            default: return "<?>"; //
+            case 'Z':
+                return "boolean";
+            case 'B':
+                return "byte";
+            case 'C':
+                return "char";
+            case 'S':
+                return "short";
+            case 'I':
+                return "int";
+            case 'J':
+                return "long";
+            case 'F':
+                return "float";
+            case 'D':
+                return "double";
+            case 'V':
+                return "void";
+            default:
+                return "<?>"; //
         }
+    }
+
+    private static String getClassSignatureStr(String sig, int[] pos, StringBuilder className) {
+        while (pos[0] < sig.length()) {
+            char c = sig.charAt(pos[0]);
+
+            if (c == '<') {
+                pos[0]++; //  '<'
+                List<String> typeArgs = new ArrayList<>();
+                while (sig.charAt(pos[0]) != '>') {
+                    typeArgs.add(parseType(sig, pos));
+                }
+                pos[0]++; //  '>'
+                String qualified = className.toString().replace('/', '.');
+                return qualified + "<" + String.join(",", typeArgs) + ">";
+            } else if (c == ';') {
+                pos[0]++;
+                return className.toString().replace('/', '.');
+            } else {
+                className.append(c);
+                pos[0]++;
+            }
+        }
+        return null;
     }
 }

@@ -90,7 +90,7 @@ public class FlinkKeyedCoProcessFunction implements UDFType {
             return method.getParameterCount() == 1
                     && method.getReturnType() instanceof VoidType
                     && method.getParameterType(0) instanceof ClassType
-                    && ((ClassType) method.getParameterType(0)).getClassName().equals("Configuration");
+                    && "Configuration".equals(((ClassType) method.getParameterType(0)).getClassName());
         }
 
         return false;
