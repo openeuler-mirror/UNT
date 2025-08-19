@@ -334,7 +334,7 @@ public class DependencyAnalyzer {
 
         @Override
         public void caseStaticFieldRef(@Nonnull JStaticFieldRef ref) {
-            if (ref.getType() instanceof ClassType && TranslatorContext.getIgnoredClasses()
+            if (ref.getType() instanceof ClassType && !TranslatorContext.getIgnoredClasses()
                     .contains(((ClassType) ref.getType()).getFullyQualifiedName())) {
                 classes.add(ref.getFieldSignature().getDeclClassType());
             }

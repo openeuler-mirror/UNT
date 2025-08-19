@@ -35,16 +35,13 @@ import javax.annotation.Nonnull;
  * @since 2025-05-19
  */
 public class MethodContext {
-    private final JavaSootMethod javaMethod;
-
-    private final UDFType type;
-    private final Local thisLocal;
-    private boolean needRet = false;
-    private int freeLabel = -1;
     private final boolean isStaticInit;
     private final boolean isInit;
     private final boolean isIgnore;
 
+    private final JavaSootMethod javaMethod;
+    private final UDFType type;
+    private final Local thisLocal;
     private final Set<Local> locals;
     private final List<Stmt> stmts;
     private final Map<Integer, Local> params = new HashMap<>();
@@ -63,6 +60,9 @@ public class MethodContext {
     private final Map<Integer, Set<Local>> beforeLocals = new HashMap<>();
     private final Map<Integer, Set<Local>> afterLocals = new HashMap<>();
     private final Set<ClassType> staticClasses = new HashSet<>();
+
+    private boolean needRet = false;
+    private int freeLabel = -1;
 
     public MethodContext(JavaSootMethod method, UDFType type) {
         StaticStmtVisitor stmtVisitor = new StaticStmtVisitor();

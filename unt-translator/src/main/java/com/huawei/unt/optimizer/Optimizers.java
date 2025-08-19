@@ -31,6 +31,7 @@ public class Optimizers {
             new RemoveIgnoreClass(),
             new MemoryReleaseOptimizer(),
             new StringPacking(),
+            new DynamicInvokeHandle(),
             new ArrayFieldHandler(),
             new InitStaticReturnHandler());
 

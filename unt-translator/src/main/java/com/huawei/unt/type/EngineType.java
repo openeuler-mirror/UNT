@@ -7,6 +7,8 @@ package com.huawei.unt.type;
 import com.huawei.unt.translator.TranslatorException;
 import com.huawei.unt.type.flink.FlinkFlatMapFunction;
 import com.huawei.unt.type.flink.FlinkKeySelector;
+import com.huawei.unt.type.flink.FlinkKeyedCoProcessFunction;
+import com.huawei.unt.type.flink.FlinkKeyedProcessFunction;
 import com.huawei.unt.type.flink.FlinkMapFunction;
 import com.huawei.unt.type.flink.FlinkReduceFunction;
 import com.huawei.unt.type.flink.FlinkRichFilterFunction;
@@ -41,7 +43,9 @@ public enum EngineType {
                         FlinkFlatMapFunction.INSTANCE,
                         FlinkMapFunction.INSTANCE,
                         FlinkRichFilterFunction.INSTANCE,
-                        FlinkReduceFunction.INSTANCE);
+                        FlinkReduceFunction.INSTANCE,
+                        FlinkKeyedProcessFunction.INSTANCE,
+                        FlinkKeyedCoProcessFunction.INSTANCE);
             default:
                 throw new TranslatorException("Unknown engine type: " + type);
         }

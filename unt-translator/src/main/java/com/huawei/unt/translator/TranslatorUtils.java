@@ -18,6 +18,9 @@ import sootup.core.jimple.basic.Immediate;
 import sootup.core.jimple.basic.Local;
 import sootup.core.jimple.common.constant.IntConstant;
 import sootup.core.jimple.common.constant.StringConstant;
+import sootup.core.jimple.common.ref.JParameterRef;
+import sootup.core.jimple.common.stmt.JIdentityStmt;
+import sootup.core.jimple.common.stmt.Stmt;
 import sootup.core.signatures.MethodSignature;
 import sootup.core.types.ArrayType;
 import sootup.core.types.ClassType;
@@ -31,6 +34,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -95,11 +99,26 @@ public class TranslatorUtils {
     public static String methodParamsToString(JavaSootMethod javaMethod) {
         StringJoiner joiner = new StringJoiner(", ");
 
-        for (int i = 0; i < javaMethod.getParameterCount(); i++) {
-            joiner.add(formatParamType(javaMethod.getParameterType(i)) + "param" + i);
+        List<Type> params = getMethodParamsType(javaMethod);
+        int i = 0;
+        for (Type type : params) {
+            joiner.add(formatParamType(type) + "param" + i++);
         }
 
         return joiner.toString();
+    }
+    private static List<Type> getMethodParamsType(JavaSootMethod javaMethod) {
+        if (javaMethod.hasBody()) {
+            Type[] params = new Type[javaMethod.getParameterCount()];
+            for (Stmt stmt : javaMethod.getBody().getStmts()) {
+                if (stmt instanceof JIdentityStmt && ((JIdentityStmt) stmt).getRightOp() instanceof JParameterRef) {
+                    JParameterRef parameterRef = (JParameterRef) ((JIdentityStmt) stmt).getRightOp();
+                    params[parameterRef.getIndex()] = ((JIdentityStmt) stmt).getLeftOp().getType();
+                }
+            }
+            return Arrays.asList(params);
+        }
+        return javaMethod.getParameterTypes();
     }
 
     /**

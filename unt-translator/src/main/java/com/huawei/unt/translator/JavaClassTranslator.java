@@ -108,8 +108,17 @@ public class JavaClassTranslator {
         for (ClassType superClassType : superClasses) {
             if (!TranslatorContext.getIgnoredClasses().contains(superClassType.getFullyQualifiedName())) {
                 String formatType = TranslatorUtils.formatType(superClassType);
-                joiner.add("public " + formatType
-                        + (TranslatorContext.getGenericFunction().contains(formatType) ? "<Object>" : ""));
+                String templates = "";
+                if (TranslatorContext.getGenericFunction().contains(formatType)) {
+                    if ("KeyedCoProcessFunction".equals(formatType)) {
+                        templates = "<Object, Object*, Object*, Object*>";
+                    } else if ("KeyedProcessFunction".equals(formatType)) {
+                        templates = "<Object, Object*, Object*>";
+                    } else {
+                        templates = "<Object>";
+                    }
+                }
+                joiner.add("public " + formatType + templates);
             }
         }
 
@@ -335,7 +344,7 @@ public class JavaClassTranslator {
 
         // fill fields
         for (JavaSootField field : javaClass.getFields()) {
-            if (!field.isStatic()) {
+            if (!field.isStatic() && !FieldModifier.isTransient(field.getModifiers())) {
                 methodBuilder.append(TAB)
                         .append("if(!jsonObj[\"")
                         .append(TranslatorUtils.formatFieldName(field.getName()))

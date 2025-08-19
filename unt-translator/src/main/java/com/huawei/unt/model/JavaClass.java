@@ -43,6 +43,7 @@ public class JavaClass {
     private boolean hasArray = false;
     private boolean hasObjectField = false;
     private boolean isJsonConstructor = false;
+    private boolean isAbstract = false;
 
     // use for lambda function
     public JavaClass(String className, UDFType udfType, JavaSootMethod udfMethod) {
@@ -114,6 +115,7 @@ public class JavaClass {
                 .collect(Collectors.toSet()));
 
         this.isLambda = false;
+        this.isAbstract = ! javaSootClass.isConcrete();
     }
 
     public String getClassName() {
@@ -188,6 +190,10 @@ public class JavaClass {
 
     public boolean isJsonConstructor() {
         return isJsonConstructor;
+    }
+
+    public boolean isAbstract() {
+        return this.isAbstract;
     }
 
     @Override

@@ -525,7 +525,7 @@ public class TranslatorValueVisitor extends AbstractValueVisitor {
 
     @Override
     public void caseDynamicInvokeExpr(@Nonnull JDynamicInvokeExpr expr) {
-        throw new TranslatorException("DynamicInvokeExpr is not supported yet");
+        throw new TranslatorException("DynamicInvokeExpr translator is supported limited");
     }
 
     @Override

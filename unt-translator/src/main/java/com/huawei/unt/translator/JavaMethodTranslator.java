@@ -173,6 +173,7 @@ public class JavaMethodTranslator {
                     continue;
                 }
 
+                // deal with unreceived obj created by single invoke method
                 if (stmt instanceof JInvokeStmt && methodContext.isIgnoredValue(i)
                         && ((JInvokeStmt) stmt).getInvokeExpr().isPresent()) {
                     ((JInvokeStmt) stmt).getInvokeExpr().get().accept(valueVisitor);
