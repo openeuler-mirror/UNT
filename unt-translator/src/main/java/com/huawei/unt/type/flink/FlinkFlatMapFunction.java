@@ -5,9 +5,9 @@
 package com.huawei.unt.type.flink;
 
 import static com.huawei.unt.translator.TranslatorContext.NEW_LINE;
+import static com.huawei.unt.translator.TranslatorContext.TAB;
 
 import com.huawei.unt.model.MethodContext;
-import com.huawei.unt.translator.TranslatorContext;
 import com.huawei.unt.translator.TranslatorUtils;
 import com.huawei.unt.type.UDFType;
 
@@ -107,7 +107,7 @@ public class FlinkFlatMapFunction implements UDFType {
             methodContext.removeLocal(param1);
             String typeString = TranslatorUtils.formatType(param1.getType());
 
-            headBuilder.append(TranslatorContext.TAB)
+            headBuilder.append(TAB)
                     .append(typeString).append(" *")
                     .append(TranslatorUtils.formatLocalName(param1))
                     .append(" = reinterpret_cast<")
@@ -116,7 +116,7 @@ public class FlinkFlatMapFunction implements UDFType {
 
             Local param2 = methodContext.getParams().get(1);
             methodContext.removeLocal(param2);
-            headBuilder.append(TranslatorContext.TAB)
+            headBuilder.append(TAB)
                     .append("Collector *")
                     .append(TranslatorUtils.formatLocalName(param2))
                     .append(" = collector;")
@@ -149,7 +149,7 @@ public class FlinkFlatMapFunction implements UDFType {
         methodContext.removeLocal(param1);
         String typeString = TranslatorUtils.formatType(param1.getType());
 
-        headBuilder.append(TranslatorContext.TAB)
+        headBuilder.append(TAB)
                 .append(typeString).append(" *")
                 .append(TranslatorUtils.formatLocalName(param1))
                 .append(" = reinterpret_cast<")
@@ -158,7 +158,7 @@ public class FlinkFlatMapFunction implements UDFType {
 
         Local param2 = methodContext.getParams().get(1);
         methodContext.removeLocal(param2);
-        headBuilder.append(TranslatorContext.TAB)
+        headBuilder.append(TAB)
                 .append("Collector *")
                 .append(TranslatorUtils.formatLocalName(param2))
                 .append(" = collector;")

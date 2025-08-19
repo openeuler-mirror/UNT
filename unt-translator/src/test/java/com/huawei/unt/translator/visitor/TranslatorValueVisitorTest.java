@@ -196,7 +196,7 @@ public class TranslatorValueVisitorTest extends BaseTest {
         ClassConstant constant = new ClassConstant("java/lang/String", stringType);
         constant.accept(valueVisitor);
         assertEquals(
-                "ClassConstant::getInstance().get(\"java/lang/String\")",
+                "ClassRegistry::instance().getClass(\"java_lang_String\")",
                 valueVisitor.toCode()
         );
     }

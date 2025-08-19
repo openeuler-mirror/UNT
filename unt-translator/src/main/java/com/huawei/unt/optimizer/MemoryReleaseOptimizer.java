@@ -137,7 +137,7 @@ public class MemoryReleaseOptimizer implements Optimizer {
 
             if (isInit && stmt instanceof JInvokeStmt && ((JInvokeStmt) stmt).getInvokeExpr().isPresent()
                     && ((JInvokeStmt) stmt).getInvokeExpr().get() instanceof JSpecialInvokeExpr
-            && ((JSpecialInvokeExpr) ((JInvokeStmt) stmt).getInvokeExpr().get()).getBase()
+                    && ((JSpecialInvokeExpr) ((JInvokeStmt) stmt).getInvokeExpr().get()).getBase()
                     .equals(methodContext.getThisLocal())
                     && TranslatorContext.INIT_FUNCTION_NAME.equals(
                     ((JInvokeStmt) stmt).getInvokeExpr().get().getMethodSignature().getName())) {
@@ -648,6 +648,8 @@ public class MemoryReleaseOptimizer implements Optimizer {
                 String methodSignatureStr = methodSignature.toString();
                 methodSignatureStr = methodSignatureStr.replace(className, superClass);
                 if (refMap.containsKey(methodSignatureStr)) {
+                    int res = refMap.get(methodSignatureStr);
+                    refMap.put(methodSignature.toString(), res);
                     return refMap.get(methodSignatureStr);
                 }
                 if (TranslatorContext.getSuperclassMap().containsKey(superClass)) {

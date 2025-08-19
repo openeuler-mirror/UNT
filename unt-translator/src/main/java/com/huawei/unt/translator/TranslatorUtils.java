@@ -18,9 +18,6 @@ import sootup.core.jimple.basic.Immediate;
 import sootup.core.jimple.basic.Local;
 import sootup.core.jimple.common.constant.IntConstant;
 import sootup.core.jimple.common.constant.StringConstant;
-import sootup.core.jimple.common.ref.JParameterRef;
-import sootup.core.jimple.common.stmt.JIdentityStmt;
-import sootup.core.jimple.common.stmt.Stmt;
 import sootup.core.signatures.MethodSignature;
 import sootup.core.types.ArrayType;
 import sootup.core.types.ClassType;
@@ -28,15 +25,17 @@ import sootup.core.types.PrimitiveType;
 import sootup.core.types.Type;
 import sootup.core.types.VoidType;
 import sootup.java.core.JavaIdentifierFactory;
+import sootup.java.core.JavaSootField;
 import sootup.java.core.JavaSootMethod;
 
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -55,10 +54,11 @@ public class TranslatorUtils {
     private static final String PRIMITIVE_ARRAY_TYPE = "JavaArray<%s>";
     private static final String ARRAY_HEAD = "basictypes/Arrays.h";
     private static final String JSON_HEAD = "nlohmann/json.hpp";
-    private static final String CLASSCONSTANT_HEAD = "basictypes/ClassConstant.h";
+    private static final String CLASSCONSTANT_HEAD = "basictypes/ClassRegistry.h";
     private static final String STRINGCONSTANT_HEAD = "basictypes/StringConstant.h";
 
-    private TranslatorUtils() {}
+    private TranslatorUtils() {
+    }
 
     /**
      * Return formatted local name
@@ -99,26 +99,13 @@ public class TranslatorUtils {
     public static String methodParamsToString(JavaSootMethod javaMethod) {
         StringJoiner joiner = new StringJoiner(", ");
 
-        List<Type> params = getMethodParamsType(javaMethod);
+        List<Type> params = javaMethod.getParameterTypes();
         int i = 0;
         for (Type type : params) {
             joiner.add(formatParamType(type) + "param" + i++);
         }
 
         return joiner.toString();
-    }
-    private static List<Type> getMethodParamsType(JavaSootMethod javaMethod) {
-        if (javaMethod.hasBody()) {
-            Type[] params = new Type[javaMethod.getParameterCount()];
-            for (Stmt stmt : javaMethod.getBody().getStmts()) {
-                if (stmt instanceof JIdentityStmt && ((JIdentityStmt) stmt).getRightOp() instanceof JParameterRef) {
-                    JParameterRef parameterRef = (JParameterRef) ((JIdentityStmt) stmt).getRightOp();
-                    params[parameterRef.getIndex()] = ((JIdentityStmt) stmt).getLeftOp().getType();
-                }
-            }
-            return Arrays.asList(params);
-        }
-        return javaMethod.getParameterTypes();
     }
 
     /**
@@ -134,7 +121,7 @@ public class TranslatorUtils {
         for (int i = 0; i < params.size(); i++) {
             Local local = params.get(i);
             methodContext.removeLocal(local);
-            joiner.add(formatParamType(local.getType()) + formatLocalName(local));
+            joiner.add(formatParamType(methodContext.getJavaMethod().getParameterType(i)) + formatLocalName(local));
         }
 
         return joiner.toString();
@@ -143,17 +130,14 @@ public class TranslatorUtils {
     /**
      * Get params to String
      *
-     * @param signature methodSignature
-     * @param args methodArgs
+     * @param signature     methodSignature
+     * @param args          methodArgs
      * @param methodContext methodContext
      * @return params code String
      */
     public static String paramsToString(MethodSignature signature, List<Immediate> args, MethodContext methodContext) {
         TranslatorValueVisitor valueVisitor = new TranslatorValueVisitor(methodContext);
         StringJoiner joiner = new StringJoiner(", ");
-
-        boolean shouldPackingString = !TranslatorContext.getStdStringMethods()
-                .contains(signature.toString());
 
         for (int i = 0; i < args.size(); i++) {
             Immediate immediate = args.get(i);
@@ -166,7 +150,7 @@ public class TranslatorUtils {
                 value = "(char) " + value;
             }
 
-            if (immediate instanceof StringConstant && shouldPackingString) {
+            if (immediate instanceof StringConstant && shouldPackingString(signature)) {
                 value = "StringConstant::getInstance().get(" + value + ")";
             }
 
@@ -175,6 +159,27 @@ public class TranslatorUtils {
         }
 
         return "(" + joiner + ")";
+    }
+
+    private static boolean shouldPackingString(MethodSignature signature) {
+        Set<String> stdStringMethods = TranslatorContext.getStdStringMethods();
+        String signatureStr = signature.toString();
+        String declClassName = signature.getDeclClassType().getFullyQualifiedName();
+        Set<String> searched = new HashSet<>();
+        LinkedList<String> classQueue = new LinkedList<>();
+        classQueue.add(declClassName);
+        while (!classQueue.isEmpty()) {
+            String className = classQueue.removeFirst();
+            if (!searched.contains(className)) {
+                if (stdStringMethods.contains(signatureStr.replace(declClassName, className))) {
+                    stdStringMethods.add(declClassName);
+                    return false;
+                }
+                searched.add(className);
+                classQueue.addAll(TranslatorContext.getSuperclassMap().getOrDefault(className, new HashSet<>()));
+            }
+        }
+        return true;
     }
 
     private static class LocalComparator implements Comparator<Local> {
@@ -212,7 +217,7 @@ public class TranslatorUtils {
         for (Local local : sortedLocals) {
             if (local.getType() instanceof ClassType
                     && TranslatorContext.getIgnoredClasses().contains(
-                            ((ClassType) local.getType()).getFullyQualifiedName())) {
+                    ((ClassType) local.getType()).getFullyQualifiedName())) {
                 continue;
             }
 
@@ -237,7 +242,7 @@ public class TranslatorUtils {
     private static String printLocalWithType(Local local) {
         StringBuilder localDeclare = new StringBuilder();
         localDeclare.append(formatParamType(local.getType())).append(formatLocalName(local));
-        if (! (local.getType() instanceof PrimitiveType)) {
+        if (!(local.getType() instanceof PrimitiveType)) {
             localDeclare.append(" = nullptr");
         }
         return localDeclare.toString();
@@ -246,7 +251,7 @@ public class TranslatorUtils {
     /**
      * try to Get UdfType from classType and engineType
      *
-     * @param classType classType
+     * @param classType  classType
      * @param engineType enginType
      * @return Optional udfType
      */
@@ -329,6 +334,12 @@ public class TranslatorUtils {
             }
         }
 
+        return getIncludeStr(javaClass, knownIncludes, translatedIncludes);
+    }
+
+    private static String getIncludeStr(JavaClass javaClass,
+                                        Set<String> knownIncludes,
+                                        Set<String> translatedIncludes) {
         StringBuilder includeBuilder = new StringBuilder();
         knownIncludes.stream().sorted().forEach(include -> includeBuilder
                 .append("#include \"")
@@ -343,6 +354,25 @@ public class TranslatorUtils {
                 .append(include)
                 .append("\"")
                 .append(NEW_LINE));
+
+        Set<PrimitiveType> primitiveTypeSet = new HashSet<>();
+        for (JavaSootField field : javaClass.getFields()) {
+            if (field.getType() instanceof PrimitiveType) {
+                if (!TranslatorContext.getPrimitiveTypeIncludeStringMap().containsKey(field.getType())) {
+                    throw new TranslatorException("no support "
+                            + ((PrimitiveType) field.getType()).getName()
+                            + "primitive type");
+                } else {
+                    primitiveTypeSet.add((PrimitiveType) field.getType());
+                }
+            }
+        }
+        for (PrimitiveType primitiveType : primitiveTypeSet) {
+            includeBuilder.append("#include \"")
+                    .append(TranslatorContext.getPrimitiveTypeIncludeStringMap().get(primitiveType))
+                    .append("\"")
+                    .append(NEW_LINE);
+        }
 
         return includeBuilder.toString();
     }
@@ -548,8 +578,94 @@ public class TranslatorUtils {
                 sb.append(hex);
             }
             return sb.toString();
-        } catch (NoSuchAlgorithmException|IOException e) {
+        } catch (NoSuchAlgorithmException | IOException e) {
             throw new TranslatorException("Failed to get jar hash path");
         }
+    }
+
+    /**
+     * parse signature
+     *
+     * @param signature signature
+     * @return signature string
+     */
+    public static String parseSignature(String signature) {
+        if (signature == null || signature.isEmpty()) {
+            return "";
+        }
+
+        StringBuilder result = new StringBuilder();
+        int[] pos = {0}; //
+        result.append(parseType(signature, pos));
+        return result.toString();
+    }
+
+    private static String parseType(String sig, int[] pos) {
+        if (pos[0] >= sig.length()) {
+            return "";
+        }
+        char ch = sig.charAt(pos[0]);
+        if (ch == '[') {
+            pos[0]++;
+            return parseType(sig, pos) + "[]";
+        }
+
+        if (ch == 'L') {
+            pos[0]++;
+            StringBuilder className = new StringBuilder();
+
+            String qualified = getClassSignatureStr(sig, pos, className);
+            if (qualified != null) {
+                return qualified;
+            }
+        }
+
+        pos[0]++;
+        switch (ch) {
+            case 'Z':
+                return "boolean";
+            case 'B':
+                return "byte";
+            case 'C':
+                return "char";
+            case 'S':
+                return "short";
+            case 'I':
+                return "int";
+            case 'J':
+                return "long";
+            case 'F':
+                return "float";
+            case 'D':
+                return "double";
+            case 'V':
+                return "void";
+            default:
+                return "<?>"; //
+        }
+    }
+
+    private static String getClassSignatureStr(String sig, int[] pos, StringBuilder className) {
+        while (pos[0] < sig.length()) {
+            char c = sig.charAt(pos[0]);
+
+            if (c == '<') {
+                pos[0]++; //  '<'
+                List<String> typeArgs = new ArrayList<>();
+                while (sig.charAt(pos[0]) != '>') {
+                    typeArgs.add(parseType(sig, pos));
+                }
+                pos[0]++; //  '>'
+                String qualified = className.toString().replace('/', '.');
+                return qualified + "<" + String.join(",", typeArgs) + ">";
+            } else if (c == ';') {
+                pos[0]++;
+                return className.toString().replace('/', '.');
+            } else {
+                className.append(c);
+                pos[0]++;
+            }
+        }
+        return null;
     }
 }

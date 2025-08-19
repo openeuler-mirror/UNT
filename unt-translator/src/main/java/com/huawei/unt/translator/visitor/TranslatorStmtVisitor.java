@@ -71,6 +71,7 @@ public class TranslatorStmtVisitor extends AbstractStmtVisitor {
             Local left = stmt.getLeftOp();
             JParameterRef param = (JParameterRef) stmt.getRightOp();
             methodContext.putParams(param.getIndex(), left);
+            methodContext.putParamLocal(left, param.getType());
         } else if (stmt.getRightOp() instanceof JThisRef) {
             // skip this local
             methodContext.removeLocal(stmt.getLeftOp());

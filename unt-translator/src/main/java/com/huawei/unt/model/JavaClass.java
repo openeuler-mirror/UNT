@@ -39,6 +39,7 @@ public class JavaClass {
     private final Set<ClassType> supperClasses = new HashSet<>();
     private final Set<ClassType> includes = new HashSet<>();
     private final Set<ClassType> loopIncludes = new HashSet<>();
+    private JavaSootClass javaSootClass = null;
 
     private boolean hasArray = false;
     private boolean hasObjectField = false;
@@ -53,14 +54,17 @@ public class JavaClass {
         ClassType udfClassType = TranslatorUtils.getClassTypeFromClassName(udfType.getBaseClass().getName());
         this.supperClasses.add(udfClassType);
         this.isLambda = true;
-        TranslatorContext.getSuperclassMap().put(className, supperClasses.stream()
+        Set<String> superClassesSet = supperClasses.stream()
                 .map(ClassType::toString)
-                .collect(Collectors.toSet()));
+                .collect(Collectors.toSet());
+        superClassesSet.add("java.lang.Object");
+        TranslatorContext.getSuperclassMap().put(className, superClassesSet);
     }
 
     public JavaClass(JavaSootClass javaSootClass, UDFType type) {
         this.className = javaSootClass.getName();
         this.type = type;
+        this.javaSootClass = javaSootClass;
 
         for (JavaSootField field : javaSootClass.getFields()) {
             if (field.getType() instanceof ClassType
@@ -115,7 +119,7 @@ public class JavaClass {
                 .collect(Collectors.toSet()));
 
         this.isLambda = false;
-        this.isAbstract = ! javaSootClass.isConcrete();
+        this.isAbstract = !javaSootClass.isConcrete();
     }
 
     public String getClassName() {
@@ -194,6 +198,14 @@ public class JavaClass {
 
     public boolean isAbstract() {
         return this.isAbstract;
+    }
+
+    public void setJavaSootClass(JavaSootClass javaSootClass) {
+        this.javaSootClass = javaSootClass;
+    }
+
+    public JavaSootClass getJavaSootClass() {
+        return javaSootClass;
     }
 
     @Override

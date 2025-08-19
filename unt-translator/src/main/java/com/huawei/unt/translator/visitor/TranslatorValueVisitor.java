@@ -141,7 +141,10 @@ public class TranslatorValueVisitor extends AbstractValueVisitor {
 
     @Override
     public void caseClassConstant(@Nonnull ClassConstant constant) {
-        valueBuilder.append("ClassConstant::getInstance().get(\"").append(constant.getValue()).append("\")");
+        valueBuilder.append("ClassRegistry::instance().getClass(\"").append(
+                TranslatorUtils.parseSignature(constant.getValue())
+                        .replace('.', '_')
+                        .replace('$', '_')).append("\")");
     }
 
     @Override
@@ -428,6 +431,8 @@ public class TranslatorValueVisitor extends AbstractValueVisitor {
             valueBuilder.append("(").append(typeString).append(") ").append(valueVisitor.toCode());
         } else if (typeString.equals("String") && expr.getOp() instanceof StringConstant) {
             valueBuilder.append("new String(").append(valueVisitor.toCode()).append(")");
+        } else if (isMatchedParam(expr)) {
+            valueBuilder.append(valueVisitor.toCode());
         } else {
             valueBuilder.append("reinterpret_cast<")
                     .append(typeString)
@@ -435,6 +440,17 @@ public class TranslatorValueVisitor extends AbstractValueVisitor {
                     .append(valueVisitor.toCode())
                     .append(")");
         }
+    }
+
+    private boolean isMatchedParam(JCastExpr expr) {
+        if (expr.getOp() instanceof Local) {
+            Local local = (Local) expr.getOp();
+            if (methodContext.getParamLocals().containsKey(local)) {
+                return TranslatorTypeVisitor.getTypeString(methodContext.getParamLocals().get(local))
+                        .equals(TranslatorTypeVisitor.getTypeString(expr.getType()));
+            }
+        }
+        return false;
     }
 
     @Override

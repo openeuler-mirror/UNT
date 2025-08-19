@@ -4,6 +4,9 @@
 
 package com.huawei.unt;
 
+import static com.huawei.unt.translator.TranslatorContext.NEW_LINE;
+import static com.huawei.unt.translator.TranslatorContext.TAB;
+
 import com.huawei.unt.dependency.DependencyAnalyzer;
 import com.huawei.unt.loader.JarHandler;
 import com.huawei.unt.loader.JarUdfLoader;
@@ -142,7 +145,7 @@ public class UNTMain {
             for (String className : TranslatorContext.getMissingInterfaces().keySet()) {
                 errMessage.append(className).append(": \n");
                 for (String method : TranslatorContext.getMissingInterfaces().get(className)) {
-                    errMessage.append(TranslatorContext.TAB).append(method).append(TranslatorContext.NEW_LINE);
+                    errMessage.append(TAB).append(method).append(NEW_LINE);
                 }
             }
             LOGGER.error(errMessage.toString());
@@ -280,10 +283,10 @@ public class UNTMain {
                     }
                     compileCommand += " " + basicLib + " " + regexLib + " -o "
                             + outputDir + File.separator + jarPathHash + File.separator + soFileName + ".so"
-                            + TranslatorContext.NEW_LINE;
+                            + NEW_LINE;
 
                     String propertyLine = classes.get(i).getClassName() + "=" + soFileName + ".so"
-                            + TranslatorContext.NEW_LINE;
+                            + NEW_LINE;
                     compileShellWriter.write(compileCommand);
                     udfPropertiesWriter.write(propertyLine);
                 }
