@@ -4,9 +4,10 @@
 
 package com.huawei.unt.translator;
 
+import sootup.core.types.PrimitiveType;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sootup.core.types.PrimitiveType;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -121,18 +122,25 @@ public class TranslatorContext {
             + TAB + TAB + "old%1$S->putRefCount();" + NEW_LINE
             + TAB + "}" + NEW_LINE;
 
-    public static final Map<PrimitiveType, String> PRIMITIVE_TYPE_STRING_MAP = new HashMap<PrimitiveType, String>(){{
-        put(PrimitiveType.BooleanType.getInstance(),"Boolean");
-        put(PrimitiveType.IntType.getInstance(),"Integer");
-        put(PrimitiveType.DoubleType.getInstance(),"Double");
-        put(PrimitiveType.LongType.getInstance(),"Long");
+    /**
+     *
+     */
+    public static Map<PrimitiveType, String> PRIMITIVE_TYPE_STRING_MAP = new HashMap<PrimitiveType, String>() {{
+        put(PrimitiveType.BooleanType.getInstance(), "Boolean");
+        put(PrimitiveType.IntType.getInstance(), "Integer");
+        put(PrimitiveType.DoubleType.getInstance(), "Double");
+        put(PrimitiveType.LongType.getInstance(), "Long");
     }};
 
-    public static final Map<PrimitiveType, String> PRIMITIVE_TYPE_INCLUDESTRING_MAP = new HashMap<PrimitiveType, String>(){{
-        put(PrimitiveType.BooleanType.getInstance(),"basictypes/java_lang_Boolean.h");
-        put(PrimitiveType.IntType.getInstance(),"basictypes/Integer.h");
-        put(PrimitiveType.DoubleType.getInstance(),"basictypes/Double.h");
-        put(PrimitiveType.LongType.getInstance(),"basictypes/Long.h");
+    /**
+     *
+     */
+    public static Map<PrimitiveType, String> PRIMITIVE_TYPE_INCLUDESTRING_MAP =
+            new HashMap<PrimitiveType, String>() {{
+        put(PrimitiveType.BooleanType.getInstance(), "basictypes/java_lang_Boolean.h");
+        put(PrimitiveType.IntType.getInstance(), "basictypes/Integer.h");
+        put(PrimitiveType.DoubleType.getInstance(), "basictypes/Double.h");
+        put(PrimitiveType.LongType.getInstance(), "basictypes/Long.h");
     }};
 
     private static Map<String, Set<String>> superclassMap = new HashMap<>();

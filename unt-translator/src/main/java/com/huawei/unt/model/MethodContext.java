@@ -228,6 +228,10 @@ public class MethodContext {
         params.put(idx, local);
     }
 
+    /**
+     * @param local
+     * @param type
+     */
     public void putParamLocal(Local local, Type type) {
         paramLocals.put(local, type);
     }

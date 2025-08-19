@@ -167,9 +167,9 @@ public class TranslatorUtils {
         Set<String> searched = new HashSet<>();
         LinkedList<String> classQueue = new LinkedList<>();
         classQueue.add(declClassName);
-        while(!classQueue.isEmpty()) {
+        while (!classQueue.isEmpty()) {
             String className = classQueue.removeFirst();
-            if(!searched.contains(className)) {
+            if (!searched.contains(className)) {
                 if (stdStringMethods.contains(signatureStr.replace(declClassName, className))) {
                     stdStringMethods.add(declClassName);
                     return false;
@@ -333,6 +333,10 @@ public class TranslatorUtils {
             }
         }
 
+        return getIncludeStr(javaClass, knownIncludes, translatedIncludes);
+    }
+
+    private static String getIncludeStr(JavaClass javaClass, Set<String> knownIncludes, Set<String> translatedIncludes) {
         StringBuilder includeBuilder = new StringBuilder();
         knownIncludes.stream().sorted().forEach(include -> includeBuilder
                 .append("#include \"")
@@ -574,8 +578,14 @@ public class TranslatorUtils {
         }
     }
 
+    /**
+     * @param signature
+     * @return
+     */
     public static String parseSignature(String signature){
-        if (signature == null || signature.isEmpty()) return "";
+        if (signature == null || signature.isEmpty()) {
+            return "";
+        }
 
         StringBuilder result = new StringBuilder();
         int[] pos = {0}; //
@@ -583,17 +593,15 @@ public class TranslatorUtils {
         return result.toString();
     }
     private static String parseType(String sig, int[] pos) {
-        if (pos[0] >= sig.length()) return "";
-
+        if (pos[0] >= sig.length()) {
+            return "";
+        }
         char ch = sig.charAt(pos[0]);
-
-        //
         if (ch == '[') {
             pos[0]++;
             return parseType(sig, pos) + "[]";
         }
 
-        // /
         if (ch == 'L') {
             pos[0]++;
             StringBuilder className = new StringBuilder();
@@ -620,7 +628,6 @@ public class TranslatorUtils {
             }
         }
 
-        //
         pos[0]++;
         switch (ch) {
             case 'Z': return "boolean";
@@ -632,7 +639,7 @@ public class TranslatorUtils {
             case 'F': return "float";
             case 'D': return "double";
             case 'V': return "void";
-            default:  return "<?>"; //
+            default: return "<?>"; //
         }
     }
 }

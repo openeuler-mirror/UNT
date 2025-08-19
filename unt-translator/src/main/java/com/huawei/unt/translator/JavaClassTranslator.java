@@ -11,8 +11,6 @@ import com.huawei.unt.model.JavaClass;
 import com.huawei.unt.type.NoneUDF;
 import com.huawei.unt.type.UDFType;
 
-import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.FieldNode;
 import sootup.core.model.FieldModifier;
 import sootup.core.types.ClassType;
 import sootup.core.types.PrimitiveType;
@@ -23,6 +21,8 @@ import sootup.java.core.JavaSootMethod;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.FieldNode;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -44,7 +44,8 @@ public class JavaClassTranslator {
     private static final String STATIC_INIT_FIELD = "initStaticField";
     private static final String STATIC_INIT_METHOD = "initStatic";
 
-    private JavaClassTranslator() {}
+    private JavaClassTranslator() {
+    }
 
     /**
      * translate javaClass to cpp code string
@@ -142,11 +143,6 @@ public class JavaClassTranslator {
                     .filter(m -> m.isPublic() || m.isProtected() || m.getName().startsWith(ACCESS_PREFIX))
                     .collect(Collectors.toList());
 
-            // List<JavaSootField> publicFields = fields.stream()
-            //         .filter(f -> (f.isPublic() || f.isProtected() || f.getName().startsWith(ACCESS_PREFIX)))
-            //         .collect(Collectors.toList());
-
-            // publicFields.forEach(fields::remove);
             publicMethods.forEach(methods::remove);
 
             headBuilder.append("public:").append(NEW_LINE);
@@ -155,14 +151,14 @@ public class JavaClassTranslator {
                     headBuilder.append(printStaticInitMethod(sootMethod)).append(NEW_LINE));
 
             if (!initMethods.isEmpty()) {
-                boolean requireDefaultInit = true;
+                boolean isRequireDefaultInit = true;
                 for (JavaSootMethod method : initMethods) {
                     if (method.getParameterCount() == 0) {
-                        requireDefaultInit = false;
+                        isRequireDefaultInit = false;
                     }
                     headBuilder.append(javaClass.getType().printDeclareMethod(method));
                 }
-                if (requireDefaultInit) {
+                if (isRequireDefaultInit) {
                     headBuilder.append(TAB)
                             .append(TranslatorUtils.formatClassName(javaClass.getClassName()))
                             .append("() = default;")
@@ -194,12 +190,7 @@ public class JavaClassTranslator {
                 headBuilder.append(NEW_LINE);
             }
 
-            // if (!fields.isEmpty() || !methods.isEmpty()) {
-            //     headBuilder.append("private:").append(NEW_LINE);
-            // }
-
-            //todo
-            if (!javaClass.isAbstract() && javaClass.getType().equals(NoneUDF.INSTANCE)){
+            if (!javaClass.isAbstract() && NoneUDF.INSTANCE.equals(javaClass.getType())) {
                 headBuilder.append(TAB).append("static Class* getClass();").append(NEW_LINE)
                         .append(TAB).append("static Class* clazz_;").append(NEW_LINE);
             }
@@ -211,13 +202,6 @@ public class JavaClassTranslator {
                 headBuilder.append(NEW_LINE);
             }
 
-            // if (!fields.isEmpty()) {
-            //     for (JavaSootField field : fields) {
-            //         headBuilder.append(printField(field));
-            //     }
-            //     headBuilder.append(NEW_LINE);
-            // }
-
             headBuilder.append("};").append(NEW_LINE);
         }
 
@@ -227,8 +211,7 @@ public class JavaClassTranslator {
         cppBuilder.append("#include \"").append(TranslatorUtils.formatClassName(javaClass.getClassName()))
                 .append(".h\"").append(NEW_LINE);
 
-        //todo
-        if (!javaClass.isAbstract() && javaClass.getType().equals(NoneUDF.INSTANCE)){
+        if (!javaClass.isAbstract() && NoneUDF.INSTANCE.equals(javaClass.getType())) {
             cppBuilder.append("#include \"").append("basictypes/ClassRegistry.h\"").append(NEW_LINE)
                     .append("#include \"").append("basictypes/ReflectMacros.h\"").append(NEW_LINE);
         }
@@ -264,27 +247,33 @@ public class JavaClassTranslator {
 
             cppBuilder.append(printMethod(javaClass.getType(), method, javaClass.isLambda()));
         }
-        //todo
-        if (!javaClass.isAbstract() && javaClass.getType().equals(NoneUDF.INSTANCE)){
-            cppBuilder.append("DEFINE_REFLECT_CLASS_BEGIN(").append(TranslatorUtils.formatClassName(javaClass.getClassName())).append(")").append(NEW_LINE);
+
+        if (!javaClass.isAbstract() && NoneUDF.INSTANCE.equals(javaClass.getType())) {
+            cppBuilder.append("DEFINE_REFLECT_CLASS_BEGIN(")
+                    .append(TranslatorUtils.formatClassName(javaClass.getClassName()))
+                    .append(")").append(NEW_LINE);
 
             JavaSootClass javaSootClass = javaClass.getJavaSootClass();
             JavaSootClassSource classSource = javaSootClass.getClassSource();
             List<FieldNode> fieldNodes = null;
-            try{
-                Class<?> aClass = ClassLoader.getSystemClassLoader().loadClass("sootup.java.bytecode.frontend.conversion.AsmClassSource");
+            try {
+                Class<?> aClass = ClassLoader.getSystemClassLoader()
+                        .loadClass("sootup.java.bytecode.frontend.conversion.AsmClassSource");
                 Field classNodeField = aClass.getDeclaredField("classNode");
                 classNodeField.setAccessible(true);
-                ClassNode classNode = (ClassNode)(classNodeField.get(classSource));
+                ClassNode classNode = null;
+                if (classNodeField.get(classSource) instanceof ClassNode) {
+                    classNode = (ClassNode) (classNodeField.get(classSource));
+                }
                 fieldNodes = classNode.fields;
-            }catch (Exception e){
+            } catch (Exception e) {
                 LOGGER.error("can not get classNode");
             }
 
             for (JavaSootField javaSootField : fields) {
                 FieldNode fieldNode = null;
                 for (FieldNode field : fieldNodes) {
-                    if (field.name.equals(javaSootField.getName())){
+                    if (field.name.equals(javaSootField.getName())) {
                         fieldNode = field;
                     }
                 }
@@ -294,30 +283,38 @@ public class JavaClassTranslator {
                 }
 
                 cppBuilder.append(TAB);
-                if (javaSootField.getType() instanceof ClassType){
+                if (javaSootField.getType() instanceof ClassType) {
                     cppBuilder.append("REGISTER_PTR_FIELD(")
                             .append(TranslatorUtils.formatClassName(javaClass.getClassName())).append(", ")
                             .append(TranslatorUtils.formatFieldName(javaSootField.getName())).append(", ")
                             .append(TranslatorUtils.formatParamType(javaSootField.getType())).append(", ").append("\"")
-                            .append(TranslatorUtils.parseSignature(fieldNode.signature == null ? fieldNode.desc : fieldNode.signature)
+                            .append(TranslatorUtils.parseSignature(
+                                    fieldNode.signature == null ? fieldNode.desc : fieldNode.signature)
                                     .replace('.', '_').replace('$', '_')).append("\"")
                             .append(")");
-                } else if (javaSootField.getType() instanceof PrimitiveType){
-                    if (!TranslatorContext.PRIMITIVE_TYPE_STRING_MAP.containsKey(javaSootField.getType())){
-                        throw new TranslatorException("no support " + ((PrimitiveType) javaSootField.getType()).getName() + "primitive type");
+                } else if (javaSootField.getType() instanceof PrimitiveType) {
+                    if (!TranslatorContext.PRIMITIVE_TYPE_STRING_MAP.containsKey(javaSootField.getType())) {
+                        throw new TranslatorException("no support "
+                                + ((PrimitiveType) javaSootField.getType()).getName()
+                                + "primitive type");
                     }
                     String type = TranslatorContext.PRIMITIVE_TYPE_STRING_MAP.get(javaSootField.getType());
                     cppBuilder.append("REGISTER_PRIMITIVE_FIELD(")
                             .append(TranslatorUtils.formatClassName(javaClass.getClassName())).append(", ")
                             .append(TranslatorUtils.formatFieldName(javaSootField.getName())).append(", ")
                             .append(type).append(", ").append("\"")
-                            .append(TranslatorUtils.parseSignature(fieldNode.signature == null ? fieldNode.desc : fieldNode.signature)
+                            .append(TranslatorUtils.parseSignature(
+                                    fieldNode.signature == null ? fieldNode.desc : fieldNode.signature)
                                     .replace('.', '_').replace('$', '_')).append("\"")
                             .append(")");
+                }else {
+                    throw new TranslatorException("no support type");
                 }
                 cppBuilder.append(NEW_LINE);
             }
-            cppBuilder.append("DEFINE_REFLECT_CLASS_END(").append(TranslatorUtils.formatClassName(javaClass.getClassName())).append(")").append(NEW_LINE);
+            cppBuilder.append("DEFINE_REFLECT_CLASS_END(")
+                    .append(TranslatorUtils.formatClassName(javaClass.getClassName()))
+                    .append(")").append(NEW_LINE);
         }
         translateRes.add(cppBuilder.toString());
 
@@ -439,14 +436,14 @@ public class JavaClassTranslator {
                             .append(NEW_LINE);
                 } else {
                     methodBuilder.append(TAB).append(TAB)
-                        .append("this->")
-                        .append(TranslatorUtils.formatFieldName(field.getName()))
-                        .append(" = new ")
-                        .append(TranslatorUtils.formatType(field.getType()))
-                        .append("(jsonObj[\"")
-                        .append(TranslatorUtils.formatFieldName(field.getName()))
-                        .append("\"]);")
-                        .append(NEW_LINE);
+                            .append("this->")
+                            .append(TranslatorUtils.formatFieldName(field.getName()))
+                            .append(" = new ")
+                            .append(TranslatorUtils.formatType(field.getType()))
+                            .append("(jsonObj[\"")
+                            .append(TranslatorUtils.formatFieldName(field.getName()))
+                            .append("\"]);")
+                            .append(NEW_LINE);
                 }
                 methodBuilder.append(TAB).append("}").append(NEW_LINE);
             }
