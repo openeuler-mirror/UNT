@@ -370,7 +370,7 @@ public class TranslatorContext {
         LOGGER.info("load generic functions");
         genericFunction = new HashMap<>(genericFunctionsMap);
         for (String s : genericFunctionsMap.keySet()) {
-            LOGGER.info("function, {}, {}", s , genericFunctionsMap.get(s));
+            LOGGER.info("function {}, {}", s, genericFunctionsMap.get(s));
         }
     }
 
