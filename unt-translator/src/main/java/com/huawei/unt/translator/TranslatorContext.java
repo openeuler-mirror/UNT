@@ -125,7 +125,7 @@ public class TranslatorContext {
     /**
      *
      */
-    private static Map<PrimitiveType, String> PrimitiveTypeStringMap =
+    private static Map<PrimitiveType, String> primitiveTypeStringMap =
             new HashMap<PrimitiveType, String>() {{
                 put(PrimitiveType.BooleanType.getInstance(), "Boolean");
                 put(PrimitiveType.IntType.getInstance(), "Integer");
@@ -136,7 +136,7 @@ public class TranslatorContext {
     /**
      *
      */
-    private static Map<PrimitiveType, String> PrimitiveTypeIncludeStringMap =
+    private static Map<PrimitiveType, String> primitiveTypeIncludeStringMap =
             new HashMap<PrimitiveType, String>() {{
                 put(PrimitiveType.BooleanType.getInstance(), "basictypes/java_lang_Boolean.h");
                 put(PrimitiveType.IntType.getInstance(), "basictypes/Integer.h");
@@ -370,7 +370,7 @@ public class TranslatorContext {
         LOGGER.info("load generic functions");
         genericFunction = new HashMap<>(genericFunctionsMap);
         for (String s : genericFunctionsMap.keySet()) {
-            LOGGER.info(s + genericFunctionsMap.get(s));
+            LOGGER.info("function, {}, {}", s , genericFunctionsMap.get(s));
         }
     }
 
@@ -460,10 +460,10 @@ public class TranslatorContext {
     }
 
     public static Map<PrimitiveType, String> getPrimitiveTypeStringMap() {
-        return PrimitiveTypeStringMap;
+        return primitiveTypeStringMap;
     }
 
     public static Map<PrimitiveType, String> getPrimitiveTypeIncludeStringMap() {
-        return PrimitiveTypeIncludeStringMap;
+        return primitiveTypeIncludeStringMap;
     }
 }

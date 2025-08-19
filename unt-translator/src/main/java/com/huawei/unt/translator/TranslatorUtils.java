@@ -615,7 +615,9 @@ public class TranslatorUtils {
             StringBuilder className = new StringBuilder();
 
             String qualified = getClassSignatureStr(sig, pos, className);
-            if (qualified != null) return qualified;
+            if (qualified != null) {
+                return qualified;
+            }
         }
 
         pos[0]++;
