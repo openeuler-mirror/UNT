@@ -6,8 +6,7 @@ package com.huawei.unt.loader;
 
 import static com.huawei.unt.model.JavaClass.Kind.INSTANCE_METHOD_REF;
 import static com.huawei.unt.model.JavaClass.Kind.STATIC_METHOD_REF;
-import java.util.Arrays;
-import java.util.StringJoiner;
+
 import static sootup.core.jimple.common.constant.MethodHandle.Kind.REF_INVOKE_STATIC;
 
 import com.huawei.unt.model.JavaClass;
@@ -40,10 +39,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.Arrays;
+import java.util.StringJoiner;
 
 /**
  * JarUdfLoader use for load udf classes from jar file
@@ -194,13 +194,15 @@ public class JarUdfLoader {
             methodHandle = (MethodHandle) invokeExpr.getBootstrapArg(1);
         }
 
-        if (methodHandle != null && methodHandle.isMethodRef() && invokeExpr.getArgs().isEmpty()) {
+        if (methodHandle != null && methodHandle.getReferenceSignature() instanceof MethodSignature
+                && invokeExpr.getArgs().isEmpty()) {
             MethodSignature methodSignature = (MethodSignature) methodHandle.getReferenceSignature();
             if (methodHandle.getKind().equals(REF_INVOKE_STATIC)) {
-                lambdaClass = methodSignature.getDeclClassType().getFullyQualifiedName().equals(className) ?
-                        getSimpleLambdaClass(methodSignature, udfType) : getStaticMethodRefClass(methodSignature, udfType);
+                lambdaClass = methodSignature.getDeclClassType().getFullyQualifiedName().equals(className)
+                        ? getSimpleLambdaClass(methodSignature, udfType)
+                        : getStaticMethodRefClass(methodSignature, udfType);
             } else {
-                lambdaClass = getMethodRefClass(methodSignature,udfType);
+                lambdaClass = getMethodRefClass(methodSignature, udfType);
             }
         }
 
@@ -220,7 +222,6 @@ public class JarUdfLoader {
     }
 
     private Optional<JavaClass> getSimpleLambdaClass(MethodSignature methodSignature, UDFType udfType) {
-
         List<String> paramTypes = methodSignature.getParameterTypes().stream()
                 .map(Type::toString).collect(Collectors.toList());
 

@@ -160,14 +160,14 @@ public class JavaClassTranslator {
                     headBuilder.append(printStaticInitMethod(sootMethod)).append(NEW_LINE));
 
             if (!initMethods.isEmpty()) {
-                boolean requireDefaultInit = true;
+                boolean isRequireDefaultInit = true;
                 for (JavaSootMethod method : initMethods) {
                     if (method.getParameterCount() == 0) {
-                        requireDefaultInit = false;
+                        isRequireDefaultInit = false;
                     }
                     headBuilder.append(javaClass.getType().printDeclareMethod(method));
                 }
-                if (requireDefaultInit) {
+                if (isRequireDefaultInit) {
                     headBuilder.append(TAB)
                             .append(TranslatorUtils.formatClassName(javaClass.getClassName()))
                             .append("() = default;")
@@ -199,7 +199,7 @@ public class JavaClassTranslator {
                 headBuilder.append(NEW_LINE);
             }
 
-            if (!javaClass.isAbstract() && javaClass.getType().equals(NoneUDF.INSTANCE)) {
+            if (!javaClass.isAbstract() && NoneUDF.INSTANCE.equals(javaClass.getType())) {
                 headBuilder.append(TAB).append("static Class* getClass();").append(NEW_LINE)
                         .append(TAB).append("static Class* clazz_;").append(NEW_LINE);
             }
@@ -309,12 +309,12 @@ public class JavaClassTranslator {
                                     .replace('.', '_').replace('$', '_')).append("\"")
                             .append(")");
                 } else if (javaSootField.getType() instanceof PrimitiveType) {
-                    if (!TranslatorContext.PRIMITIVE_TYPE_STRING_MAP.containsKey(javaSootField.getType())){
+                    if (!TranslatorContext.getPrimitiveTypeStringMap().containsKey(javaSootField.getType())) {
                         throw new TranslatorException("no support "
                                 + ((PrimitiveType) javaSootField.getType()).getName()
                                 + " primitive type");
                     }
-                    String type = TranslatorContext.PRIMITIVE_TYPE_STRING_MAP.get(javaSootField.getType());
+                    String type = TranslatorContext.getPrimitiveTypeStringMap().get(javaSootField.getType());
                     cppBuilder.append("REGISTER_PRIMITIVE_FIELD(")
                             .append(TranslatorUtils.formatClassName(javaClass.getClassName())).append(", ")
                             .append(TranslatorUtils.formatFieldName(javaSootField.getName())).append(", ")
@@ -338,7 +338,6 @@ public class JavaClassTranslator {
 
     private static void printStaticMethodRefUdf(StringBuilder cppBuilder, JavaClass javaClass) {
         MethodSignature refMethod = javaClass.getRefMethod();
-        int refCount = TranslatorContext.getRefCount(refMethod);
 
         cppBuilder.append(javaClass.getType()
                 .printMethodRefHeadAndParams(javaClass.getClassName(), refMethod.getParameterTypes()));
@@ -353,18 +352,19 @@ public class JavaClassTranslator {
         cppBuilder.append(String.format(STATIC_METHOD_INVOKE,
                 TranslatorUtils.formatClassName(refMethod.getDeclClassType().getFullyQualifiedName()),
                 refMethod.getName(), params));
+
+        int refCount = TranslatorContext.getRefCount(refMethod);
         printMethodRefUdfReturn(cppBuilder, javaClass, refCount);
     }
 
     private static void printInstanceMethodRefUdf(StringBuilder cppBuilder, JavaClass javaClass) {
         MethodSignature refMethod = javaClass.getRefMethod();
-        int refCount = TranslatorContext.getRefCount(refMethod);
 
         cppBuilder.append(javaClass.getType()
                 .printMethodRefHeadAndParams(javaClass.getClassName(), ImmutableList.of(refMethod.getDeclClassType())));
         cppBuilder.append(TAB);
 
-        if (refMethod.getName().equals("<init>")) {
+        if ("<init>".equals(refMethod.getName())) {
             StringJoiner params = new StringJoiner(", ");
             for (int i = 0; i < refMethod.getParameterCount(); i++) {
                 params.add("in" + i);
@@ -383,6 +383,7 @@ public class JavaClassTranslator {
                     refMethod.getName()));
         }
 
+        int refCount = TranslatorContext.getRefCount(refMethod);
         printMethodRefUdfReturn(cppBuilder, javaClass, refCount);
     }
 

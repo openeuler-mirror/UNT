@@ -41,14 +41,15 @@ import java.util.stream.Collectors;
  *
  * @since 2025-06-30
  */
-public class DynamicInvokeHandle implements Optimizer{
+public class DynamicInvokeHandle implements Optimizer {
     private static final String TAB_INLINE = TAB + TAB + TAB;
-    private static final String OBJ_TRANS = TAB_INLINE+ "%1$s *in%2$d = (%1$s*) %3$s;" + NEW_LINE;
+    private static final String OBJ_TRANS = TAB_INLINE + "%1$s *in%2$d = (%1$s*) %3$s;" + NEW_LINE;
     private static final String UNKNOWN_PUT_REF = TAB_INLINE + "if (%1$s != nullptr) {" + NEW_LINE
             + TAB_INLINE + TAB + "%1$s->putRefCount();" + NEW_LINE
             + TAB_INLINE + "}" + NEW_LINE;
     private static final String GET_REF = TAB_INLINE + "if (%1$s != nullptr) {" + NEW_LINE
             + TAB_INLINE + TAB + "%1$s->getRefCount();" + NEW_LINE + TAB + "}" + NEW_LINE;
+
     private ClassType declClassType;
     private TranslatorValueVisitor valueVisitor;
     private CallerKind callerKind;
@@ -109,7 +110,7 @@ public class DynamicInvokeHandle implements Optimizer{
                     getMethodBody(invokeMethod, args, declMethodType))
                     .append(TAB).append(TAB).append("}");
             return lambdaCodes.toString();
-        } catch (ClassCastException e) {
+        } catch (ClassCastException | TranslatorException e) {
             throw new TranslatorException(e.getMessage());
         }
     }
@@ -117,8 +118,6 @@ public class DynamicInvokeHandle implements Optimizer{
     private String getMethodBody(MethodHandle methodHandle, List<Immediate> args,
                                  MethodType methodType) {
         StringJoiner params = new StringJoiner(", ");
-        StringBuilder stmts = new StringBuilder();
-        String caller = getCaller(methodHandle, args, methodType, stmts);
 
         for (Immediate arg : args) {
             arg.accept(valueVisitor);
@@ -126,8 +125,43 @@ public class DynamicInvokeHandle implements Optimizer{
             valueVisitor.clear();
         }
 
-        MethodSignature signature = (MethodSignature) methodHandle.getReferenceSignature();
-        for (int j = callerKind.equals(CallerKind.INPUT) ? 1 : 0; j < methodType.getParameterTypes().size(); j++) {
+        MethodSignature signature;
+        if (methodHandle.getReferenceSignature() instanceof MethodSignature) {
+            signature = (MethodSignature) methodHandle.getReferenceSignature();
+        } else {
+            throw new TranslatorException("not support dynamic invoke kind");
+        }
+
+        StringBuilder stmts = new StringBuilder();
+        dealwith(methodType, args, signature, params, stmts);
+
+        stmts.append(TAB_INLINE);
+        if (! (methodType.getReturnType() instanceof VoidType)) {
+            stmts.append("return ");
+        }
+        if (! (signature.getType() instanceof VoidType)) {
+            stmts.append(TranslatorUtils.formatParamType(signature.getType())).append("tmp = ");
+        }
+        if (CallerKind.CONSTRUCTOR.equals(callerKind)) {
+            stmts.append(String.format(NEW_OBJ,
+                    TranslatorUtils.formatClassName(signature.getDeclClassType().getFullyQualifiedName()),
+                    params)).append(";").append(NEW_LINE);
+        } else {
+            String caller = getCaller(methodHandle, args, methodType, stmts);
+            stmts.append(caller).append(signature.getName()).append("(")
+                    .append(params).append(");").append(NEW_LINE);
+        }
+
+        memoryManageBeforeReturn(signature, stmts);
+        if (!(methodType.getReturnType() instanceof VoidType)) {
+            stmts.append(TAB_INLINE).append("return tmp;").append(NEW_LINE);
+        }
+        return stmts.toString();
+    }
+
+    private void dealwith(MethodType methodType, List<Immediate> args, MethodSignature signature, StringJoiner params,
+                          StringBuilder stmts) {
+        for (int j = CallerKind.INPUT.equals(callerKind) ? 1 : 0; j < methodType.getParameterTypes().size(); j++) {
             Type declParamterType = methodType.getParameterTypes().get(j);
             int paramIndex = args.size() + j;
             Type paramType = signature.getParameterType(paramIndex);
@@ -146,28 +180,6 @@ public class DynamicInvokeHandle implements Optimizer{
                 params.add("in" + paramIndex);
             }
         }
-
-        stmts.append(TAB_INLINE);
-        if (! (methodType.getReturnType() instanceof VoidType)) {
-            stmts.append("return ");
-        }
-        if (! (signature.getType() instanceof VoidType)) {
-            stmts.append(TranslatorUtils.formatParamType(signature.getType())).append("tmp = ");
-        }
-        if (callerKind.equals(CallerKind.CONSTRUCTOR)) {
-            stmts.append(String.format(NEW_OBJ,
-                    TranslatorUtils.formatClassName(signature.getDeclClassType().getFullyQualifiedName()),
-                    params)).append(";").append(NEW_LINE);
-        } else {
-            stmts.append(caller).append(signature.getName()).append("(")
-                    .append(params).append(");").append(NEW_LINE);
-        }
-
-        memoryManageBeforeReturn(signature, stmts);
-        if (!(methodType.getReturnType() instanceof VoidType)) {
-            stmts.append(TAB_INLINE).append("return tmp;").append(NEW_LINE);
-        }
-        return stmts.toString();
     }
 
     private void memoryManageBeforeReturn(MethodSignature signature, StringBuilder stmts) {
@@ -193,16 +205,17 @@ public class DynamicInvokeHandle implements Optimizer{
         }
     }
 
-    private String getCaller(MethodHandle methodHandle, List<Immediate> args, MethodType methodType, StringBuilder stmts) {
+    private String getCaller(MethodHandle methodHandle, List<Immediate> args, MethodType methodType,
+                             StringBuilder stmts) {
         String caller = "";
         if (methodHandle.getKind().equals(REF_INVOKE_STATIC)) {
             ClassType callerClassType = methodHandle.getReferenceSignature().getDeclClassType();
-            caller = callerClassType.equals(declClassType) ?
-                    "" : TranslatorUtils.formatClassName(callerClassType.getFullyQualifiedName()) + "::";
+            caller = declClassType.equals(callerClassType)
+                    ? "" : TranslatorUtils.formatClassName(callerClassType.getFullyQualifiedName()) + "::";
             callerKind = CallerKind.CLASS;
         } else if (methodHandle.getKind().equals(REF_INVOKE_CONSTRUCTOR)) {
             callerKind = CallerKind.CONSTRUCTOR;
-        } else if (args.isEmpty()){
+        } else if (args.isEmpty()) {
             if (!methodHandle.getReferenceSignature().getDeclClassType()
                     .equals(methodType.getParameterTypes().get(0))) {
                 String requiredClass = TranslatorUtils.formatClassName(
@@ -230,31 +243,23 @@ public class DynamicInvokeHandle implements Optimizer{
         return "[&](" + joiner + ")";
     }
 
+    /**
+     * DynamicInvoke method caller kind
+     */
     public enum CallerKind {
-        CLASS(1, "CLASS"),
-        INPUT(2, "INPUT"),
-        OBJ(3, "OBJ"),
-        CONSTRUCTOR(4, "CONSTRUCTOR");
+        CLASS("CLASS"),
+        INPUT("INPUT"),
+        OBJ("OBJ"),
+        CONSTRUCTOR("CONSTRUCTOR");
 
-        private final int val;
         private final String valStr;
 
-        CallerKind(int val, String valStr) {
-            this.val = val;
+        CallerKind(String valStr) {
             this.valStr = valStr;
         }
 
         public String toString() {
             return this.valStr;
         }
-
-        public int getValue() {
-            return this.val;
-        }
-
-        public String getValueName() {
-            return this.valStr;
-        }
-
     }
 }

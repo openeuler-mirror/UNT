@@ -18,7 +18,6 @@ import sootup.core.jimple.common.expr.JNewMultiArrayExpr;
 import sootup.core.jimple.common.expr.JVirtualInvokeExpr;
 import sootup.core.signatures.MethodSignature;
 import sootup.core.types.ClassType;
-import sootup.core.types.PrimitiveType;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -143,23 +142,19 @@ public class TranslatorContext {
     public static final String OLD_VAR_PUT = TAB + "if (old%1$S != nullptr) {" + NEW_LINE
             + TAB + TAB + "old%1$S->putRefCount();" + NEW_LINE
             + TAB + "}" + NEW_LINE;
+    private static final LinkedList<String> superClassQueue = new LinkedList<>();
+    private static final Set<String> searched = new HashSet<>();
 
-    /**
-     *
-     */
-    public static final Map<PrimitiveType, String> PRIMITIVE_TYPE_STRING_MAP =
-            new HashMap<PrimitiveType, String>(){{
+    private static Map<PrimitiveType, String> primitiveTypeStringMap =
+            new HashMap<PrimitiveType, String>() {{
                 put(PrimitiveType.BooleanType.getInstance(), "Boolean");
                 put(PrimitiveType.IntType.getInstance(), "Integer");
                 put(PrimitiveType.DoubleType.getInstance(), "Double");
                 put(PrimitiveType.LongType.getInstance(), "Long");
             }};
 
-    /**
-     *
-     */
-    public static final Map<PrimitiveType, String> PRIMITIVE_TYPE_INCLUDESTRING_MAP =
-            new HashMap<PrimitiveType, String>(){{
+    private static Map<PrimitiveType, String> primitiveTypeIncludeStringMap =
+            new HashMap<PrimitiveType, String>() {{
                 put(PrimitiveType.BooleanType.getInstance(), "basictypes/java_lang_Boolean.h");
                 put(PrimitiveType.IntType.getInstance(), "basictypes/Integer.h");
                 put(PrimitiveType.DoubleType.getInstance(), "basictypes/Double.h");
@@ -408,23 +403,14 @@ public class TranslatorContext {
     }
 
     /**
-     * update subclass map
+     * get ref mark of method invoke value with methodSignature and value
+     *
+     * @param methodSignature methodSignature
+     * @param value value
+     * @return the ref mark of the method
      */
-    public static void updateSubclassMap() {
-        for (String sub : getSuperclassMap().keySet()) {
-            for (String sup : getSuperclassMap().get(sub)) {
-                Set<String> subs = getSubclassMap().getOrDefault(sup, new HashSet<>());
-                subs.add(sub);
-                getSubclassMap().put(sup, subs);
-            }
-        }
-    }
-
-    private static final LinkedList<String> superClassQueue = new LinkedList<>();
-    private static final Set<String> searched = new HashSet<>();
-
     public static int getRefCount(MethodSignature methodSignature, Value value) {
-        if (methodSignature.getName().equals("<init>") || methodSignature.getName().equals("toString")){
+        if ("<init>".equals(methodSignature.getName()) || "toString".equals(methodSignature.getName())) {
             return 1;
         }
         ClassType classType = methodSignature.getDeclClassType();
@@ -449,6 +435,12 @@ public class TranslatorContext {
         return 0;
     }
 
+    /**
+     * get ref mark of value
+     *
+     * @param value value
+     * @return the ref mark of value
+     */
     public static int getRefCount(Value value) {
         if (value instanceof JDynamicInvokeExpr || isNewExpr(value) || isPackingString(value)) {
             return 1;
@@ -460,8 +452,27 @@ public class TranslatorContext {
         return 0;
     }
 
+    /**
+     * get ref mark of method with methodSignature
+     *
+     * @param methodSignature methodSignature
+     * @return the ref mark of method
+     */
     public static int getRefCount(MethodSignature methodSignature) {
         return getRefCount(methodSignature, null);
+    }
+
+    /**
+     * update subclass map
+     */
+    public static void updateSubclassMap() {
+        for (String sub : getSuperclassMap().keySet()) {
+            for (String sup : getSuperclassMap().get(sub)) {
+                Set<String> subs = getSubclassMap().getOrDefault(sup, new HashSet<>());
+                subs.add(sub);
+                getSubclassMap().put(sup, subs);
+            }
+        }
     }
 
     private static int searchSuperClass(MethodSignature methodSignature) {
@@ -503,7 +514,7 @@ public class TranslatorContext {
         boolean isStringConstantCast = false;
         if (value instanceof JCastExpr && value.getType() instanceof ClassType) {
             String typeString = TranslatorUtils.formatClassName(((ClassType) value.getType()).getFullyQualifiedName());
-            isStringConstantCast = typeString.equals("String") && ((JCastExpr) value).getOp() instanceof StringConstant;
+            isStringConstantCast = "String".equals(typeString) && ((JCastExpr) value).getOp() instanceof StringConstant;
         }
         return value instanceof StringConstant
                 || isToString(value)
@@ -512,7 +523,7 @@ public class TranslatorContext {
 
     private static boolean isToString(Value value) {
         if (value instanceof AbstractInstanceInvokeExpr) {
-            return ((AbstractInstanceInvokeExpr) value).getMethodSignature().getName().equals("toString");
+            return "toString".equals(((AbstractInstanceInvokeExpr) value).getMethodSignature().getName());
         }
         return false;
     }
@@ -536,6 +547,13 @@ public class TranslatorContext {
     public static String getCompileOption() {
         return compileOption;
     }
+
+    /**
+     * check if the class is in need packages
+     *
+     * @param className className
+     * @return boolean
+     */
     public static boolean isInUdfPackage(String className) {
         if (udfPackages == null) {
             return true;
@@ -600,5 +618,13 @@ public class TranslatorContext {
 
     public static Map<String, Integer> getLibInterfaceRef() {
         return libInterfaceRef;
+    }
+
+    public static Map<PrimitiveType, String> getPrimitiveTypeStringMap() {
+        return primitiveTypeStringMap;
+    }
+
+    public static Map<PrimitiveType, String> getPrimitiveTypeIncludeStringMap() {
+        return primitiveTypeIncludeStringMap;
     }
 }

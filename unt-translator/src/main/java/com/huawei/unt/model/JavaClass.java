@@ -77,33 +77,7 @@ public class JavaClass {
             this.fields.add(field);
         }
 
-        for (JavaSootMethod method : javaSootClass.getMethods()) {
-            if (method.isNative()) {
-                throw new LoaderException("Not support native method now");
-            }
-            if (method.getModifiers().contains(MethodModifier.BRIDGE)
-                    || method.isMain(JavaIdentifierFactory.getInstance())
-                    || TranslatorUtils.isIgnoredMethod(method)
-                    || (method.getReturnType() instanceof ClassType
-                        && TranslatorContext.getIgnoredClasses().contains(
-                            ((ClassType) method.getReturnType()).getFullyQualifiedName()))) {
-                continue;
-            }
-
-            boolean isIgnoreParam = false;
-            for (Type parameterType : method.getParameterTypes()) {
-                if (parameterType instanceof ClassType
-                        && TranslatorContext.getIgnoredClasses().contains(
-                                ((ClassType) parameterType).getFullyQualifiedName())) {
-                    isIgnoreParam = true;
-                    break;
-                }
-            }
-            if (isIgnoreParam) {
-                continue;
-            }
-            this.methods.add(method);
-        }
+        initMethods();
 
         Optional<JavaClassType> superClass = javaSootClass.getSuperclass();
 
@@ -136,6 +110,36 @@ public class JavaClass {
         supperClasses.add(udfClassType);
         includes.addAll(udfType.getRequiredIncludes());
         includes.add(methodSignature.getDeclClassType());
+    }
+
+    private void initMethods() {
+        for (JavaSootMethod method : javaSootClass.getMethods()) {
+            if (method.isNative()) {
+                throw new LoaderException("Not support native method now");
+            }
+            if (method.getModifiers().contains(MethodModifier.BRIDGE)
+                    || method.isMain(JavaIdentifierFactory.getInstance())
+                    || TranslatorUtils.isIgnoredMethod(method)
+                    || (method.getReturnType() instanceof ClassType
+                    && TranslatorContext.getIgnoredClasses().contains(
+                    ((ClassType) method.getReturnType()).getFullyQualifiedName()))) {
+                continue;
+            }
+
+            boolean isIgnoreParam = false;
+            for (Type parameterType : method.getParameterTypes()) {
+                if (parameterType instanceof ClassType
+                        && TranslatorContext.getIgnoredClasses().contains(
+                        ((ClassType) parameterType).getFullyQualifiedName())) {
+                    isIgnoreParam = true;
+                    break;
+                }
+            }
+            if (isIgnoreParam) {
+                continue;
+            }
+            this.methods.add(method);
+        }
     }
 
     public String getClassName() {
@@ -249,58 +253,23 @@ public class JavaClass {
         return this.isAbstract;
     }
 
+    /**
+     * the kind of dynamic invoke
+     */
     public enum Kind {
-        STATIC_METHOD_REF(1, "STATIC_METHOD_REF"),
-        INSTANCE_METHOD_REF(2, "INSTANCE_METHOD_REF"),
-        LAMBDA_CLASS(3, "LAMBDA_CLASS"),
-        SIMPLE_CLASS(4, "SIMPLE_CLASS");
+        STATIC_METHOD_REF("STATIC_METHOD_REF"),
+        INSTANCE_METHOD_REF("INSTANCE_METHOD_REF"),
+        LAMBDA_CLASS("LAMBDA_CLASS"),
+        SIMPLE_CLASS("SIMPLE_CLASS");
 
-        private final int val;
         private final String valStr;
 
-        private Kind(int val, String valStr) {
-            this.val = val;
+        Kind(String valStr) {
             this.valStr = valStr;
         }
 
         public String toString() {
             return this.valStr;
-        }
-
-        public int getValue() {
-            return this.val;
-        }
-
-        public String getValueName() {
-            return this.valStr;
-        }
-
-        public static Kind getKind(int kind) {
-            Kind[] var1 = values();
-            int var2 = var1.length;
-
-            for(int var3 = 0; var3 < var2; ++var3) {
-                Kind k = var1[var3];
-                if (k.getValue() == kind) {
-                    return k;
-                }
-            }
-
-            throw new RuntimeException("Error: No javaClass kind for value '" + kind + "'.");
-        }
-
-        public static Kind getKind(String kindName) {
-            Kind[] var1 = values();
-            int var2 = var1.length;
-
-            for(int var3 = 0; var3 < var2; ++var3) {
-                Kind k = var1[var3];
-                if (k.getValueName().equals(kindName)) {
-                    return k;
-                }
-            }
-
-            throw new RuntimeException("Error: No method handle kind for value name '" + kindName + "'.");
         }
     }
 }

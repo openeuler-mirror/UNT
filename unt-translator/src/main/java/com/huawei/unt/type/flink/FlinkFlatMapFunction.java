@@ -177,7 +177,6 @@ public class FlinkFlatMapFunction implements UDFType {
                 .append("::flatMap(Object *obj, Collector *collector) {")
                 .append(NEW_LINE);
 
-
         String typeString = TranslatorUtils.formatType(paramTypes.get(0));
 
         headBuilder.append(TAB)

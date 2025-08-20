@@ -350,18 +350,19 @@ public class DependencyAnalyzer {
         @Override
         public void caseDynamicInvokeExpr(@Nonnull JDynamicInvokeExpr expr) {
             List<Immediate> bootstrapArgs = expr.getBootstrapArgs();
-            try {
-                MethodHandle invokeMethod = (MethodHandle) bootstrapArgs.get(1);
+            MethodHandle invokeMethod;
+            if (bootstrapArgs.get(1) instanceof MethodHandle) {
+                invokeMethod = (MethodHandle) bootstrapArgs.get(1);
+            } else {
+                throw new TranslatorException("not supported dynamic invoke stmts");
+            }
 
-                if (bootstrapArgs.size() < 3 || invokeMethod.isFieldRef()) {
-                    throw new TranslatorException("not supported dynamic invoke stmts");
-                }
+            if (bootstrapArgs.size() < 3 || invokeMethod.isFieldRef()) {
+                throw new TranslatorException("not supported dynamic invoke stmts");
+            }
 
-                if (invokeMethod.getKind().equals(MethodHandle.Kind.REF_INVOKE_STATIC)) {
-                    classes.add(invokeMethod.getReferenceSignature().getDeclClassType());
-                }
-            } catch (Exception e) {
-                throw new TranslatorException(e.getMessage());
+            if (MethodHandle.Kind.REF_INVOKE_STATIC.equals(invokeMethod.getKind())) {
+                classes.add(invokeMethod.getReferenceSignature().getDeclClassType());
             }
         }
     }

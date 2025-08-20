@@ -182,6 +182,13 @@ public class TranslatorUtils {
         return true;
     }
 
+    /**
+     * Get Lambda Udf Class Name
+     *
+     * @param methodSignature MethodSignature
+     * @param udfType UDFType
+     * @return lambda udf class name
+     */
     public static String formatLambdaUdfClassName(MethodSignature methodSignature, UDFType udfType) {
         return methodSignature.getDeclClassType().getFullyQualifiedName()
                 + "$" + methodSignature.getName()
@@ -339,7 +346,12 @@ public class TranslatorUtils {
                 }
             }
         }
+        return getIncludeStr(javaClass, knownIncludes, translatedIncludes);
+    }
 
+    private static String getIncludeStr(JavaClass javaClass,
+                                        Set<String> knownIncludes,
+                                        Set<String> translatedIncludes) {
         StringBuilder includeBuilder = new StringBuilder();
         knownIncludes.stream().sorted().forEach(include -> includeBuilder
                 .append("#include \"")
@@ -358,16 +370,18 @@ public class TranslatorUtils {
         Set<PrimitiveType> primitiveTypeSet = new HashSet<>();
         for (JavaSootField field : javaClass.getFields()) {
             if (field.getType() instanceof PrimitiveType) {
-                if (!TranslatorContext.PRIMITIVE_TYPE_INCLUDESTRING_MAP.containsKey(field.getType())) {
-                    throw new TranslatorException("no support " + ((PrimitiveType) field.getType()).getName() + " primitive type");
-                }else {
+                if (!TranslatorContext.getPrimitiveTypeIncludeStringMap().containsKey(field.getType())) {
+                    throw new TranslatorException("no support "
+                            + ((PrimitiveType) field.getType()).getName()
+                            + " primitive type");
+                } else {
                     primitiveTypeSet.add((PrimitiveType) field.getType());
                 }
             }
         }
         for (PrimitiveType primitiveType : primitiveTypeSet) {
             includeBuilder.append("#include \"")
-                    .append(TranslatorContext.PRIMITIVE_TYPE_INCLUDESTRING_MAP.get(primitiveType))
+                    .append(TranslatorContext.getPrimitiveTypeIncludeStringMap().get(primitiveType))
                     .append("\"")
                     .append(NEW_LINE);
         }

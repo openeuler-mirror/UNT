@@ -588,5 +588,4 @@ public class MemoryReleaseOptimizer implements Optimizer {
                 && TranslatorContext.INIT_FUNCTION_NAME
                 .equals(((JSpecialInvokeExpr) value).getMethodSignature().getName());
     }
-
 }

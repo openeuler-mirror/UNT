@@ -115,64 +115,71 @@ public class FlinkKeyedProcessFunction implements UDFType {
                 methodContext.getJavaMethod().getDeclClassType().getFullyQualifiedName());
         if ("processElement".equals(methodContext.getJavaMethod().getName())
                 && isUdfFunction(methodContext.getJavaMethod())) {
-
-            StringBuilder headBuilder = new StringBuilder("void ")
-                    .append(className)
-                    .append("::processElement(")
-                    .append("Object *obj, KeyedProcessFunction<Object*, Object*, Object*>"
-                            + "::Context *ctx, Collector *collector) {")
-                    .append(NEW_LINE);
-
-            Local param1 = methodContext.getParams().get(0);
-            methodContext.removeLocal(param1);
-            String typeString = TranslatorUtils.formatType(param1.getType());
-
-            headBuilder.append(TAB)
-                    .append(typeString).append(" *")
-                    .append(TranslatorUtils.formatLocalName(param1))
-                    .append(" = reinterpret_cast<")
-                    .append(typeString).append(" *>(obj);")
-                    .append(NEW_LINE);
-
-            Local param2 = methodContext.getParams().get(1);
-            methodContext.removeLocal(param2);
-            headBuilder.append(TAB)
-                    .append("KeyedProcessFunction<Object*, Object*, Object*>::Context *")
-                    .append(TranslatorUtils.formatLocalName(param2))
-                    .append(" = ctx;")
-                    .append(NEW_LINE);
-
-            Local param3 = methodContext.getParams().get(2);
-            methodContext.removeLocal(param3);
-            headBuilder.append(TAB)
-                    .append("Collector *")
-                    .append(TranslatorUtils.formatLocalName(param3))
-                    .append(" = collector;")
-                    .append(NEW_LINE);
-
-            return headBuilder.append(NEW_LINE).toString();
-        }  else if ("open".equals(methodContext.getJavaMethod().getName())
+            return printProcessElementHeadAndParams(methodContext, className);
+        } else if ("open".equals(methodContext.getJavaMethod().getName())
                 && isUdfFunction(methodContext.getJavaMethod())) {
-            StringBuilder headBuilder = new StringBuilder()
-                    .append("void ")
-                    .append(className)
-                    .append("::open(const Configuration& conf)")
-                    .append(NEW_LINE)
-                    .append("{")
-                    .append(NEW_LINE);
-
-            Local paramLocal = methodContext.getParams().get(0);
-            methodContext.removeLocal(paramLocal);
-
-            headBuilder.append(TAB)
-                    .append("Configuration *")
-                    .append(TranslatorUtils.formatLocalName(paramLocal))
-                    .append(" = const_cast<Configuration *>(&conf);")
-                    .append(NEW_LINE);
-
-            return headBuilder.append(NEW_LINE).toString();
+            return printOpenHeadAndParams(methodContext, className);
         } else {
             return TranslatorUtils.printHeadAndParams(methodContext);
         }
+    }
+
+    private String printProcessElementHeadAndParams(MethodContext methodContext, String className) {
+        StringBuilder headBuilder = new StringBuilder("void ")
+                .append(className)
+                .append("::processElement(")
+                .append("Object *obj, KeyedProcessFunction<Object*, Object*, Object*>"
+                        + "::Context *ctx, Collector *collector) {")
+                .append(NEW_LINE);
+
+        Local param1 = methodContext.getParams().get(0);
+        methodContext.removeLocal(param1);
+        String typeString = TranslatorUtils.formatType(param1.getType());
+
+        headBuilder.append(TAB)
+                .append(typeString).append(" *")
+                .append(TranslatorUtils.formatLocalName(param1))
+                .append(" = reinterpret_cast<")
+                .append(typeString).append(" *>(obj);")
+                .append(NEW_LINE);
+
+        Local param2 = methodContext.getParams().get(1);
+        methodContext.removeLocal(param2);
+        headBuilder.append(TAB)
+                .append("KeyedProcessFunction<Object*, Object*, Object*>::Context *")
+                .append(TranslatorUtils.formatLocalName(param2))
+                .append(" = ctx;")
+                .append(NEW_LINE);
+
+        Local param3 = methodContext.getParams().get(2);
+        methodContext.removeLocal(param3);
+        headBuilder.append(TAB)
+                .append("Collector *")
+                .append(TranslatorUtils.formatLocalName(param3))
+                .append(" = collector;")
+                .append(NEW_LINE);
+
+        return headBuilder.append(NEW_LINE).toString();
+    }
+
+    private String printOpenHeadAndParams(MethodContext methodContext, String className) {
+        StringBuilder headBuilder = new StringBuilder()
+                .append("void ")
+                .append(className)
+                .append("::open(const Configuration& conf)")
+                .append(NEW_LINE)
+                .append("{")
+                .append(NEW_LINE);
+
+        Local paramLocal = methodContext.getParams().get(0);
+        methodContext.removeLocal(paramLocal);
+
+        headBuilder.append(TAB)
+                .append("Configuration *")
+                .append(TranslatorUtils.formatLocalName(paramLocal))
+                .append(" = const_cast<Configuration *>(&conf);")
+                .append(NEW_LINE);
+
+        return headBuilder.append(NEW_LINE).toString();
     }
 }

@@ -108,10 +108,22 @@ public interface UDFType {
         throw new TranslatorException("This kind of udf does not support lambda function");
     }
 
+    /**
+     * print method ref head and params
+     *
+     * @param className className
+     * @param paramTypes paramTypes
+     * @return method ref head and params
+     */
     default String printMethodRefHeadAndParams(String className, List<Type> paramTypes) {
         throw new TranslatorException("This kind of udf does not support method ref function");
     }
 
+    /**
+     * check if the return of Lambda is referenced
+     *
+     * @return boolean
+     */
     default boolean refLambdaReturn() {
         throw new TranslatorException("This kind of udf does not support lambda function");
     }
