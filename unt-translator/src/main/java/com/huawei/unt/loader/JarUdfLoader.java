@@ -6,9 +6,6 @@ package com.huawei.unt.loader;
 
 import static com.huawei.unt.model.JavaClass.Kind.INSTANCE_METHOD_REF;
 import static com.huawei.unt.model.JavaClass.Kind.STATIC_METHOD_REF;
-
-import static sootup.core.jimple.common.constant.MethodHandle.Kind.REF_INVOKE_STATIC;
-
 import com.huawei.unt.model.JavaClass;
 import com.huawei.unt.translator.TranslatorContext;
 import com.huawei.unt.translator.TranslatorException;
@@ -17,6 +14,8 @@ import com.huawei.unt.type.EngineType;
 import com.huawei.unt.type.UDFType;
 
 import com.google.common.collect.ImmutableList;
+
+import static sootup.core.jimple.common.constant.MethodHandle.Kind.REF_INVOKE_STATIC;
 
 import sootup.core.jimple.basic.Local;
 import sootup.core.jimple.common.constant.MethodHandle;
@@ -36,6 +35,7 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.SerializedLambda;
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
