@@ -16,11 +16,13 @@ import com.google.common.collect.ImmutableSet;
 import sootup.core.jimple.basic.Local;
 import sootup.core.model.MethodModifier;
 import sootup.core.types.ClassType;
+import sootup.core.types.Type;
 import sootup.java.core.JavaIdentifierFactory;
 import sootup.java.core.JavaSootMethod;
 
 import org.apache.flink.api.common.functions.MapFunction;
 
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -121,10 +123,11 @@ public class FlinkMapFunction implements UDFType {
 
     @Override
     public String printLambdaHeadAndParams(MethodContext methodContext) {
-        String declClassName = TranslatorUtils.formatClassName(
-                methodContext.getJavaMethod().getDeclClassType().getFullyQualifiedName());
-        String methodName = TranslatorUtils.formatClassName(methodContext.getJavaMethod().getName());
-        String className = declClassName + "_" + methodName;
+        String className = TranslatorUtils.formatClassName(
+                TranslatorUtils.formatLambdaUdfClassName(
+                        methodContext.getJavaMethod().getSignature(),
+                        methodContext.getUdfType())
+        );
 
         StringBuilder headBuilder = new StringBuilder();
 
@@ -147,6 +150,33 @@ public class FlinkMapFunction implements UDFType {
                 .append(NEW_LINE);
 
         return headBuilder.toString();
+    }
+
+    @Override
+    public String printMethodRefHeadAndParams(String className, List<Type> paramTypes) {
+        StringBuilder headBuilder = new StringBuilder();
+
+        headBuilder.append("Object *")
+                .append(TranslatorUtils.formatClassName(className))
+                .append("::")
+                .append("map(Object *obj)")
+                .append(NEW_LINE)
+                .append("{")
+                .append(NEW_LINE);
+
+        String typeString = TranslatorUtils.formatType(paramTypes.get(0));
+
+        headBuilder.append(TAB)
+                .append(typeString).append(" *").append("in0")
+                .append(" = reinterpret_cast<").append(typeString).append(" *>(obj);")
+                .append(NEW_LINE);
+
+        return headBuilder.toString();
+    }
+
+    @Override
+    public boolean refLambdaReturn() {
+        return true;
     }
 
     @Override

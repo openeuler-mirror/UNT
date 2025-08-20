@@ -6,6 +6,7 @@ package com.huawei.unt.loader;
 
 import com.huawei.unt.UNTException;
 import com.huawei.unt.model.JavaClass;
+import com.huawei.unt.translator.TranslatorContext;
 import com.huawei.unt.translator.TranslatorException;
 import com.huawei.unt.type.UDFType;
 
@@ -60,7 +61,9 @@ public class JarHandler {
             JavaView view = getJavaView(jarPath);
             this.typeHierarchy = view.getTypeHierarchy();
             for (JavaSootClass javaSootClass : view.getClasses().collect(Collectors.toList())) {
-                allJavaClass.put(javaSootClass.getName(), javaSootClass);
+                if (TranslatorContext.isInUdfPackage(javaSootClass.getName())) {
+                    allJavaClass.put(javaSootClass.getName(), javaSootClass);
+                }
             }
             this.javaView = view;
         } catch (Exception e) {

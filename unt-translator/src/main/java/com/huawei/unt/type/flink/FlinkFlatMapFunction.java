@@ -16,6 +16,7 @@ import com.google.common.collect.ImmutableSet;
 import sootup.core.jimple.basic.Local;
 import sootup.core.model.MethodModifier;
 import sootup.core.types.ClassType;
+import sootup.core.types.Type;
 import sootup.core.types.VoidType;
 import sootup.java.core.JavaIdentifierFactory;
 import sootup.java.core.JavaSootMethod;
@@ -24,6 +25,7 @@ import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.util.Collector;
 
 import java.util.Set;
+import java.util.List;
 
 /**
  * Flink dataStream FlatMapFunction
@@ -135,10 +137,11 @@ public class FlinkFlatMapFunction implements UDFType {
 
     @Override
     public String printLambdaHeadAndParams(MethodContext methodContext) {
-        String declClassName = TranslatorUtils.formatClassName(
-                methodContext.getJavaMethod().getDeclClassType().getFullyQualifiedName());
-        String methodName = TranslatorUtils.formatClassName(methodContext.getJavaMethod().getName());
-        String className = declClassName + "_" + methodName;
+        String className = TranslatorUtils.formatClassName(
+                TranslatorUtils.formatLambdaUdfClassName(
+                        methodContext.getJavaMethod().getSignature(),
+                        methodContext.getUdfType())
+        );
 
         StringBuilder headBuilder = new StringBuilder("void ")
                 .append(className)
@@ -165,6 +168,36 @@ public class FlinkFlatMapFunction implements UDFType {
                 .append(NEW_LINE);
 
         return headBuilder.append(NEW_LINE).toString();
+    }
+
+    @Override
+    public String printMethodRefHeadAndParams(String className, List<Type> paramTypes) {
+        StringBuilder headBuilder = new StringBuilder("void ")
+                .append(TranslatorUtils.formatClassName(className))
+                .append("::flatMap(Object *obj, Collector *collector) {")
+                .append(NEW_LINE);
+
+        String typeString = TranslatorUtils.formatType(paramTypes.get(0));
+
+        headBuilder.append(TAB)
+                .append(typeString).append(" *")
+                .append("in0")
+                .append(" = reinterpret_cast<")
+                .append(typeString).append(" *>(obj);")
+                .append(NEW_LINE);
+
+        headBuilder.append(TAB)
+                .append("Collector *")
+                .append("in1")
+                .append(" = collector;")
+                .append(NEW_LINE);
+
+        return headBuilder.append(NEW_LINE).toString();
+    }
+
+    @Override
+    public boolean refLambdaReturn() {
+        return false;
     }
 
     @Override

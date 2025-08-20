@@ -36,11 +36,11 @@ import javax.annotation.Nonnull;
  * @since 2025-05-19
  */
 public class MethodContext {
+    private final JavaSootMethod javaMethod;
+
     private final boolean isStaticInit;
     private final boolean isInit;
     private final boolean isIgnore;
-
-    private final JavaSootMethod javaMethod;
     private final UDFType type;
     private final Local thisLocal;
     private final Set<Local> locals;
@@ -56,7 +56,6 @@ public class MethodContext {
     private final Set<Integer> reassignStmts = new HashSet<>();
     private final Set<Local> reassignLocals = new HashSet<>();
     private final Set<Integer> ignoredReturnValues = new HashSet<>();
-    private final Map<Integer, Set<LValue>> makeNull = new HashMap<>();
     private final Set<Integer> gotoFreeStmts = new HashSet<>();
     private final Map<Integer, Immediate> retStmts = new HashMap<>();
     private final Map<Integer, Set<Local>> beforeLocals = new HashMap<>();
@@ -270,15 +269,6 @@ public class MethodContext {
     }
 
     /**
-     * mark some fields to null
-     *
-     * @param fields fields marked to null
-     */
-    public void setMakeNull(Map<Integer, Set<LValue>> fields) {
-        this.makeNull.putAll(fields);
-    }
-
-    /**
      * set GotoFree Stmts
      *
      * @param gotoFreeStmts gotoFreeStmts
@@ -407,19 +397,6 @@ public class MethodContext {
      */
     public Set<Local> getReassignLocals() {
         return this.reassignLocals;
-    }
-
-    /**
-     * get make null vars
-     *
-     * @param i index
-     * @return vars
-     */
-    public Set<LValue> getMakeNullVars(int i) {
-        if (makeNull.containsKey(i)) {
-            return makeNull.get(i);
-        }
-        return new HashSet<>();
     }
 
     /**

@@ -5,6 +5,19 @@
 package com.huawei.unt.translator;
 
 import sootup.core.types.PrimitiveType;
+import sootup.core.jimple.basic.Value;
+import sootup.core.jimple.common.constant.StringConstant;
+import sootup.core.jimple.common.expr.AbstractInstanceInvokeExpr;
+import sootup.core.jimple.common.expr.AbstractInvokeExpr;
+import sootup.core.jimple.common.expr.JCastExpr;
+import sootup.core.jimple.common.expr.JDynamicInvokeExpr;
+import sootup.core.jimple.common.expr.JInterfaceInvokeExpr;
+import sootup.core.jimple.common.expr.JNewArrayExpr;
+import sootup.core.jimple.common.expr.JNewExpr;
+import sootup.core.jimple.common.expr.JNewMultiArrayExpr;
+import sootup.core.jimple.common.expr.JVirtualInvokeExpr;
+import sootup.core.signatures.MethodSignature;
+import sootup.core.types.ClassType;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,9 +30,12 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.Arrays;
+import java.util.StringJoiner;
 
 /**
  * TranslatorContext
@@ -48,6 +64,11 @@ public class TranslatorContext {
      * four space for tab
      */
     public static final String TAB = "    ";
+
+    /**
+     * new object expression
+     */
+    public static final String NEW_OBJ = "new %s(%s)";
 
     /**
      * unknown put ref cpp code string
@@ -121,10 +142,9 @@ public class TranslatorContext {
     public static final String OLD_VAR_PUT = TAB + "if (old%1$S != nullptr) {" + NEW_LINE
             + TAB + TAB + "old%1$S->putRefCount();" + NEW_LINE
             + TAB + "}" + NEW_LINE;
+    private static final LinkedList<String> superClassQueue = new LinkedList<>();
+    private static final Set<String> searched = new HashSet<>();
 
-    /**
-     *
-     */
     private static Map<PrimitiveType, String> primitiveTypeStringMap =
             new HashMap<PrimitiveType, String>() {{
                 put(PrimitiveType.BooleanType.getInstance(), "Boolean");
@@ -133,9 +153,6 @@ public class TranslatorContext {
                 put(PrimitiveType.LongType.getInstance(), "Long");
             }};
 
-    /**
-     *
-     */
     private static Map<PrimitiveType, String> primitiveTypeIncludeStringMap =
             new HashMap<PrimitiveType, String>() {{
                 put(PrimitiveType.BooleanType.getInstance(), "basictypes/java_lang_Boolean.h");
@@ -163,6 +180,7 @@ public class TranslatorContext {
     private static boolean isHwAccTune;
     private static boolean isRegexAcc;
     private static String compileOption;
+    private static Set<String> udfPackages;
 
     private TranslatorContext() {
     }
@@ -239,6 +257,16 @@ public class TranslatorContext {
             LOGGER.info("use compile_option: {}", getCompileOption());
         }
 
+        if (!getUdfMap().containsKey("udf_package") || "".equals(getUdfMap().get("udf_package"))) {
+            udfPackages = null;
+            LOGGER.warn("default scan all package in jar");
+        } else {
+            udfPackages = new HashSet<>(Arrays.asList(getUdfMap().get("udf_package").split(",")));
+            StringJoiner loadUdfPackages = new StringJoiner(",");
+            udfPackages.forEach(loadUdfPackages::add);
+            LOGGER.info("scan package: {}", loadUdfPackages);
+        }
+
         String basicDir = getUdfMap().get("basic_lib_path").endsWith(File.separator)
                 ? getUdfMap().get("basic_lib_path")
                 : getUdfMap().get("basic_lib_path") + File.separator;
@@ -300,7 +328,7 @@ public class TranslatorContext {
 
             String dependInterface;
             while ((dependInterface = dependInterfacesReader.readLine()) != null) {
-                if (dependInterface.startsWith("%")) {
+                if (dependInterface.startsWith("%") || dependInterface.isEmpty()) {
                     continue;
                 }
                 String[] ref = dependInterface.trim().split(", ");
@@ -375,6 +403,66 @@ public class TranslatorContext {
     }
 
     /**
+     * get ref mark of method invoke value with methodSignature and value
+     *
+     * @param methodSignature methodSignature
+     * @param value value
+     * @return the ref mark of the method
+     */
+    public static int getRefCount(MethodSignature methodSignature, Value value) {
+        if ("<init>".equals(methodSignature.getName()) || "toString".equals(methodSignature.getName())) {
+            return 1;
+        }
+        ClassType classType = methodSignature.getDeclClassType();
+        if (libInterfaceRef.containsKey(methodSignature.toString())) {
+            return libInterfaceRef.get(methodSignature.toString());
+        } else {
+            int refTmp = -1;
+            if (value == null || value instanceof JVirtualInvokeExpr || value instanceof JInterfaceInvokeExpr) {
+                if (superclassMap.containsKey(classType.getFullyQualifiedName())) {
+                    refTmp = searchSuperClass(methodSignature);
+                    superClassQueue.clear();
+                    searched.clear();
+                }
+            }
+            if (refTmp != -1) {
+                return refTmp;
+            }
+        }
+        putMissingInterfaces(methodSignature);
+        LOGGER.warn(String.format(
+                "the ref of method %s not found in refMap, use default 0 as ref count", methodSignature));
+        return 0;
+    }
+
+    /**
+     * get ref mark of value
+     *
+     * @param value value
+     * @return the ref mark of value
+     */
+    public static int getRefCount(Value value) {
+        if (value instanceof JDynamicInvokeExpr || isNewExpr(value) || isPackingString(value)) {
+            return 1;
+        }
+        if (value instanceof AbstractInvokeExpr) {
+            MethodSignature signature = ((AbstractInvokeExpr) value).getMethodSignature();
+            return getRefCount(signature, value);
+        }
+        return 0;
+    }
+
+    /**
+     * get ref mark of method with methodSignature
+     *
+     * @param methodSignature methodSignature
+     * @return the ref mark of method
+     */
+    public static int getRefCount(MethodSignature methodSignature) {
+        return getRefCount(methodSignature, null);
+    }
+
+    /**
      * update subclass map
      */
     public static void updateSubclassMap() {
@@ -385,6 +473,59 @@ public class TranslatorContext {
                 getSubclassMap().put(sup, subs);
             }
         }
+    }
+
+    private static int searchSuperClass(MethodSignature methodSignature) {
+        String className = methodSignature.getDeclClassType().getFullyQualifiedName();
+        superClassQueue.addAll(superclassMap.get(className));
+        while (! superClassQueue.isEmpty()) {
+            String superClass = superClassQueue.removeFirst();
+            if (! searched.contains(superClass)) {
+                String methodSignatureStr = methodSignature.toString();
+                methodSignatureStr = methodSignatureStr.replace(className, superClass);
+                if (libInterfaceRef.containsKey(methodSignatureStr)) {
+                    int res = libInterfaceRef.get(methodSignatureStr);
+                    libInterfaceRef.put(methodSignature.toString(), res);
+                    return libInterfaceRef.get(methodSignatureStr);
+                }
+                if (superclassMap.containsKey(superClass)) {
+                    superClassQueue.addAll(
+                            superclassMap.get(superClass));
+                }
+                searched.add(superClass);
+            }
+        }
+        return -1;
+    }
+
+    private static void putMissingInterfaces(MethodSignature methodSignature) {
+        String className = methodSignature.getDeclClassType().getFullyQualifiedName();
+        Set<String> missingMethods = missingInterfaces.getOrDefault(className, new HashSet<>());
+        missingMethods.add(methodSignature.getSubSignature().toString());
+        missingInterfaces.put(
+                methodSignature.getDeclClassType().getFullyQualifiedName(), missingMethods);
+    }
+
+    private static boolean isNewExpr(Value value) {
+        return value instanceof JNewExpr || value instanceof JNewArrayExpr || value instanceof JNewMultiArrayExpr;
+    }
+
+    private static boolean isPackingString(Value value) {
+        boolean isStringConstantCast = false;
+        if (value instanceof JCastExpr && value.getType() instanceof ClassType) {
+            String typeString = TranslatorUtils.formatClassName(((ClassType) value.getType()).getFullyQualifiedName());
+            isStringConstantCast = "String".equals(typeString) && ((JCastExpr) value).getOp() instanceof StringConstant;
+        }
+        return value instanceof StringConstant
+                || isToString(value)
+                || isStringConstantCast;
+    }
+
+    private static boolean isToString(Value value) {
+        if (value instanceof AbstractInstanceInvokeExpr) {
+            return "toString".equals(((AbstractInstanceInvokeExpr) value).getMethodSignature().getName());
+        }
+        return false;
     }
 
     public static int getTuneLevel() {
@@ -405,6 +546,26 @@ public class TranslatorContext {
 
     public static String getCompileOption() {
         return compileOption;
+    }
+
+    /**
+     * check if the class is in need packages
+     *
+     * @param className className
+     * @return boolean
+     */
+    public static boolean isInUdfPackage(String className) {
+        if (udfPackages == null) {
+            return true;
+        }
+
+        for (String udfPackage : udfPackages) {
+            if (className.startsWith(udfPackage)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public static Map<String, Set<String>> getSuperclassMap() {
@@ -435,10 +596,6 @@ public class TranslatorContext {
         return functionMap;
     }
 
-    public static Map<String, Integer> getLibInterfaceRef() {
-        return libInterfaceRef;
-    }
-
     public static Set<String> getFilterPackages() {
         return filterPackages;
     }
@@ -457,6 +614,10 @@ public class TranslatorContext {
 
     public static Map<String, String> getGenericFunction() {
         return genericFunction;
+    }
+
+    public static Map<String, Integer> getLibInterfaceRef() {
+        return libInterfaceRef;
     }
 
     public static Map<PrimitiveType, String> getPrimitiveTypeStringMap() {

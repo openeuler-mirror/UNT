@@ -12,17 +12,9 @@ import sootup.core.jimple.basic.Immediate;
 import sootup.core.jimple.basic.LValue;
 import sootup.core.jimple.basic.Local;
 import sootup.core.jimple.basic.Value;
-import sootup.core.jimple.common.constant.StringConstant;
-import sootup.core.jimple.common.expr.AbstractInstanceInvokeExpr;
 import sootup.core.jimple.common.expr.AbstractInvokeExpr;
 import sootup.core.jimple.common.expr.JCastExpr;
-import sootup.core.jimple.common.expr.JDynamicInvokeExpr;
-import sootup.core.jimple.common.expr.JInterfaceInvokeExpr;
-import sootup.core.jimple.common.expr.JNewArrayExpr;
-import sootup.core.jimple.common.expr.JNewExpr;
-import sootup.core.jimple.common.expr.JNewMultiArrayExpr;
 import sootup.core.jimple.common.expr.JSpecialInvokeExpr;
-import sootup.core.jimple.common.expr.JVirtualInvokeExpr;
 import sootup.core.jimple.common.ref.JArrayRef;
 import sootup.core.jimple.common.ref.JFieldRef;
 import sootup.core.jimple.common.stmt.JAssignStmt;
@@ -33,7 +25,6 @@ import sootup.core.jimple.common.stmt.JReturnStmt;
 import sootup.core.jimple.common.stmt.JReturnVoidStmt;
 import sootup.core.jimple.common.stmt.Stmt;
 import sootup.core.signatures.MethodSignature;
-import sootup.core.types.ClassType;
 import sootup.core.types.PrimitiveType;
 
 import org.slf4j.Logger;
@@ -42,7 +33,6 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -66,9 +56,6 @@ public class MemoryReleaseOptimizer implements Optimizer {
      */
     public static final Integer AFTER = 1;
 
-    private final Map<String, Integer> refMap = TranslatorContext.getLibInterfaceRef();
-    private final LinkedList<String> superClassQueue = new LinkedList<>();
-    private final Set<String> searched = new HashSet<>();
     private List<Stmt> stmts;
     private List<Stmt> stmtsToBeTranslated;
     private Map<Local, Integer> locals;
@@ -77,7 +64,6 @@ public class MemoryReleaseOptimizer implements Optimizer {
     private Map<Integer, Map<LValue, Integer>> unknownFree;
     private Map<Integer, Map<LValue, Integer>> circleFree;
     private Map<Integer, Map<LValue, Integer>> getRef;
-    private Map<Integer, Set<LValue>> makeNullSet;
     private Set<Integer> gotoFreeStmts;
     private Map<Integer, Immediate> retStmts;
     private Set<Integer> reassignStmts;
@@ -93,7 +79,7 @@ public class MemoryReleaseOptimizer implements Optimizer {
     private int finalReturn;
     private boolean needRet;
     private boolean needFree;
-    private String methodSignature;
+    private MethodSignature methodSignature;
     private boolean isStaticInit;
     private boolean isInit;
     private Map<Integer, Integer> loops;
@@ -108,7 +94,7 @@ public class MemoryReleaseOptimizer implements Optimizer {
         isStaticInit = methodContext.isStaticInit();
         isInit = methodContext.isInit();
         stmts = methodContext.getJavaMethod().getBody().getStmts();
-        methodSignature = methodContext.getJavaMethod().getSignature().toString();
+        methodSignature = methodContext.getJavaMethod().getSignature();
         stmtsToBeTranslated = methodContext.getStmts();
         locals = new HashMap<>();
         localAssign = new HashMap<>();
@@ -116,7 +102,6 @@ public class MemoryReleaseOptimizer implements Optimizer {
         unknownFree = new HashMap<>();
         circleFree = new HashMap<>();
         getRef = new HashMap<>();
-        makeNullSet = new HashMap<>();
         gotoFreeStmts = new HashSet<>();
         retStmts = new HashMap<>();
         reassignStmts = new HashSet<>();
@@ -187,7 +172,6 @@ public class MemoryReleaseOptimizer implements Optimizer {
         methodContext.setUnknownFree(unknownFree);
         methodContext.setCircleFree(circleFree);
         methodContext.setGetRef(getRef);
-        methodContext.setMakeNull(makeNullSet);
         methodContext.setReassignStmts(reassignStmts);
         methodContext.setReassignLocals(reassignLocals);
         methodContext.setIgnoredReturnValues(ignoredReturnValues);
@@ -276,22 +260,20 @@ public class MemoryReleaseOptimizer implements Optimizer {
         int j = i;
         Set<Integer> targets = new HashSet<>();
         while (j < stmts.size()) {
-            if (methodContext.isRemoved(j)) {
-                j++;
-                continue;
-            }
-            Stmt stmt = stmts.get(j);
-            if (stmt.branches()) {
-                for (Integer branchTarget : methodContext.getBranchTargets(stmt)) {
-                    if (branchTarget > i) {
-                        targets.add(branchTarget);
-                    } else {
-                        backupPoints.put(j, i);
+            if (!methodContext.isRemoved(j)) {
+                Stmt stmt = stmts.get(j);
+                if (stmt.branches()) {
+                    for (Integer branchTarget : methodContext.getBranchTargets(stmt)) {
+                        if (branchTarget > i) {
+                            targets.add(branchTarget);
+                        } else {
+                            backupPoints.put(j, i);
+                        }
                     }
                 }
-            }
-            if (stmt instanceof JGotoStmt || stmt instanceof JReturnStmt || stmt instanceof JReturnVoidStmt) {
-                break;
+                if (stmt instanceof JGotoStmt || stmt instanceof JReturnStmt || stmt instanceof JReturnVoidStmt) {
+                    break;
+                }
             }
             j++;
             if (methodContext.containsLabel(j)) {
@@ -320,7 +302,7 @@ public class MemoryReleaseOptimizer implements Optimizer {
         LValue leftOp = ((JAssignStmt) stmt).getLeftOp();
 
         Value value = ((JAssignStmt) stmt).getRightOp();
-        int ref = getRef(value);
+        int ref = TranslatorContext.getRefCount(value);
         if (!(leftOp.getType() instanceof PrimitiveType)) {
             if (leftOp instanceof Local) {
                 localAssignStmtHandle(i, (Local) leftOp, value, ref);
@@ -422,7 +404,7 @@ public class MemoryReleaseOptimizer implements Optimizer {
                     getRefs = getRef.getOrDefault(location, new HashMap<>());
                     getRefs.put(leftOp, AFTER);
                     getRef.put(location, getRefs);
-                    reassignStmts.add(j);
+                    reassignStmts.add(location);
                 }
                 locals.put(leftOp, 1);
             }
@@ -496,7 +478,7 @@ public class MemoryReleaseOptimizer implements Optimizer {
         }
         LValue leftOp = ((JAssignStmt) stmt).getLeftOp();
         Value value = ((JAssignStmt) stmt).getRightOp();
-        int ref = getRef(value);
+        int ref = TranslatorContext.getRefCount(value);
         if (! (leftOp.getType() instanceof PrimitiveType)) {
             if (leftOp instanceof Local) {
                 if (localAssign.containsKey(leftOp)) {
@@ -524,7 +506,7 @@ public class MemoryReleaseOptimizer implements Optimizer {
         Stmt stmt = stmts.get(i);
         if (stmt instanceof JInvokeStmt && ((JInvokeStmt) stmt).getInvokeExpr().isPresent()) {
             Optional<AbstractInvokeExpr> expr = ((JInvokeStmt) stmt).getInvokeExpr();
-            if (!isObjInit(expr.get()) && getRef(expr.get()) == 1) {
+            if (!isObjInit(expr.get()) && TranslatorContext.getRefCount(expr.get()) == 1) {
                 ignoredReturnValues.add(i);
             }
         }
@@ -543,7 +525,7 @@ public class MemoryReleaseOptimizer implements Optimizer {
             gotoFree(finalReturn);
         }
         finalReturn = i;
-        if (refMap.get(methodSignature) == 1) {
+        if (TranslatorContext.getRefCount(methodSignature) == 1) {
             returnRefHandle(i);
         }
     }
@@ -601,81 +583,9 @@ public class MemoryReleaseOptimizer implements Optimizer {
         freeMap.put(i, vars);
     }
 
-    private int getRef(Value value) {
-        if (value instanceof JDynamicInvokeExpr || isNewExpr(value)
-                || value instanceof StringConstant || isToString(value)) {
-            return 1;
-        }
-        if (value instanceof AbstractInvokeExpr) {
-            MethodSignature signature = ((AbstractInvokeExpr) value).getMethodSignature();
-            ClassType classType = signature.getDeclClassType();
-            if (refMap.containsKey(signature.toString())) {
-                return refMap.get(signature.toString());
-            } else {
-                int refTmp = -1;
-                if (value instanceof JVirtualInvokeExpr || value instanceof JInterfaceInvokeExpr) {
-                    if (TranslatorContext.getSuperclassMap().containsKey(classType.getFullyQualifiedName())) {
-                        refTmp = searchSuperClass(signature);
-                        superClassQueue.clear();
-                        searched.clear();
-                    }
-                }
-                if (refTmp != -1) {
-                    return refTmp;
-                }
-            }
-            putMissingInterfaces(signature);
-            LOGGER.warn(String.format(
-                    "the ref of method %s not found in refMap, use default 0 as ref count", signature));
-        }
-        return 0;
-    }
-
-    private void putMissingInterfaces(MethodSignature methodSignature) {
-        String className = methodSignature.getDeclClassType().getFullyQualifiedName();
-        Set<String> missingMethods = TranslatorContext.getMissingInterfaces().getOrDefault(className, new HashSet<>());
-        missingMethods.add(methodSignature.getSubSignature().toString());
-        TranslatorContext.getMissingInterfaces().put(
-                methodSignature.getDeclClassType().getFullyQualifiedName(), missingMethods);
-    }
-
-    private int searchSuperClass(MethodSignature methodSignature) {
-        String className = methodSignature.getDeclClassType().getFullyQualifiedName();
-        superClassQueue.addAll(TranslatorContext.getSuperclassMap().get(className));
-        while (! superClassQueue.isEmpty()) {
-            String superClass = superClassQueue.removeFirst();
-            if (! searched.contains(superClass)) {
-                String methodSignatureStr = methodSignature.toString();
-                methodSignatureStr = methodSignatureStr.replace(className, superClass);
-                if (refMap.containsKey(methodSignatureStr)) {
-                    int res = refMap.get(methodSignatureStr);
-                    refMap.put(methodSignature.toString(), res);
-                    return refMap.get(methodSignatureStr);
-                }
-                if (TranslatorContext.getSuperclassMap().containsKey(superClass)) {
-                    superClassQueue.addAll(
-                            TranslatorContext.getSuperclassMap().get(superClass));
-                }
-                searched.add(superClass);
-            }
-        }
-        return -1;
-    }
-
     private boolean isObjInit(Value value) {
         return value instanceof JSpecialInvokeExpr
                 && TranslatorContext.INIT_FUNCTION_NAME
                 .equals(((JSpecialInvokeExpr) value).getMethodSignature().getName());
-    }
-
-    private boolean isNewExpr(Value value) {
-        return value instanceof JNewExpr || value instanceof JNewArrayExpr || value instanceof JNewMultiArrayExpr;
-    }
-
-    private boolean isToString(Value value) {
-        if (value instanceof AbstractInstanceInvokeExpr) {
-            return ((AbstractInstanceInvokeExpr) value).getMethodSignature().getName().equals("toString");
-        }
-        return false;
     }
 }

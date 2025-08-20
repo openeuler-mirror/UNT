@@ -16,12 +16,14 @@ import com.google.common.collect.ImmutableSet;
 import sootup.core.jimple.basic.Local;
 import sootup.core.model.MethodModifier;
 import sootup.core.types.ClassType;
+import sootup.core.types.Type;
 import sootup.java.core.JavaIdentifierFactory;
 import sootup.java.core.JavaSootMethod;
 
 import org.apache.flink.api.common.functions.ReduceFunction;
 
 import java.util.Set;
+import java.util.List;
 
 /**
  * Flink ReduceFunction
@@ -124,14 +126,15 @@ public class FlinkReduceFunction implements UDFType {
 
     @Override
     public String printLambdaHeadAndParams(MethodContext methodContext) {
-        String declClassName = TranslatorUtils.formatClassName(
-                methodContext.getJavaMethod().getDeclClassType().getFullyQualifiedName());
-        String methodName = TranslatorUtils.formatClassName(methodContext.getJavaMethod().getName());
-        String className = declClassName + "_" + methodName;
+        String className = TranslatorUtils.formatClassName(
+                TranslatorUtils.formatLambdaUdfClassName(
+                        methodContext.getJavaMethod().getSignature(),
+                        methodContext.getUdfType())
+        );
 
         StringBuilder headBuilder = new StringBuilder()
                 .append("Object *")
-                .append(className)
+                .append(TranslatorUtils.formatClassName(className))
                 .append("::")
                 .append("reduce(Object *input0, Object *input1)")
                 .append(NEW_LINE)
@@ -151,6 +154,34 @@ public class FlinkReduceFunction implements UDFType {
         }
 
         return headBuilder.append(NEW_LINE).toString();
+    }
+
+    @Override
+    public String printMethodRefHeadAndParams(String className, List<Type> paramTypes) {
+        StringBuilder headBuilder = new StringBuilder()
+                .append("Object *")
+                .append(className)
+                .append("::")
+                .append("reduce(Object *input0, Object *input1)")
+                .append(NEW_LINE)
+                .append("{")
+                .append(NEW_LINE);
+
+        for (int i = 0; i < 2; i++) {
+            String typeString = TranslatorUtils.formatType(paramTypes.get(i));
+
+            headBuilder.append(TAB)
+                    .append(typeString).append(" *").append("in").append(i)
+                    .append(" = reinterpret_cast<").append(typeString).append(" *>(input").append(i).append(");")
+                    .append(NEW_LINE);
+        }
+
+        return headBuilder.append(NEW_LINE).toString();
+    }
+
+    @Override
+    public boolean refLambdaReturn() {
+        return true;
     }
 
     @Override

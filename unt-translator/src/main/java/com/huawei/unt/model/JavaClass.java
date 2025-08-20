@@ -10,6 +10,7 @@ import com.huawei.unt.translator.TranslatorUtils;
 import com.huawei.unt.type.UDFType;
 
 import sootup.core.model.MethodModifier;
+import sootup.core.signatures.MethodSignature;
 import sootup.core.types.ClassType;
 import sootup.core.types.Type;
 import sootup.java.core.JavaIdentifierFactory;
@@ -33,6 +34,7 @@ public class JavaClass {
     private final String className;
     private final UDFType type;
     private final boolean isLambda;
+    private final Kind kind;
 
     private final Set<JavaSootField> fields = new HashSet<>();
     private final Set<JavaSootMethod> methods = new HashSet<>();
@@ -45,6 +47,7 @@ public class JavaClass {
     private boolean hasObjectField = false;
     private boolean isJsonConstructor = false;
     private boolean isAbstract = false;
+    private MethodSignature refMethod = null;
 
     // use for lambda function
     public JavaClass(String className, UDFType udfType, JavaSootMethod udfMethod) {
@@ -54,18 +57,17 @@ public class JavaClass {
         ClassType udfClassType = TranslatorUtils.getClassTypeFromClassName(udfType.getBaseClass().getName());
         this.supperClasses.add(udfClassType);
         this.isLambda = true;
-        Set<String> superClassesSet = supperClasses.stream()
+        this.kind = Kind.LAMBDA_CLASS;
+        TranslatorContext.getSuperclassMap().put(className, supperClasses.stream()
                 .map(ClassType::toString)
-                .collect(Collectors.toSet());
-        superClassesSet.add("java.lang.Object");
-        TranslatorContext.getSuperclassMap().put(className, superClassesSet);
+                .collect(Collectors.toSet()));
     }
 
     public JavaClass(JavaSootClass javaSootClass, UDFType type) {
         this.className = javaSootClass.getName();
         this.type = type;
         this.javaSootClass = javaSootClass;
-
+        this.kind = Kind.SIMPLE_CLASS;
         for (JavaSootField field : javaSootClass.getFields()) {
             if (field.getType() instanceof ClassType
                     && TranslatorContext.getIgnoredClasses().contains(
@@ -75,33 +77,7 @@ public class JavaClass {
             this.fields.add(field);
         }
 
-        for (JavaSootMethod method : javaSootClass.getMethods()) {
-            if (method.isNative()) {
-                throw new LoaderException("Not support native method now");
-            }
-            if (method.getModifiers().contains(MethodModifier.BRIDGE)
-                    || method.isMain(JavaIdentifierFactory.getInstance())
-                    || TranslatorUtils.isIgnoredMethod(method)
-                    || (method.getReturnType() instanceof ClassType
-                        && TranslatorContext.getIgnoredClasses().contains(
-                            ((ClassType) method.getReturnType()).getFullyQualifiedName()))) {
-                continue;
-            }
-
-            boolean isIgnoreParam = false;
-            for (Type parameterType : method.getParameterTypes()) {
-                if (parameterType instanceof ClassType
-                        && TranslatorContext.getIgnoredClasses().contains(
-                                ((ClassType) parameterType).getFullyQualifiedName())) {
-                    isIgnoreParam = true;
-                    break;
-                }
-            }
-            if (isIgnoreParam) {
-                continue;
-            }
-            this.methods.add(method);
-        }
+        initMethods();
 
         Optional<JavaClassType> superClass = javaSootClass.getSuperclass();
 
@@ -114,12 +90,56 @@ public class JavaClass {
                 .filter(c -> !TranslatorContext.getIgnoredClasses().contains(c.getFullyQualifiedName()))
                 .collect(Collectors.toList()));
 
-        TranslatorContext.getSuperclassMap().put(className, supperClasses.stream()
+        Set<String> superClassesSet = supperClasses.stream()
                 .map(ClassType::toString)
-                .collect(Collectors.toSet()));
+                .collect(Collectors.toSet());
+        superClassesSet.add("java.lang.Object");
+        TranslatorContext.getSuperclassMap().put(className, superClassesSet);
 
         this.isLambda = false;
         this.isAbstract = !javaSootClass.isConcrete();
+    }
+
+    public JavaClass(MethodSignature methodSignature, UDFType udfType, Kind kind) {
+        this.className = TranslatorUtils.formatLambdaUdfClassName(methodSignature, udfType);
+        this.type = udfType;
+        this.kind = kind;
+        this.isLambda = true;
+        this.refMethod = methodSignature;
+        ClassType udfClassType = TranslatorUtils.getClassTypeFromClassName(udfType.getBaseClass().getName());
+        supperClasses.add(udfClassType);
+        includes.addAll(udfType.getRequiredIncludes());
+        includes.add(methodSignature.getDeclClassType());
+    }
+
+    private void initMethods() {
+        for (JavaSootMethod method : javaSootClass.getMethods()) {
+            if (method.isNative()) {
+                throw new LoaderException("Not support native method now");
+            }
+            if (method.getModifiers().contains(MethodModifier.BRIDGE)
+                    || method.isMain(JavaIdentifierFactory.getInstance())
+                    || TranslatorUtils.isIgnoredMethod(method)
+                    || (method.getReturnType() instanceof ClassType
+                    && TranslatorContext.getIgnoredClasses().contains(
+                    ((ClassType) method.getReturnType()).getFullyQualifiedName()))) {
+                continue;
+            }
+
+            boolean isIgnoreParam = false;
+            for (Type parameterType : method.getParameterTypes()) {
+                if (parameterType instanceof ClassType
+                        && TranslatorContext.getIgnoredClasses().contains(
+                        ((ClassType) parameterType).getFullyQualifiedName())) {
+                    isIgnoreParam = true;
+                    break;
+                }
+            }
+            if (isIgnoreParam) {
+                continue;
+            }
+            this.methods.add(method);
+        }
     }
 
     public String getClassName() {
@@ -196,16 +216,20 @@ public class JavaClass {
         return isJsonConstructor;
     }
 
-    public boolean isAbstract() {
-        return this.isAbstract;
-    }
-
     public void setJavaSootClass(JavaSootClass javaSootClass) {
         this.javaSootClass = javaSootClass;
     }
 
     public JavaSootClass getJavaSootClass() {
         return javaSootClass;
+    };
+
+    public MethodSignature getRefMethod() {
+        return refMethod;
+    }
+
+    public Kind getKind() {
+        return kind;
     }
 
     @Override
@@ -223,5 +247,29 @@ public class JavaClass {
     @Override
     public int hashCode() {
         return Objects.hash(className, type);
+    }
+
+    public boolean isAbstract() {
+        return this.isAbstract;
+    }
+
+    /**
+     * the kind of dynamic invoke
+     */
+    public enum Kind {
+        STATIC_METHOD_REF("STATIC_METHOD_REF"),
+        INSTANCE_METHOD_REF("INSTANCE_METHOD_REF"),
+        LAMBDA_CLASS("LAMBDA_CLASS"),
+        SIMPLE_CLASS("SIMPLE_CLASS");
+
+        private final String valStr;
+
+        Kind(String valStr) {
+            this.valStr = valStr;
+        }
+
+        public String toString() {
+            return this.valStr;
+        }
     }
 }

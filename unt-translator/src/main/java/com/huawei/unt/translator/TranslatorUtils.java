@@ -32,6 +32,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.stream.Collectors;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -42,7 +43,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.StringJoiner;
-import java.util.stream.Collectors;
 
 /**
  * TranslatorUtils
@@ -182,6 +182,19 @@ public class TranslatorUtils {
         return true;
     }
 
+    /**
+     * Get Lambda Udf Class Name
+     *
+     * @param methodSignature MethodSignature
+     * @param udfType UDFType
+     * @return lambda udf class name
+     */
+    public static String formatLambdaUdfClassName(MethodSignature methodSignature, UDFType udfType) {
+        return methodSignature.getDeclClassType().getFullyQualifiedName()
+                + "$" + methodSignature.getName()
+                + "#" + udfType.getBaseClass().getName();
+    }
+
     private static class LocalComparator implements Comparator<Local> {
         @Override
         public int compare(Local o1, Local o2) {
@@ -276,7 +289,7 @@ public class TranslatorUtils {
             return TranslatorContext.getStringMap().get(className);
         }
 
-        return className.replace('.', '_').replace('$', '_');
+        return className.replace('.', '_').replace('$', '_').replace('#', '_');
     }
 
     /**
@@ -333,7 +346,6 @@ public class TranslatorUtils {
                 }
             }
         }
-
         return getIncludeStr(javaClass, knownIncludes, translatedIncludes);
     }
 
@@ -361,7 +373,7 @@ public class TranslatorUtils {
                 if (!TranslatorContext.getPrimitiveTypeIncludeStringMap().containsKey(field.getType())) {
                     throw new TranslatorException("no support "
                             + ((PrimitiveType) field.getType()).getName()
-                            + "primitive type");
+                            + " primitive type");
                 } else {
                     primitiveTypeSet.add((PrimitiveType) field.getType());
                 }

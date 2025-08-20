@@ -83,7 +83,7 @@ public class RefAnalyzer {
                 if (! searched.contains(subclass)) {
                     String tmpSignature = methodSignatureStr.replace(interfaceName, subclass);
                     if (REF_MAP.containsKey(tmpSignature)) {
-                        REF_MAP.put(methodSignature.toString(), REF_MAP.get(tmpSignature));
+                        REF_MAP.put(methodSignatureStr, REF_MAP.get(tmpSignature));
                         break;
                     }
                     if (SUBCLASS_MAP.containsKey(subclass)) {
