@@ -6,7 +6,6 @@ package com.huawei.unt.loader;
 
 import static com.huawei.unt.model.JavaClass.Kind.INSTANCE_METHOD_REF;
 import static com.huawei.unt.model.JavaClass.Kind.STATIC_METHOD_REF;
-
 import com.huawei.unt.model.JavaClass;
 import com.huawei.unt.translator.TranslatorContext;
 import com.huawei.unt.translator.TranslatorException;
