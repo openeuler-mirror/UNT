@@ -48,6 +48,6 @@ public class JarLoadTest extends BaseTest {
 
         jarUdfLoader.loadUdfClasses();
 
-        assertEquals(2, jarUdfLoader.getClassUdfMap().size());
+        assertEquals(3, jarUdfLoader.getClassUdfMap().size());
     }
 }
