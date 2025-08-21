@@ -133,12 +133,10 @@ public class DynamicInvokeHandle implements Optimizer {
         }
 
         StringBuilder stmts = new StringBuilder();
+        String caller = getCaller(methodHandle, args, methodType, stmts);
         dealwith(methodType, args, signature, params, stmts);
 
         stmts.append(TAB_INLINE);
-        if (! (methodType.getReturnType() instanceof VoidType)) {
-            stmts.append("return ");
-        }
         if (! (signature.getType() instanceof VoidType)) {
             stmts.append(TranslatorUtils.formatParamType(signature.getType())).append("tmp = ");
         }
@@ -147,7 +145,6 @@ public class DynamicInvokeHandle implements Optimizer {
                     TranslatorUtils.formatClassName(signature.getDeclClassType().getFullyQualifiedName()),
                     params)).append(";").append(NEW_LINE);
         } else {
-            String caller = getCaller(methodHandle, args, methodType, stmts);
             stmts.append(caller).append(signature.getName()).append("(")
                     .append(params).append(");").append(NEW_LINE);
         }

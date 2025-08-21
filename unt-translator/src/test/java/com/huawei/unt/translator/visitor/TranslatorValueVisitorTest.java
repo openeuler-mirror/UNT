@@ -633,7 +633,7 @@ public class TranslatorValueVisitorTest extends BaseTest {
                 TranslatorException.class,
                 () -> dyn.accept(visitor)
         );
-        assertEquals("DynamicInvokeExpr is not supported yet", ex.getMessage());
+        assertEquals("DynamicInvokeExpr translator is supported limited", ex.getMessage());
     }
 
     @Test
