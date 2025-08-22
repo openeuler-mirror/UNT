@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
+ */
+
 package com.cutiedeng;
 
 import org.apache.flink.api.common.functions.*;
@@ -10,8 +14,9 @@ class PojoByteEmitter implements MapFunction<Object, PojoByte> {
 }
 
 class PojoByte {
-    private byte b;
     private static byte staticB;
+
+    private byte b;
 
     public byte getB () {
         return b;
