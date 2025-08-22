@@ -15,13 +15,16 @@ public:
     TestFieldTranslate(nlohmann::json jsonObj);
     ~TestFieldTranslate();
 
-private:
     java_lang_String *name = nullptr;
 
+    static Class* getClass();
+    static Class* clazz_;
 };
 
 #endif
 , #include "TestFieldTranslate.h"
+#include "basictypes/ClassRegistry.h"
+#include "basictypes/ReflectMacros.h"
 
 
 TestFieldTranslate::TestFieldTranslate()
@@ -43,4 +46,7 @@ TestFieldTranslate::TestFieldTranslate(nlohmann::json jsonObj) : java_lang_Objec
     }
 }
 
+DEFINE_REFLECT_CLASS_BEGIN(TestFieldTranslate)
+    REGISTER_PTR_FIELD(TestFieldTranslate, name, java_lang_String *, "java_lang_String")
+DEFINE_REFLECT_CLASS_END(TestFieldTranslate)
 ]

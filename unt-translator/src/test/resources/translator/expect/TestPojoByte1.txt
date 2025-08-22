@@ -1,0 +1,88 @@
+[#ifndef COM_CUTIEDENG_POJOBYTE_H
+#define COM_CUTIEDENG_POJOBYTE_H
+
+#include "basictypes/ClassRegistry.h"
+#include "basictypes/StringConstant.h"
+#include "nlohmann/json.hpp"
+
+#include "java_lang_Object.h"
+#include "basictypes/Byte.h"
+
+class com_cutiedeng_PojoByte : public java_lang_Object {
+public:
+    com_cutiedeng_PojoByte();
+
+    com_cutiedeng_PojoByte(nlohmann::json jsonObj);
+    ~com_cutiedeng_PojoByte();
+
+    int8_t getB();
+    static int8_t getStaticB();
+    void setB(int8_t param0);
+    static void setStaticB(int8_t param0);
+
+    thread_local static int8_t staticB;
+    int8_t b;
+
+    static Class* getClass();
+    static Class* clazz_;
+};
+
+#endif
+, #include "com_cutiedeng_PojoByte.h"
+#include "basictypes/ClassRegistry.h"
+#include "basictypes/ReflectMacros.h"
+
+
+com_cutiedeng_PojoByte::com_cutiedeng_PojoByte()
+{
+
+    return;
+}
+
+com_cutiedeng_PojoByte::~com_cutiedeng_PojoByte() {
+}
+
+com_cutiedeng_PojoByte::com_cutiedeng_PojoByte(nlohmann::json jsonObj) : java_lang_Object(jsonObj)
+ {
+    if(!jsonObj["b"].empty()) {
+        this->b = jsonObj["b"];
+    }
+}
+
+
+int8_t com_cutiedeng_PojoByte::getB()
+{
+    int8_t stack1;
+
+    stack1 = this->b;
+
+    return stack1;
+}
+
+int8_t com_cutiedeng_PojoByte::getStaticB()
+{
+    int8_t stack0;
+
+    stack0 = com_cutiedeng_PojoByte::staticB;
+
+    return stack0;
+}
+
+void com_cutiedeng_PojoByte::setB(int8_t l1)
+{
+    this->b = l1;
+
+    return;
+}
+
+void com_cutiedeng_PojoByte::setStaticB(int8_t l0)
+{
+    com_cutiedeng_PojoByte::staticB = l0;
+
+    return;
+}
+DEFINE_REFLECT_CLASS_BEGIN(com_cutiedeng_PojoByte)
+    REGISTER_PRIMITIVE_FIELD(com_cutiedeng_PojoByte, staticB, Byte, "byte")
+    REGISTER_PRIMITIVE_FIELD(com_cutiedeng_PojoByte, b, Byte, "byte")
+DEFINE_REFLECT_CLASS_END(com_cutiedeng_PojoByte)
+]

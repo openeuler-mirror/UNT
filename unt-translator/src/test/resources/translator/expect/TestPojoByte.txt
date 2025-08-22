@@ -1,0 +1,55 @@
+[#ifndef COM_CUTIEDENG_POJOBYTEEMITTER_H
+#define COM_CUTIEDENG_POJOBYTEEMITTER_H
+
+#include "basictypes/ClassRegistry.h"
+#include "basictypes/StringConstant.h"
+#include "nlohmann/json.hpp"
+
+#include "com_cutiedeng_PojoByte.h"
+#include "java_lang_Object.h"
+#include "org_apache_flink_api_common_functions_MapFunction.h"
+
+class com_cutiedeng_PojoByteEmitter : public org_apache_flink_api_common_functions_MapFunction, public java_lang_Object {
+public:
+    com_cutiedeng_PojoByteEmitter();
+
+    com_cutiedeng_PojoByteEmitter(nlohmann::json jsonObj);
+    ~com_cutiedeng_PojoByteEmitter();
+
+    com_cutiedeng_PojoByte *map(java_lang_Object *param0);
+
+    static Class* getClass();
+    static Class* clazz_;
+};
+
+#endif
+, #include "com_cutiedeng_PojoByteEmitter.h"
+#include "basictypes/ClassRegistry.h"
+#include "basictypes/ReflectMacros.h"
+
+
+com_cutiedeng_PojoByteEmitter::com_cutiedeng_PojoByteEmitter()
+{
+
+    return;
+}
+
+com_cutiedeng_PojoByteEmitter::~com_cutiedeng_PojoByteEmitter() {
+}
+
+com_cutiedeng_PojoByteEmitter::com_cutiedeng_PojoByteEmitter(nlohmann::json jsonObj) : org_apache_flink_api_common_functions_MapFunction(jsonObj), java_lang_Object(jsonObj)
+ {
+}
+
+
+com_cutiedeng_PojoByte *com_cutiedeng_PojoByteEmitter::map(java_lang_Object *l1)
+{
+    com_cutiedeng_PojoByte *stack2 = nullptr;
+
+    stack2 = new com_cutiedeng_PojoByte();
+
+    return stack2;
+}
+DEFINE_REFLECT_CLASS_BEGIN(com_cutiedeng_PojoByteEmitter)
+DEFINE_REFLECT_CLASS_END(com_cutiedeng_PojoByteEmitter)
+]
