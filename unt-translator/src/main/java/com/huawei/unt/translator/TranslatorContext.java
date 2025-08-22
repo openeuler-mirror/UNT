@@ -151,6 +151,11 @@ public class TranslatorContext {
                 put(PrimitiveType.IntType.getInstance(), "Integer");
                 put(PrimitiveType.DoubleType.getInstance(), "Double");
                 put(PrimitiveType.LongType.getInstance(), "Long");
+
+                put (PrimitiveType.FloatType.getInstance(), "Float");
+                put (PrimitiveType.ByteType.getInstance(), "Byte");
+                put (PrimitiveType.CharType.getInstance(), "Character");
+                put (PrimitiveType.ShortType.getInstance(), "Short");
             }};
 
     private static Map<PrimitiveType, String> primitiveTypeIncludeStringMap =
@@ -159,6 +164,11 @@ public class TranslatorContext {
                 put(PrimitiveType.IntType.getInstance(), "basictypes/Integer.h");
                 put(PrimitiveType.DoubleType.getInstance(), "basictypes/Double.h");
                 put(PrimitiveType.LongType.getInstance(), "basictypes/Long.h");
+
+                put (PrimitiveType.FloatType.getInstance(), "basictypes/Float.h");
+                put (PrimitiveType.ByteType.getInstance(), "basictypes/Byte.h");
+                put (PrimitiveType.CharType.getInstance(), "basictypes/Character.h");
+                put (PrimitiveType.ShortType.getInstance(), "basictypes/Short.h");
             }};
 
     private static Map<String, Set<String>> superclassMap = new HashMap<>();

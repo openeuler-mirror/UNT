@@ -1,0 +1,93 @@
+[#ifndef COM_CUTIEDENG_POJOCHAREXTENDER_H
+#define COM_CUTIEDENG_POJOCHAREXTENDER_H
+
+#include "basictypes/ClassRegistry.h"
+#include "basictypes/StringConstant.h"
+#include "nlohmann/json.hpp"
+
+#include "com_cutiedeng_CharTree.h"
+#include "com_cutiedeng_PojoChar.h"
+#include "java_lang_Character.h"
+#include "java_lang_Object.h"
+#include "java_util_Map.h"
+#include "org_apache_flink_api_common_functions_MapFunction.h"
+
+class com_cutiedeng_PojoCharExtender : public org_apache_flink_api_common_functions_MapFunction, public java_lang_Object {
+public:
+    com_cutiedeng_PojoCharExtender();
+
+    com_cutiedeng_PojoCharExtender(nlohmann::json jsonObj);
+    ~com_cutiedeng_PojoCharExtender();
+
+    com_cutiedeng_CharTree *map(java_lang_Character *param0);
+
+    com_cutiedeng_CharTree *current = nullptr;
+
+    static Class* getClass();
+    static Class* clazz_;
+};
+
+#endif
+, #include "com_cutiedeng_PojoCharExtender.h"
+#include "basictypes/ClassRegistry.h"
+#include "basictypes/ReflectMacros.h"
+
+
+com_cutiedeng_PojoCharExtender::com_cutiedeng_PojoCharExtender()
+{
+
+    return;
+}
+
+com_cutiedeng_PojoCharExtender::~com_cutiedeng_PojoCharExtender() {
+    if (current) {
+        current->putRefCount();
+    }
+}
+
+com_cutiedeng_PojoCharExtender::com_cutiedeng_PojoCharExtender(nlohmann::json jsonObj) : org_apache_flink_api_common_functions_MapFunction(jsonObj), java_lang_Object(jsonObj)
+ {
+    if(!jsonObj["current"].empty()) {
+        this->current = new com_cutiedeng_CharTree(jsonObj["current"]);
+    }
+}
+
+
+com_cutiedeng_CharTree *com_cutiedeng_PojoCharExtender::map(java_lang_Character *l1)
+{
+    char stack10;
+    com_cutiedeng_CharTree *stack3 = nullptr;
+    com_cutiedeng_CharTree *stack4 = nullptr;
+    com_cutiedeng_CharTree *stack7 = nullptr;
+    com_cutiedeng_CharTree *stack8 = nullptr;
+    com_cutiedeng_CharTree *l2 = nullptr;
+    com_cutiedeng_PojoChar *stack6 = nullptr;
+    com_cutiedeng_PojoChar *stack9 = nullptr;
+    java_util_Map *stack5 = nullptr;
+
+    stack3 = new com_cutiedeng_CharTree();
+    l2 = stack3;
+    stack4 = this->current;
+    stack5 = stack4->child;
+    stack5->put(l1, stack3);
+    if (this->current != nullptr) {
+        this->current->putRefCount();
+    }
+    this->current = stack3;
+    stack7 = this->current;
+    stack6 = new com_cutiedeng_PojoChar();
+    if (stack7->value != nullptr) {
+        stack7->value->putRefCount();
+    }
+    stack7->value = stack6;
+    stack8 = this->current;
+    stack9 = stack8->value;
+    stack10 = l1->charValue();
+    stack9->setC(stack10);
+
+    return stack3;
+}
+DEFINE_REFLECT_CLASS_BEGIN(com_cutiedeng_PojoCharExtender)
+    REGISTER_PTR_FIELD(com_cutiedeng_PojoCharExtender, current, com_cutiedeng_CharTree *, "com_cutiedeng_CharTree")
+DEFINE_REFLECT_CLASS_END(com_cutiedeng_PojoCharExtender)
+]

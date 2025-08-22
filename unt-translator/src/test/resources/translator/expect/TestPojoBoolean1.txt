@@ -1,0 +1,90 @@
+[#ifndef COM_CUTIEDENG_POJOPARSEBOOLEAN_H
+#define COM_CUTIEDENG_POJOPARSEBOOLEAN_H
+
+#include "basictypes/ClassRegistry.h"
+#include "basictypes/StringConstant.h"
+#include "nlohmann/json.hpp"
+
+#include "com_cutiedeng_PojoBoolean.h"
+#include "java_lang_Object.h"
+#include "java_lang_String.h"
+#include "org_apache_flink_api_common_functions_MapFunction.h"
+
+class com_cutiedeng_PojoParseBoolean : public org_apache_flink_api_common_functions_MapFunction, public java_lang_Object {
+public:
+    com_cutiedeng_PojoParseBoolean();
+
+    com_cutiedeng_PojoParseBoolean(nlohmann::json jsonObj);
+    ~com_cutiedeng_PojoParseBoolean();
+
+    com_cutiedeng_PojoBoolean *map(java_lang_String *param0);
+
+    static Class* getClass();
+    static Class* clazz_;
+};
+
+#endif
+, #include "com_cutiedeng_PojoParseBoolean.h"
+#include "basictypes/ClassRegistry.h"
+#include "basictypes/ReflectMacros.h"
+
+
+com_cutiedeng_PojoParseBoolean::com_cutiedeng_PojoParseBoolean()
+{
+
+    return;
+}
+
+com_cutiedeng_PojoParseBoolean::~com_cutiedeng_PojoParseBoolean() {
+}
+
+com_cutiedeng_PojoParseBoolean::com_cutiedeng_PojoParseBoolean(nlohmann::json jsonObj) : org_apache_flink_api_common_functions_MapFunction(jsonObj), java_lang_Object(jsonObj)
+ {
+}
+
+
+com_cutiedeng_PojoBoolean *com_cutiedeng_PojoParseBoolean::map(java_lang_String *l1)
+{
+    bool stack3;
+    bool stack4;
+    com_cutiedeng_PojoBoolean *stack5 = nullptr;
+    com_cutiedeng_PojoBoolean *stack6 = nullptr;
+    com_cutiedeng_PojoBoolean *stack7 = nullptr;
+    com_cutiedeng_PojoBoolean *l20 = nullptr;
+    com_cutiedeng_PojoBoolean *l21 = nullptr;
+    com_cutiedeng_PojoBoolean *l22 = nullptr;
+
+    com_cutiedeng_PojoBoolean * ret;
+    stack3 = l1->equals("true");
+    if ( stack3 == 0 ) {
+        goto label0;
+    }
+    stack7 = new com_cutiedeng_PojoBoolean();
+    l20 = stack7;
+    stack7->setBooleanContent(1);
+    ret = stack7;
+    goto free;
+
+label0:
+    stack4 = l1->equals("false");
+    if ( stack4 == 0 ) {
+        goto label1;
+    }
+    stack6 = new com_cutiedeng_PojoBoolean();
+    l21 = stack6;
+    stack6->setBooleanContent(1);
+    ret = stack6;
+    goto free;
+
+label1:
+    stack5 = new com_cutiedeng_PojoBoolean();
+    l22 = stack5;
+    stack5->setBooleanContent(0);
+    ret = stack5;
+
+free:
+    return ret;
+}
+DEFINE_REFLECT_CLASS_BEGIN(com_cutiedeng_PojoParseBoolean)
+DEFINE_REFLECT_CLASS_END(com_cutiedeng_PojoParseBoolean)
+]

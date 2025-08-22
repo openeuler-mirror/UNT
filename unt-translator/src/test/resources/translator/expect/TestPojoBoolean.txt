@@ -1,0 +1,68 @@
+[#ifndef COM_CUTIEDENG_POJOBOOLEAN_H
+#define COM_CUTIEDENG_POJOBOOLEAN_H
+
+#include "basictypes/ClassRegistry.h"
+#include "basictypes/StringConstant.h"
+#include "nlohmann/json.hpp"
+
+#include "java_lang_Object.h"
+#include "basictypes/java_lang_Boolean.h"
+
+class com_cutiedeng_PojoBoolean : public java_lang_Object {
+public:
+    com_cutiedeng_PojoBoolean();
+
+    com_cutiedeng_PojoBoolean(nlohmann::json jsonObj);
+    ~com_cutiedeng_PojoBoolean();
+
+    bool isBooleanContent();
+    void setBooleanContent(bool param0);
+
+    bool booleanContent;
+
+    static Class* getClass();
+    static Class* clazz_;
+};
+
+#endif
+, #include "com_cutiedeng_PojoBoolean.h"
+#include "basictypes/ClassRegistry.h"
+#include "basictypes/ReflectMacros.h"
+
+
+com_cutiedeng_PojoBoolean::com_cutiedeng_PojoBoolean()
+{
+
+    return;
+}
+
+com_cutiedeng_PojoBoolean::~com_cutiedeng_PojoBoolean() {
+}
+
+com_cutiedeng_PojoBoolean::com_cutiedeng_PojoBoolean(nlohmann::json jsonObj) : java_lang_Object(jsonObj)
+ {
+    if(!jsonObj["booleanContent"].empty()) {
+        this->booleanContent = jsonObj["booleanContent"];
+    }
+}
+
+
+bool com_cutiedeng_PojoBoolean::isBooleanContent()
+{
+    bool stack1;
+
+    stack1 = this->booleanContent;
+
+    return stack1;
+}
+
+void com_cutiedeng_PojoBoolean::setBooleanContent(bool l1)
+{
+    this->booleanContent = l1;
+
+    return;
+}
+DEFINE_REFLECT_CLASS_BEGIN(com_cutiedeng_PojoBoolean)
+    REGISTER_PRIMITIVE_FIELD(com_cutiedeng_PojoBoolean, booleanContent, Boolean, "boolean")
+DEFINE_REFLECT_CLASS_END(com_cutiedeng_PojoBoolean)
+]
