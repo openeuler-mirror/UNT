@@ -95,16 +95,16 @@ public class JarUdfLoader {
     public void loadUdfClasses() {
         for (JavaSootClass javaClass : jarHandler.getAllJavaClasses()) {
             // skip ignored class
-            boolean skip = false;
+            boolean isSkip = false;
 
             for (String skipPackage : TranslatorContext.getFilterPackages()) {
                 if (javaClass.getName().startsWith(skipPackage)) {
-                    skip = true;
+                    isSkip = true;
                     break;
                 }
             }
 
-            if (skip) {
+            if (isSkip) {
                 continue;
             }
 
@@ -156,20 +156,22 @@ public class JarUdfLoader {
 
     /**
      * load udf classes by collect from jar
+     *
+     * @param collect collect
      */
     public void loadUdfClassesByCollect(List<JavaSootClass> collect) {
         for (JavaSootClass javaClass : collect) {
             // skip ignored class
-            boolean skip = false;
+            boolean isSkip = false;
 
             for (String skipPackage : TranslatorContext.getFilterPackages()) {
                 if (javaClass.getName().startsWith(skipPackage)) {
-                    skip = true;
+                    isSkip = true;
                     break;
                 }
             }
 
-            if (skip) {
+            if (isSkip) {
                 continue;
             }
 
@@ -272,7 +274,13 @@ public class JarUdfLoader {
         if (methodHandle != null
                 && methodHandle.isMethodRef()
                 && invokeExpr.getArgs().isEmpty()) {
-            MethodSignature methodSignature = (MethodSignature) methodHandle.getReferenceSignature();
+            MethodSignature methodSignature = null;
+            if (methodHandle.getReferenceSignature() instanceof MethodSignature) {
+                methodSignature = (MethodSignature) methodHandle.getReferenceSignature();
+            }
+            if (methodSignature == null) {
+                throw new TranslatorException("convert MethodSignature failed");
+            }
             if (methodHandle.getKind().equals(REF_INVOKE_STATIC)) {
                 lambdaClass = methodSignature.getDeclClassType().getFullyQualifiedName().equals(className)
                         ? getSimpleLambdaClass(methodSignature, udfType)

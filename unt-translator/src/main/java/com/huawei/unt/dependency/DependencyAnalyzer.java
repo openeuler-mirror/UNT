@@ -29,7 +29,11 @@ import sootup.core.model.Body;
 import sootup.core.types.ArrayType;
 import sootup.core.types.ClassType;
 import sootup.core.types.Type;
-import sootup.java.core.*;
+import sootup.java.core.AnnotationUsage;
+import sootup.java.core.JavaIdentifierFactory;
+import sootup.java.core.JavaSootClass;
+import sootup.java.core.JavaSootField;
+import sootup.java.core.JavaSootMethod;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -110,22 +114,26 @@ public class DependencyAnalyzer {
                     javaClass.getClassName()), javaClass);
             addJsonConstructorQueue.add(javaClass);
         }
+        getJsonConstructMap(addJsonConstructorQueue, addJsonConstructorMap);
+        for (JavaClass value : addJsonConstructorMap.values()) {
+            value.setJsonConstructor();
+            LOGGER.info("{} need to construct using json", value.getClassName());
+        }
+    }
+
+    private void getJsonConstructMap(Queue<JavaClass> addJsonConstructorQueue, Map<ClassType, JavaClass> addJsonConstructorMap) {
         while (!addJsonConstructorQueue.isEmpty()) {
             JavaClass javaClass = addJsonConstructorQueue.poll();
             boolean hasObjectField = false;
-
             HashSet<ClassType> needToJsonConstruct = new HashSet<>();
-
             Set<ClassType> supperClasses = javaClass.getSupperClasses().stream()
                     .filter(c -> !TranslatorContext.getStringMap().containsKey(c.getFullyQualifiedName()))
                     .collect(Collectors.toSet());
 
             needToJsonConstruct.addAll(supperClasses);
-
             Set<JavaSootField> fields = javaClass.getFields();
             for (JavaSootField field : fields) {
                 Type fieldType = field.getType();
-
                 if (fieldType instanceof ClassType) {
                     ClassType fieldClassType = (ClassType) fieldType;
                     if ("java.lang.Object".equals(fieldClassType.getFullyQualifiedName())) {
@@ -137,11 +145,9 @@ public class DependencyAnalyzer {
                     needToJsonConstruct.add(fieldClassType);
                 }
             }
-
             Set<ClassType> newJsonConstruct = needToJsonConstruct.stream()
                     .filter(c -> !addJsonConstructorMap.containsKey(c))
                     .collect(Collectors.toSet());
-
             for (ClassType classType : newJsonConstruct) {
                 if (classType.getFullyQualifiedName().equals(TranslatorContext.getMainClass())) {
                     continue;
@@ -152,18 +158,13 @@ public class DependencyAnalyzer {
                             newJsonjavaClass.getClassName()), newJsonjavaClass);
                     addJsonConstructorQueue.add(newJsonjavaClass);
                 } catch (Exception e) {
-                    LOGGER.error("fieldClassType {} not found in allNeedTransClasses "
-                            , classType.getFullyQualifiedName());
+                    LOGGER.error("fieldClassType {} not found in allNeedTransClasses ",
+                            classType.getFullyQualifiedName());
                 }
             }
-
             if (hasObjectField) {
                 javaClass.setHasObjectField();
             }
-        }
-        for (JavaClass value : addJsonConstructorMap.values()) {
-            value.setJsonConstructor();
-            LOGGER.info("{} need to construct using json", value.getClassName());
         }
     }
 
@@ -173,7 +174,7 @@ public class DependencyAnalyzer {
      * @return all dependency classes
      */
     public Collection<JavaClass> getAllDependencyClasses() {
-        boolean ismissing = false;
+        boolean isMissing = false;
         while (!classQueue.isEmpty()) {
             JavaClass javaClass = classQueue.poll();
             LOGGER.info("Start analyze class: {}", javaClass.getClassName());
@@ -182,8 +183,6 @@ public class DependencyAnalyzer {
             Set<ClassType> missingClasses = new HashSet<>();
 
             ClassType thisClassType = JavaIdentifierFactory.getInstance().getClassType(javaClass.getClassName());
-
-            DependencyStmtVisitor stmtVisitor = new DependencyStmtVisitor();
 
             Set<ClassType> dependencies = new HashSet<>(javaClass.getSupperClasses());
 
@@ -231,7 +230,7 @@ public class DependencyAnalyzer {
                     javaClass.setHasArray();
                 }
             }
-
+            DependencyStmtVisitor stmtVisitor = new DependencyStmtVisitor();
             for (JavaSootMethod method : javaClass.getMethods()) {
                 LOGGER.info("Start analyze method: {}", method);
                 if (method.isMain(JavaIdentifierFactory.getInstance())) {
@@ -307,14 +306,14 @@ public class DependencyAnalyzer {
             }
 
             if (isMissingClass) {
-                ismissing = true;
+                isMissing = true;
                 LOGGER.error("Analyze class {} failed, missing some dependency class: ", javaClass.getClassName());
                 for (ClassType missingClass : missingClasses) {
                     LOGGER.error("Missing: {}", missingClass.getFullyQualifiedName());
                 }
             }
         }
-        if (ismissing) {
+        if (isMissing) {
             throw new TranslatorException("missing basictype, exit");
         }
         this.addJsonConstructorFlag();
@@ -331,11 +330,6 @@ public class DependencyAnalyzer {
         while (!classQueue.isEmpty()) {
             JavaClass javaClass = classQueue.poll();
             LOGGER.info("Start analyze class: {}", javaClass.getClassName());
-            Map<ClassType, JavaClass> newFoundClasses = new HashMap<>();
-            Set<ClassType> missingClasses = new HashSet<>();
-
-            ClassType thisClassType = JavaIdentifierFactory.getInstance().getClassType(javaClass.getClassName());
-
             DependencyStmtVisitor stmtVisitor = new DependencyStmtVisitor();
 
             Set<ClassType> dependencies = new HashSet<>(javaClass.getSupperClasses());
@@ -374,7 +368,9 @@ public class DependencyAnalyzer {
 
             dependencies.addAll(stmtVisitor.getClasses());
             stmtVisitor.clear();
-
+            ClassType thisClassType = JavaIdentifierFactory
+                    .getInstance()
+                    .getClassType(javaClass.getClassName());
             dependencies.remove(thisClassType);
 
             if (javaClass.getRefMethod() != null) {
@@ -392,12 +388,12 @@ public class DependencyAnalyzer {
                     .filter(c -> !TranslatorContext.getStringMap().containsKey(c.getFullyQualifiedName()))
                     .collect(Collectors.toSet());
 
+            Map<ClassType, JavaClass> newFoundClasses = new HashMap<>();
             for (ClassType classType : newDependencies) {
                 JavaClass newClass;
                 try {
                     newClass = jarHandler.getJavaClass(classType, NoneUDF.INSTANCE);
                 } catch (LoaderException e) {
-                    missingClasses.add(classType);
                     continue;
                 }
                 newFoundClasses.put(classType, newClass);

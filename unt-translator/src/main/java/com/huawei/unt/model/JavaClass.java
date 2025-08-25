@@ -13,8 +13,12 @@ import sootup.core.model.MethodModifier;
 import sootup.core.signatures.MethodSignature;
 import sootup.core.types.ClassType;
 import sootup.core.types.Type;
-import sootup.java.core.*;
+import sootup.java.core.AnnotationUsage;
+import sootup.java.core.JavaSootClass;
+import sootup.java.core.JavaSootField;
+import sootup.java.core.JavaSootMethod;
 import sootup.java.core.types.JavaClassType;
+import sootup.java.core.JavaIdentifierFactory;
 
 import java.util.HashSet;
 import java.util.Objects;

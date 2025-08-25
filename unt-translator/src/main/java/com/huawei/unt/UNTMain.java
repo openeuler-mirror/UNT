@@ -20,9 +20,10 @@ import com.huawei.unt.type.EngineType;
 import com.huawei.unt.type.NoneUDF;
 import com.huawei.unt.type.UDFType;
 
+import sootup.java.core.JavaSootClass;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sootup.java.core.JavaSootClass;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -75,8 +76,6 @@ public class UNTMain {
                 .map(javaClass -> javaClass.getJavaSootClass())
                 .collect(Collectors.toList());
         jarUdfLoader.loadUdfClassesByCollect(allNeetClassByMain);
-
-//        jarUdfLoader.loadUdfClasses();
 
         Map<UDFType, List<JavaClass>> classesUdfMap = jarUdfLoader.getClassUdfMap();
 

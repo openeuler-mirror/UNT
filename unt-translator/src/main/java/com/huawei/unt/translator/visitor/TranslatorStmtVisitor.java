@@ -93,9 +93,12 @@ public class TranslatorStmtVisitor extends AbstractStmtVisitor {
 
         TranslatorValueVisitor valueVisitor = new TranslatorValueVisitor(methodContext);
         if (stmt.getLeftOp() instanceof JInstanceFieldRef) {
-            Type subSignatureType = ((JInstanceFieldRef) stmt.getLeftOp()).getFieldSignature().getSubSignature().getType();
-            if (subSignatureType instanceof JavaClassType &&
-                    ((JavaClassType) subSignatureType).getFullyQualifiedName().equals(TranslatorContext.getMainClass())) {
+            Type subSignatureType = ((JInstanceFieldRef) stmt.getLeftOp())
+                    .getFieldSignature().getSubSignature().getType();
+            if (subSignatureType instanceof JavaClassType
+                    && ((JavaClassType) subSignatureType)
+                    .getFullyQualifiedName()
+                    .equals(TranslatorContext.getMainClass())) {
                 return;
             }
         }

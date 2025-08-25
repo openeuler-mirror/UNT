@@ -129,6 +129,7 @@ public class JarHandler {
     /**
      * Get java class by key
      *
+     * @param key key
      * @return java class
      */
     public JavaSootClass getJavaClass(String key) {

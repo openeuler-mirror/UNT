@@ -127,8 +127,10 @@ public class TranslatorUtils {
         for (int i = 0; i < params.size(); i++) {
             Local local = params.get(i);
             methodContext.removeLocal(local);
-            if (local.getType() instanceof JavaClassType &&
-                    ((JavaClassType) local.getType()).getFullyQualifiedName().equals(TranslatorContext.getMainClass())) {
+            if (local.getType() instanceof JavaClassType
+                    && ((JavaClassType) local.getType())
+                    .getFullyQualifiedName()
+                    .equals(TranslatorContext.getMainClass())) {
                 continue;
             }
             joiner.add(formatParamType(methodContext.getJavaMethod().getParameterType(i)) + formatLocalName(local));

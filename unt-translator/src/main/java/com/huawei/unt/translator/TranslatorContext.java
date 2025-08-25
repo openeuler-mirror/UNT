@@ -379,7 +379,7 @@ public class TranslatorContext {
                 try {
                     dependInterfaces.put(ref[0].trim(), Integer.valueOf(ref[1].trim()));
                 } catch (Exception e) {
-                    System.out.println(e.getMessage());
+                    LOGGER.info(e.getMessage());
                 }
             }
 
@@ -625,6 +625,8 @@ public class TranslatorContext {
 
 
     /**
+     * check if the processFunction is in InProcessFunction
+     *
      * @param processFunction processFunction
      * @return isInProcessFunction
      */
@@ -700,7 +702,7 @@ public class TranslatorContext {
         return primitiveTypeIncludeStringMap;
     }
 
-    public static Set<String>  getJsonSerializeSet() {
+    public static Set<String> getJsonSerializeSet() {
         return jsonSerializeSet;
     }
 }

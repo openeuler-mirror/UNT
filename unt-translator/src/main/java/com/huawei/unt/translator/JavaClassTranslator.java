@@ -22,8 +22,12 @@ import sootup.core.signatures.MethodSignature;
 import sootup.core.types.ClassType;
 import sootup.core.types.PrimitiveType;
 import sootup.core.types.VoidType;
-import sootup.java.core.*;
+import sootup.java.core.AnnotationUsage;
+import sootup.java.core.JavaSootClass;
+import sootup.java.core.JavaSootField;
+import sootup.java.core.JavaSootMethod;
 import sootup.java.core.types.JavaClassType;
+import sootup.java.core.JavaSootClassSource;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -156,13 +160,10 @@ public class JavaClassTranslator {
 
             headBuilder.append("public:").append(NEW_LINE);
 
-            //json
-
             Set<ClassType> superClassesJson = superClasses.stream()
                     .filter(m -> !TranslatorContext.getJsonSerializeSet().contains(m.getFullyQualifiedName()))
                     .collect(Collectors.toSet());
 
-            //
             if (superClassesJson.size() > 0) {
                 for (ClassType classType : superClassesJson) {
                     headBuilder.append(TAB).append("KACC_DEFINE_ZHUJIE_DERIVED_TYPE_INTRUSIVE_BASE_CLASS(")
@@ -186,11 +187,19 @@ public class JavaClassTranslator {
                                 String key = stringObjectEntry.getKey();
                                 if ("using".equals(key)) {
                                     Object value = stringObjectEntry.getValue();
-                                    String className = ((ClassConstant) value).getValue();
+                                    String className = null;
+                                    if (value instanceof ClassConstant) {
+                                        className = ((ClassConstant) value).getValue();
+                                    }
+                                    if (className == null) {
+                                        throw new TranslatorException("value convert ClassConstant failed");
+                                    }
                                     serializerName = TranslatorUtils.formatClassName(
                                             TranslatorUtils.parseSignature(className));
                                 }
                             }
+                        } else {
+                            throw new TranslatorException("no support annotation");
                         }
                     }
                     if (!isIgnore && !field.isStatic()
@@ -219,11 +228,19 @@ public class JavaClassTranslator {
                                 String key = stringObjectEntry.getKey();
                                 if ("using".equals(key)) {
                                     Object value = stringObjectEntry.getValue();
-                                    String className = ((ClassConstant) value).getValue();
+                                    String className = null;
+                                    if (value instanceof ClassConstant) {
+                                        className = ((ClassConstant) value).getValue();
+                                    }
+                                    if (className == null) {
+                                        throw new TranslatorException("value convert ClassConstant failed");
+                                    }
                                     serializerName = TranslatorUtils.formatClassName(
                                             TranslatorUtils.parseSignature(className));
                                 }
                             }
+                        } else {
+                            throw new TranslatorException("no support annotation");
                         }
                     }
                     if (!field.isStatic()
@@ -279,10 +296,12 @@ public class JavaClassTranslator {
                     }
                     Iterable<AnnotationUsage> annotations = field.getAnnotations();
                     if (annotations.iterator().hasNext()) {
-                        System.out.println(annotations.iterator().next().toString());
+                        LOGGER.info(annotations.iterator().next().toString());
                     }
-                    if (field.getType() instanceof JavaClassType &&
-                            ((JavaClassType) field.getType()).getFullyQualifiedName().equals(TranslatorContext.getMainClass())) {
+                    if (field.getType() instanceof JavaClassType
+                            && ((JavaClassType) field.getType())
+                            .getFullyQualifiedName()
+                            .equals(TranslatorContext.getMainClass())) {
                         continue;
                     }
                     headBuilder.append(printField(field));
@@ -579,18 +598,12 @@ public class JavaClassTranslator {
 
     private static String printConstructorFromJson(StringBuilder methodBuilder, JavaClass javaClass) {
         String className = TranslatorUtils.formatClassName(javaClass.getClassName());
-
-        methodBuilder.append(className)
-                .append("::")
-                .append(className)
+        methodBuilder.append(className).append("::").append(className)
                 .append("(nlohmann::json jsonObj)");
-
-        // deal with father class......should deal with extends class
         Set<ClassType> superClassForJson = javaClass.getSupperClasses().stream()
                 .filter(c -> !TranslatorContext.getIgnoredClasses().contains(c.getFullyQualifiedName()))
                 .filter(c -> !TranslatorContext.getStringMap().containsKey(c.getFullyQualifiedName()))
                 .collect(Collectors.toSet());
-
         if (!superClassForJson.isEmpty()) {
             methodBuilder.append(" : ");
         }
@@ -599,46 +612,37 @@ public class JavaClassTranslator {
             String fatherName = TranslatorUtils.formatClassName(classType.getFullyQualifiedName());
             joiner.add(fatherName + "(jsonObj)");
         }
-
         methodBuilder.append(joiner).append(NEW_LINE).append(" {").append(NEW_LINE);
-
-        // fill fields
         for (JavaSootField field : javaClass.getFields()) {
-            if (field.getType() instanceof ClassType &&
-                    ((ClassType) field.getType()).getFullyQualifiedName().equals(TranslatorContext.getMainClass())) {
+            if (field.getType() instanceof ClassType
+                    && ((ClassType) field.getType())
+                    .getFullyQualifiedName()
+                    .equals(TranslatorContext.getMainClass())) {
                 continue;
             }
             if (!field.isStatic() && !FieldModifier.isTransient(field.getModifiers())) {
-                methodBuilder.append(TAB)
-                        .append("if(!jsonObj[\"")
+                methodBuilder.append(TAB).append("if(!jsonObj[\"")
                         .append(TranslatorUtils.formatFieldName(field.getName()))
-                        .append("\"].empty()) {")
-                        .append(NEW_LINE);
+                        .append("\"].empty()) {").append(NEW_LINE);
                 if (field.getType() instanceof PrimitiveType) {
-                    methodBuilder.append(TAB).append(TAB)
-                            .append("this->")
+                    methodBuilder.append(TAB).append(TAB).append("this->")
                             .append(TranslatorUtils.formatFieldName(field.getName()))
                             .append(" = jsonObj[\"")
                             .append(TranslatorUtils.formatFieldName(field.getName()))
-                            .append("\"];")
-                            .append(NEW_LINE);
+                            .append("\"];").append(NEW_LINE);
                 } else {
-                    methodBuilder.append(TAB).append(TAB)
-                            .append("this->")
+                    methodBuilder.append(TAB).append(TAB).append("this->")
                             .append(TranslatorUtils.formatFieldName(field.getName()))
                             .append(" = new ")
                             .append(TranslatorUtils.formatType(field.getType()))
                             .append("(jsonObj[\"")
                             .append(TranslatorUtils.formatFieldName(field.getName()))
-                            .append("\"]);")
-                            .append(NEW_LINE);
+                            .append("\"]);").append(NEW_LINE);
                 }
                 methodBuilder.append(TAB).append("}").append(NEW_LINE);
             }
         }
-
         methodBuilder.append("}").append(NEW_LINE).append(NEW_LINE);
-
         return methodBuilder.toString();
     }
 

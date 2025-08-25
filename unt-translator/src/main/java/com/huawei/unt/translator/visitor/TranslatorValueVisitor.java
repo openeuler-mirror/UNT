@@ -467,8 +467,15 @@ public class TranslatorValueVisitor extends AbstractValueVisitor {
     public void caseInstanceOfExpr(@Nonnull JInstanceOfExpr expr) {
         TranslatorValueVisitor valueVisitor = new TranslatorValueVisitor(methodContext);
         expr.getOp().accept(valueVisitor);
+        String className = null;
+        if (expr.getCheckType() instanceof ClassType) {
+            className = TranslatorUtils.formatClassName(((ClassType) expr.getCheckType()).getFullyQualifiedName());
+        }
+        if (className == null) {
+            throw new TranslatorException("expr.getCheckType convert ClassType failed");
+        }
         valueBuilder.append("dynamic_cast<")
-                .append(TranslatorUtils.formatClassName(((ClassType)expr.getCheckType()).getFullyQualifiedName()))
+                .append(className)
                 .append("*>(")
                 .append(valueVisitor.toCode())
                 .append(") != nullptr");
@@ -513,9 +520,13 @@ public class TranslatorValueVisitor extends AbstractValueVisitor {
 
     @Override
     public void caseSpecialInvokeExpr(@Nonnull JSpecialInvokeExpr expr) {
-        valueBuilder.append(TranslatorUtils.formatClassName(expr.getMethodSignature().getDeclClassType().getFullyQualifiedName())).append("::")
+        valueBuilder.append(TranslatorUtils.formatClassName(
+                expr.getMethodSignature()
+                        .getDeclClassType()
+                        .getFullyQualifiedName())).append("::")
                 .append(expr.getMethodSignature().getName())
-                .append(TranslatorUtils.paramsToString(expr.getMethodSignature(), expr.getArgs(), methodContext));
+                .append(TranslatorUtils.paramsToString(
+                        expr.getMethodSignature(), expr.getArgs(), methodContext));
     }
 
     @Override
@@ -526,7 +537,8 @@ public class TranslatorValueVisitor extends AbstractValueVisitor {
         valueVisitor.clear();
         valueBuilder.append("->");
         valueBuilder.append(expr.getMethodSignature().getName())
-                .append(TranslatorUtils.paramsToString(expr.getMethodSignature(), expr.getArgs(), methodContext));
+                .append(TranslatorUtils.paramsToString(
+                        expr.getMethodSignature(), expr.getArgs(), methodContext));
     }
 
     @Override
