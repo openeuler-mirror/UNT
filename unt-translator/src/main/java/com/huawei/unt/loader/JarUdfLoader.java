@@ -130,7 +130,9 @@ public class JarUdfLoader {
             } catch (Exception e) {
                 LOGGER.warn("Load lambda classes from class {} failed, {}", javaClass.getName(), e.getMessage());
             }
-            tryLoadLambdaClassUDF(lambdaClasses);
+            if (lambdaClasses != null && !lambdaClasses.isEmpty()) {
+                tryLoadLambdaClassUDF(lambdaClasses);
+            }
         }
 
         for (UDFType type : classUdfMap.keySet()) {
@@ -184,7 +186,9 @@ public class JarUdfLoader {
             } catch (Exception e) {
                 LOGGER.warn("Load lambda classes from class {} failed, {}", javaClass.getName(), e.getMessage());
             }
-            tryLoadLambdaClassUDF(lambdaClasses);
+            if (lambdaClasses != null && !lambdaClasses.isEmpty()) {
+                tryLoadLambdaClassUDF(lambdaClasses);
+            }
         }
 
         for (UDFType type : classUdfMap.keySet()) {
@@ -196,17 +200,15 @@ public class JarUdfLoader {
     }
 
     private void tryLoadLambdaClassUDF(List<JavaClass> lambdaClasses) {
-        if (lambdaClasses != null && !lambdaClasses.isEmpty()) {
-            for (JavaClass lambdaClass : lambdaClasses) {
-                if (requiredUdf.contains(lambdaClass.getType().getBaseClass().getName())) {
-                    if (lambdaClass.getType() instanceof FlinkProcessFunction
-                            && !TranslatorContext.isInProcessFunction(lambdaClass.getClassName())) {
-                        continue;
-                    }
-                    List<JavaClass> udfClasses = classUdfMap.getOrDefault(lambdaClass.getType(), new ArrayList<>());
-                    udfClasses.add(lambdaClass);
-                    classUdfMap.put(lambdaClass.getType(), udfClasses);
+        for (JavaClass lambdaClass : lambdaClasses) {
+            if (requiredUdf.contains(lambdaClass.getType().getBaseClass().getName())) {
+                if (lambdaClass.getType() instanceof FlinkProcessFunction
+                        && !TranslatorContext.isInProcessFunction(lambdaClass.getClassName())) {
+                    continue;
                 }
+                List<JavaClass> udfClasses = classUdfMap.getOrDefault(lambdaClass.getType(), new ArrayList<>());
+                udfClasses.add(lambdaClass);
+                classUdfMap.put(lambdaClass.getType(), udfClasses);
             }
         }
     }

@@ -133,7 +133,7 @@ public class DependencyAnalyzer {
 
             needToJsonConstruct.addAll(supperClasses);
             Set<JavaSootField> fields = javaClass.getFields();
-            getJsonConstructByField(fields, hasObjectField, needToJsonConstruct);
+            hasObjectField = getJsonConstructByField(fields, needToJsonConstruct);
             Set<ClassType> newJsonConstruct = needToJsonConstruct.stream()
                     .filter(c -> !addJsonConstructorMap.containsKey(c))
                     .collect(Collectors.toSet());
@@ -157,7 +157,9 @@ public class DependencyAnalyzer {
         }
     }
 
-    private void getJsonConstructByField(Set<JavaSootField> fields, boolean hasObjectField, HashSet<ClassType> needToJsonConstruct) {
+    private boolean getJsonConstructByField(Set<JavaSootField> fields,
+                                         HashSet<ClassType> needToJsonConstruct) {
+        boolean hasObjectField = false;
         for (JavaSootField field : fields) {
             Type fieldType = field.getType();
             if (fieldType instanceof ClassType) {
@@ -171,6 +173,7 @@ public class DependencyAnalyzer {
                 needToJsonConstruct.add(fieldClassType);
             }
         }
+        return hasObjectField;
     }
 
     /**
@@ -380,17 +383,17 @@ public class DependencyAnalyzer {
         return allClasses.values();
     }
 
-    private static void getDependEnciesInMethod(JavaClass javaClass, Set<ClassType> dependencies, DependencyStmtVisitor stmtVisitor) {
+    private void getDependEnciesInMethod(JavaClass javaClass,
+                                                Set<ClassType> dependencies,
+                                                DependencyStmtVisitor stmtVisitor) {
         for (JavaSootMethod method : javaClass.getJavaSootClass().getMethods()) {
             LOGGER.info("Start analyze method: {}", method);
             if (TranslatorContext.getIgnoredMethods().contains(method.getSignature().toString())
                     || !method.hasBody()) {
                 // abstract method && ignored method analyze param
-                for (Type paramType : method.getParameterTypes()) {
-                    if (paramType instanceof ClassType) {
-                        dependencies.add((ClassType) paramType);
-                    }
-                }
+                method.getParameterTypes().stream()
+                        .filter(paramType -> paramType instanceof ClassType)
+                        .map(paramType -> (ClassType) paramType).forEach(dependencies::add);
                 continue;
             }
 
