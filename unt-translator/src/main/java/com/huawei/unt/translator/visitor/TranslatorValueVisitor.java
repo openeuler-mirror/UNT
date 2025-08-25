@@ -429,9 +429,13 @@ public class TranslatorValueVisitor extends AbstractValueVisitor {
         String typeString = TranslatorTypeVisitor.getTypeString(expr.getType());
 
         if (expr.getType() instanceof PrimitiveType) {
-            valueBuilder.append("(").append(typeString).append(") ").append(valueVisitor.toCode());
-        } else if ((typeString.equals("String") || typeString.equals("CharSequence")) && expr.getOp() instanceof StringConstant) {
-            valueBuilder.append("new String(").append(valueVisitor.toCode()).append(")");
+            valueBuilder.append("(")
+                    .append(typeString).append(") ")
+                    .append(valueVisitor.toCode());
+        } else if (("String".equals(typeString) || "CharSequence".equals(typeString))
+                && expr.getOp() instanceof StringConstant) {
+            valueBuilder.append("new String(")
+                    .append(valueVisitor.toCode()).append(")");
         } else if (isMatchedParam(expr)) {
             valueBuilder.append(valueVisitor.toCode());
         } else {
@@ -509,13 +513,6 @@ public class TranslatorValueVisitor extends AbstractValueVisitor {
 
     @Override
     public void caseSpecialInvokeExpr(@Nonnull JSpecialInvokeExpr expr) {
-//        String base = expr.getBase().equals(methodContext.getThisLocal()) ? "this"
-//                : TranslatorUtils.formatLocalName(expr.getBase());
-//
-//        valueBuilder.append(base).append("->");
-//        valueBuilder.append(expr.getMethodSignature().getName())
-//                .append(TranslatorUtils.paramsToString(expr.getMethodSignature(), expr.getArgs(), methodContext));
-
         valueBuilder.append(TranslatorUtils.formatClassName(expr.getMethodSignature().getDeclClassType().getFullyQualifiedName())).append("::")
                 .append(expr.getMethodSignature().getName())
                 .append(TranslatorUtils.paramsToString(expr.getMethodSignature(), expr.getArgs(), methodContext));

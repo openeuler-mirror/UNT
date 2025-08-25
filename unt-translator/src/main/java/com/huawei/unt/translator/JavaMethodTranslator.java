@@ -39,13 +39,14 @@ import java.util.StringJoiner;
  * @since 2025-05-19
  */
 public class JavaMethodTranslator {
-    private JavaMethodTranslator() {}
+    private JavaMethodTranslator() {
+    }
 
     /**
      * Translate method to cpp code strings
      *
-     * @param type UDFType
-     * @param method method
+     * @param type     UDFType
+     * @param method   method
      * @param isLambda isLambda
      * @return translated cpp code string
      */
@@ -98,9 +99,12 @@ public class JavaMethodTranslator {
                 // deal with retStmts
                 if (methodContext.hasRet(i)) {
                     methodContext.getRetValue(i).accept(valueVisitor);
-                    if (methodContext.getRetValue(i) instanceof StringConstant){
-                        bodyBuilder.append(String.format(TranslatorContext.RET_ASSIGN, "new String(" + valueVisitor.toCode() + ")"));
-                    }else {
+                    if (methodContext.getRetValue(i) instanceof StringConstant) {
+                        bodyBuilder.append(
+                                String.format(
+                                        TranslatorContext.RET_ASSIGN,
+                                        "new String(" + valueVisitor.toCode() + ")"));
+                    } else {
                         bodyBuilder.append(String.format(TranslatorContext.RET_ASSIGN, valueVisitor.toCode()));
                     }
                     valueVisitor.clear();
@@ -185,7 +189,7 @@ public class JavaMethodTranslator {
                 }
                 if (stmt.toString().equals("interfaceinvoke r7.<org.apache.flink.streaming.api.functions.source."
                         + "SourceFunction$SourceContext: void collect(java.lang.Object)>(r4)")
-                    && method.toString().equals("<com.meituan.data.rt.metrics.function.MetricsGenerateSource: "
+                        && method.toString().equals("<com.meituan.data.rt.metrics.function.MetricsGenerateSource: "
                         + "void run(org.apache.flink.streaming.api.functions.source.SourceFunction$SourceContext)>")) {
                     bodyBuilder.append(TAB).append("callback->process();").append(NEW_LINE);
                 }
@@ -301,9 +305,9 @@ public class JavaMethodTranslator {
             if (stmt instanceof JInvokeStmt && ((JInvokeStmt) stmt).getInvokeExpr().isPresent()
                     && ((JInvokeStmt) stmt).getInvokeExpr().get() instanceof JSpecialInvokeExpr
                     && ((JSpecialInvokeExpr) ((JInvokeStmt) stmt).getInvokeExpr().get()).getBase()
-                            .equals(methodContext.getThisLocal())
+                    .equals(methodContext.getThisLocal())
                     && TranslatorContext.INIT_FUNCTION_NAME.equals(
-                            ((JInvokeStmt) stmt).getInvokeExpr().get().getMethodSignature().getName())) {
+                    ((JInvokeStmt) stmt).getInvokeExpr().get().getMethodSignature().getName())) {
                 MethodSignature signature = ((JInvokeStmt) stmt).getInvokeExpr().get().getMethodSignature();
 
                 ClassType declClassType = ((JInvokeStmt) stmt).getInvokeExpr().get()

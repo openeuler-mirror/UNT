@@ -71,7 +71,9 @@ public class UNTMain {
         javaClasses.add(new JavaClass(mainJavaClass, NoneUDF.INSTANCE));
         DependencyAnalyzer mainDependencyAnalyzer = new DependencyAnalyzer(jarHandler, javaClasses);
         Collection<JavaClass> allDependencyClassesByMain = mainDependencyAnalyzer.getAllDependencyClassesByMain();
-        List<JavaSootClass> allNeetClassByMain = allDependencyClassesByMain.stream().map(javaClass -> javaClass.getJavaSootClass()).collect(Collectors.toList());
+        List<JavaSootClass> allNeetClassByMain = allDependencyClassesByMain.stream()
+                .map(javaClass -> javaClass.getJavaSootClass())
+                .collect(Collectors.toList());
         jarUdfLoader.loadUdfClassesByCollect(allNeetClassByMain);
 
 //        jarUdfLoader.loadUdfClasses();

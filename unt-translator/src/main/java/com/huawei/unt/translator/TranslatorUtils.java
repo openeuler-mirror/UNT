@@ -103,7 +103,9 @@ public class TranslatorUtils {
         List<Type> params = javaMethod.getParameterTypes();
         int i = 0;
         for (Type type : params) {
-            if (type instanceof JavaClassType && ((JavaClassType) type).getFullyQualifiedName().equals(TranslatorContext.getMainClass())){
+            if (type instanceof JavaClassType
+                    && ((JavaClassType) type).getFullyQualifiedName()
+                            .equals(TranslatorContext.getMainClass())) {
                 continue;
             }
             joiner.add(formatParamType(type) + "param" + i++);
@@ -194,7 +196,7 @@ public class TranslatorUtils {
      * Get Lambda Udf Class Name
      *
      * @param methodSignature MethodSignature
-     * @param udfType UDFType
+     * @param udfType         UDFType
      * @return lambda udf class name
      */
     public static String formatLambdaUdfClassName(MethodSignature methodSignature, UDFType udfType) {

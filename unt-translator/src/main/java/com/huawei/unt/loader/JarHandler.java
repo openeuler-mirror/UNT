@@ -126,6 +126,11 @@ public class JarHandler {
         return allJavaClass.values();
     }
 
+    /**
+     * Get java class by key
+     *
+     * @return java class
+     */
     public JavaSootClass getJavaClass(String key) {
         if (!allJavaClass.containsKey(key)) {
             throw new TranslatorException("javaSootClass " + key + " not found");

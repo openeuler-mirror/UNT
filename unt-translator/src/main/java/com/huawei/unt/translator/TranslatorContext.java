@@ -152,10 +152,10 @@ public class TranslatorContext {
                 put(PrimitiveType.DoubleType.getInstance(), "Double");
                 put(PrimitiveType.LongType.getInstance(), "Long");
 
-                put (PrimitiveType.FloatType.getInstance(), "Float");
-                put (PrimitiveType.ByteType.getInstance(), "Byte");
-                put (PrimitiveType.CharType.getInstance(), "Character");
-                put (PrimitiveType.ShortType.getInstance(), "Short");
+                put(PrimitiveType.FloatType.getInstance(), "Float");
+                put(PrimitiveType.ByteType.getInstance(), "Byte");
+                put(PrimitiveType.CharType.getInstance(), "Character");
+                put(PrimitiveType.ShortType.getInstance(), "Short");
             }};
 
     private static Map<PrimitiveType, String> primitiveTypeIncludeStringMap =
@@ -165,13 +165,13 @@ public class TranslatorContext {
                 put(PrimitiveType.DoubleType.getInstance(), "basictypes/Double.h");
                 put(PrimitiveType.LongType.getInstance(), "basictypes/Long.h");
 
-                put (PrimitiveType.FloatType.getInstance(), "basictypes/Float.h");
-                put (PrimitiveType.ByteType.getInstance(), "basictypes/Byte.h");
-                put (PrimitiveType.CharType.getInstance(), "basictypes/Character.h");
-                put (PrimitiveType.ShortType.getInstance(), "basictypes/Short.h");
+                put(PrimitiveType.FloatType.getInstance(), "basictypes/Float.h");
+                put(PrimitiveType.ByteType.getInstance(), "basictypes/Byte.h");
+                put(PrimitiveType.CharType.getInstance(), "basictypes/Character.h");
+                put(PrimitiveType.ShortType.getInstance(), "basictypes/Short.h");
             }};
 
-    public static final Set<String> JSON_SERIALIZE_SET = new HashSet<String>(){{
+    private static Set<String> jsonSerializeSet = new HashSet<String>() {{
         add("java.lang.Object");
         add("java.util.HashMap");
         add("java.util.Map");
@@ -207,6 +207,7 @@ public class TranslatorContext {
     private static Set<String> udfPackages;
     private static Set<String> processFunctions;
     private static String mainClass;
+
     private TranslatorContext() {
     }
 
@@ -302,7 +303,7 @@ public class TranslatorContext {
             LOGGER.info("scan processFunction: {}", loadProcessFunctionPackages);
         }
 
-        if (!getUdfMap().containsKey("main_class") || "".equals(getUdfMap().get("main_class"))){
+        if (!getUdfMap().containsKey("main_class") || "".equals(getUdfMap().get("main_class"))) {
             mainClass = null;
             LOGGER.warn("main_class is null, default scan all task in jar");
         } else {
@@ -376,9 +377,8 @@ public class TranslatorContext {
                 }
                 String[] ref = dependInterface.trim().split(", ");
                 try {
-
                     dependInterfaces.put(ref[0].trim(), Integer.valueOf(ref[1].trim()));
-                }catch (Exception e){
+                } catch (Exception e) {
                     System.out.println(e.getMessage());
                 }
             }
@@ -454,7 +454,7 @@ public class TranslatorContext {
      * get ref mark of method invoke value with methodSignature and value
      *
      * @param methodSignature methodSignature
-     * @param value value
+     * @param value           value
      * @return the ref mark of the method
      */
     public static int getRefCount(MethodSignature methodSignature, Value value) {
@@ -526,9 +526,9 @@ public class TranslatorContext {
     private static int searchSuperClass(MethodSignature methodSignature) {
         String className = methodSignature.getDeclClassType().getFullyQualifiedName();
         superClassQueue.addAll(superclassMap.get(className));
-        while (! superClassQueue.isEmpty()) {
+        while (!superClassQueue.isEmpty()) {
             String superClass = superClassQueue.removeFirst();
-            if (! searched.contains(superClass)) {
+            if (!searched.contains(superClass)) {
                 String methodSignatureStr = methodSignature.toString();
                 methodSignatureStr = methodSignatureStr.replace(className, superClass);
                 if (libInterfaceRef.containsKey(methodSignatureStr)) {
@@ -562,7 +562,9 @@ public class TranslatorContext {
         boolean isStringConstantCast = false;
         if (value instanceof JCastExpr && value.getType() instanceof ClassType) {
             String typeString = TranslatorUtils.formatClassName(((ClassType) value.getType()).getFullyQualifiedName());
-            isStringConstantCast = ("String".equals(typeString) || "CharSequence".equals(typeString)) && ((JCastExpr) value).getOp() instanceof StringConstant;
+            isStringConstantCast = ("String".equals(typeString)
+                    || "CharSequence".equals(typeString))
+                    && ((JCastExpr) value).getOp() instanceof StringConstant;
         }
         return value instanceof StringConstant
                 || isToString(value)
@@ -621,8 +623,13 @@ public class TranslatorContext {
         return false;
     }
 
+
+    /**
+     * @param processFunction processFunction
+     * @return isInProcessFunction
+     */
     public static boolean isInProcessFunction(String processFunction) {
-        if (processFunctions == null){
+        if (processFunctions == null) {
             return true;
         }
         for (String function : processFunctions) {
@@ -691,5 +698,9 @@ public class TranslatorContext {
 
     public static Map<PrimitiveType, String> getPrimitiveTypeIncludeStringMap() {
         return primitiveTypeIncludeStringMap;
+    }
+
+    public static Set<String>  getJsonSerializeSet() {
+        return jsonSerializeSet;
     }
 }

@@ -61,7 +61,7 @@ public class FlinkReduceFunction implements UDFType {
             return false;
         }
 
-        if (!method.getName().equals("reduce")) {
+        if (!"reduce".equals(method.getName())) {
             return false;
         }
 

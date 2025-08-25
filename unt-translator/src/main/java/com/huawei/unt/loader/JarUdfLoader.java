@@ -6,6 +6,7 @@ package com.huawei.unt.loader;
 
 import static com.huawei.unt.model.JavaClass.Kind.INSTANCE_METHOD_REF;
 import static com.huawei.unt.model.JavaClass.Kind.STATIC_METHOD_REF;
+
 import com.huawei.unt.model.JavaClass;
 import com.huawei.unt.translator.TranslatorContext;
 import com.huawei.unt.translator.TranslatorException;
@@ -109,7 +110,8 @@ public class JarUdfLoader {
 
             Optional<UDFType> udfType = getUDFType(javaClass, engineType);
             if (udfType.isPresent() && requiredUdf.contains(udfType.get().getBaseClass().getName())) {
-                if (udfType.get() instanceof FlinkProcessFunction && !TranslatorContext.isInProcessFunction(javaClass.getName())) {
+                if (udfType.get() instanceof FlinkProcessFunction
+                        && !TranslatorContext.isInProcessFunction(javaClass.getName())) {
                     continue;
                 }
                 JavaClass udfClz = new JavaClass(javaClass, udfType.get());
@@ -132,7 +134,8 @@ public class JarUdfLoader {
             if (lambdaClasses != null && !lambdaClasses.isEmpty()) {
                 for (JavaClass lambdaClass : lambdaClasses) {
                     if (requiredUdf.contains(lambdaClass.getType().getBaseClass().getName())) {
-                        if (lambdaClass.getType() instanceof FlinkProcessFunction && !TranslatorContext.isInProcessFunction(lambdaClass.getClassName())) {
+                        if (lambdaClass.getType() instanceof FlinkProcessFunction
+                                && !TranslatorContext.isInProcessFunction(lambdaClass.getClassName())) {
                             continue;
                         }
                         List<JavaClass> udfClasses = classUdfMap.getOrDefault(lambdaClass.getType(), new ArrayList<>());
@@ -151,6 +154,9 @@ public class JarUdfLoader {
         }
     }
 
+    /**
+     * load udf classes by collect from jar
+     */
     public void loadUdfClassesByCollect(List<JavaSootClass> collect) {
         for (JavaSootClass javaClass : collect) {
             // skip ignored class
@@ -169,7 +175,8 @@ public class JarUdfLoader {
 
             Optional<UDFType> udfType = getUDFType(javaClass, engineType);
             if (udfType.isPresent() && requiredUdf.contains(udfType.get().getBaseClass().getName())) {
-                if (udfType.get() instanceof FlinkProcessFunction && !TranslatorContext.isInProcessFunction(javaClass.getName())) {
+                if (udfType.get() instanceof FlinkProcessFunction
+                        && !TranslatorContext.isInProcessFunction(javaClass.getName())) {
                     continue;
                 }
                 JavaClass udfClz = new JavaClass(javaClass, udfType.get());
@@ -192,7 +199,8 @@ public class JarUdfLoader {
             if (lambdaClasses != null && !lambdaClasses.isEmpty()) {
                 for (JavaClass lambdaClass : lambdaClasses) {
                     if (requiredUdf.contains(lambdaClass.getType().getBaseClass().getName())) {
-                        if (lambdaClass.getType() instanceof FlinkProcessFunction && !TranslatorContext.isInProcessFunction(lambdaClass.getClassName())) {
+                        if (lambdaClass.getType() instanceof FlinkProcessFunction
+                                && !TranslatorContext.isInProcessFunction(lambdaClass.getClassName())) {
                             continue;
                         }
                         List<JavaClass> udfClasses = classUdfMap.getOrDefault(lambdaClass.getType(), new ArrayList<>());
@@ -212,7 +220,7 @@ public class JarUdfLoader {
     }
 
     private List<JavaClass> loadLambdaUdfFunction(JavaSootClass javaClass,
-            EngineType engineType, JarHandler jarHandler) {
+                                                  EngineType engineType, JarHandler jarHandler) {
         List<JavaClass> lambdaUdfFunctions = new ArrayList<>();
 
         // scan all methods in class find lambda function
@@ -225,7 +233,7 @@ public class JarUdfLoader {
     }
 
     private Set<JavaClass> loadLambdaFunctionsFromBody(JarHandler jarHandler,
-            EngineType engineType, String className, Body body) {
+                                                       EngineType engineType, String className, Body body) {
         Map<Local, UDFType> udfTypeMap = new HashMap<>();
 
         for (Local local : body.getLocals()) {
