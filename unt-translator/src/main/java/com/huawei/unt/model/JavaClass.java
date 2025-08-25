@@ -13,10 +13,7 @@ import sootup.core.model.MethodModifier;
 import sootup.core.signatures.MethodSignature;
 import sootup.core.types.ClassType;
 import sootup.core.types.Type;
-import sootup.java.core.JavaIdentifierFactory;
-import sootup.java.core.JavaSootClass;
-import sootup.java.core.JavaSootField;
-import sootup.java.core.JavaSootMethod;
+import sootup.java.core.*;
 import sootup.java.core.types.JavaClassType;
 
 import java.util.HashSet;
@@ -38,6 +35,9 @@ public class JavaClass {
 
     private final Set<JavaSootField> fields = new HashSet<>();
     private final Set<JavaSootMethod> methods = new HashSet<>();
+    private final Set<AnnotationUsage> classAnnotations = new HashSet<>();
+    private final Set<AnnotationUsage> fieldAnnotations = new HashSet<>();
+    private final Set<AnnotationUsage> methodAnnotations = new HashSet<>();
     private final Set<ClassType> supperClasses = new HashSet<>();
     private final Set<ClassType> includes = new HashSet<>();
     private final Set<ClassType> loopIncludes = new HashSet<>();
@@ -65,6 +65,9 @@ public class JavaClass {
 
     public JavaClass(JavaSootClass javaSootClass, UDFType type) {
         this.className = javaSootClass.getName();
+        for (AnnotationUsage annotation : javaSootClass.getAnnotations()) {
+            classAnnotations.add(annotation);
+        }
         this.type = type;
         this.javaSootClass = javaSootClass;
         this.kind = Kind.SIMPLE_CLASS;
@@ -73,6 +76,9 @@ public class JavaClass {
                     && TranslatorContext.getIgnoredClasses().contains(
                             ((ClassType) field.getType()).getFullyQualifiedName())) {
                 continue;
+            }
+            for (AnnotationUsage annotation : field.getAnnotations()) {
+                fieldAnnotations.add(annotation);
             }
             this.fields.add(field);
         }
@@ -93,7 +99,6 @@ public class JavaClass {
         Set<String> superClassesSet = supperClasses.stream()
                 .map(ClassType::toString)
                 .collect(Collectors.toSet());
-        superClassesSet.add("java.lang.Object");
         TranslatorContext.getSuperclassMap().put(className, superClassesSet);
 
         this.isLambda = false;
@@ -138,6 +143,9 @@ public class JavaClass {
             if (isIgnoreParam) {
                 continue;
             }
+            for (AnnotationUsage annotation : method.getAnnotations()) {
+                methodAnnotations.add(annotation);
+            }
             this.methods.add(method);
         }
     }
@@ -161,6 +169,18 @@ public class JavaClass {
      */
     public void addLoopInclude(ClassType classType) {
         this.loopIncludes.add(classType);
+    }
+
+    public Set<AnnotationUsage> getClassAnnotations() {
+        return classAnnotations;
+    }
+
+    public Set<AnnotationUsage> getFieldAnnotations() {
+        return fieldAnnotations;
+    }
+
+    public Set<AnnotationUsage> getMethodAnnotations() {
+        return methodAnnotations;
     }
 
     /**

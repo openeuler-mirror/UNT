@@ -119,7 +119,7 @@ public class TranslatorContext {
     /**
      * tmp object assign code string
      */
-    public static final String TMP_OBJ_ASSIGN = TAB + "Object *tmpObj = %s;" + NEW_LINE;
+    public static final String TMP_OBJ_ASSIGN = TAB + "tmpObj = %s;" + NEW_LINE;
 
     /**
      * tmp object free object
@@ -171,6 +171,20 @@ public class TranslatorContext {
                 put (PrimitiveType.ShortType.getInstance(), "basictypes/Short.h");
             }};
 
+    public static final Set<String> JSON_SERIALIZE_SET = new HashSet<String>(){{
+        add("java.lang.Object");
+        add("java.util.HashMap");
+        add("java.util.Map");
+        add("java.lang.String");
+        add("java.util.List");
+        add("java.util.ArrayList");
+        add("java.util.LinkedList");
+        add("java.lang.Long");
+        add("java.lang.Double");
+        add("java.math.BigInteger");
+        add("java.lang.Integer");
+    }};
+
     private static Map<String, Set<String>> superclassMap = new HashMap<>();
     private static Map<String, Set<String>> subclassMap = new HashMap<>();
     private static Map<String, Set<String>> missingInterfaces = new HashMap<>();
@@ -191,7 +205,8 @@ public class TranslatorContext {
     private static boolean isRegexAcc;
     private static String compileOption;
     private static Set<String> udfPackages;
-
+    private static Set<String> processFunctions;
+    private static String mainClass;
     private TranslatorContext() {
     }
 
@@ -277,6 +292,24 @@ public class TranslatorContext {
             LOGGER.info("scan package: {}", loadUdfPackages);
         }
 
+        if (!getUdfMap().containsKey("process_function") || "".equals(getUdfMap().get("process_function"))) {
+            processFunctions = null;
+            LOGGER.warn("default scan all processFunction in jar");
+        } else {
+            processFunctions = new HashSet<>(Arrays.asList(getUdfMap().get("process_function").split(",")));
+            StringJoiner loadProcessFunctionPackages = new StringJoiner(",");
+            processFunctions.forEach(loadProcessFunctionPackages::add);
+            LOGGER.info("scan processFunction: {}", loadProcessFunctionPackages);
+        }
+
+        if (!getUdfMap().containsKey("main_class") || "".equals(getUdfMap().get("main_class"))){
+            mainClass = null;
+            LOGGER.warn("main_class is null, default scan all task in jar");
+        } else {
+            mainClass = getUdfMap().get("main_class");
+            LOGGER.info("use main_class: {}", getMainClass());
+        }
+
         String basicDir = getUdfMap().get("basic_lib_path").endsWith(File.separator)
                 ? getUdfMap().get("basic_lib_path")
                 : getUdfMap().get("basic_lib_path") + File.separator;
@@ -342,7 +375,12 @@ public class TranslatorContext {
                     continue;
                 }
                 String[] ref = dependInterface.trim().split(", ");
-                dependInterfaces.put(ref[0].trim(), Integer.valueOf(ref[1].trim()));
+                try {
+
+                    dependInterfaces.put(ref[0].trim(), Integer.valueOf(ref[1].trim()));
+                }catch (Exception e){
+                    System.out.println(e.getMessage());
+                }
             }
 
             String grcFunction;
@@ -524,7 +562,7 @@ public class TranslatorContext {
         boolean isStringConstantCast = false;
         if (value instanceof JCastExpr && value.getType() instanceof ClassType) {
             String typeString = TranslatorUtils.formatClassName(((ClassType) value.getType()).getFullyQualifiedName());
-            isStringConstantCast = "String".equals(typeString) && ((JCastExpr) value).getOp() instanceof StringConstant;
+            isStringConstantCast = ("String".equals(typeString) || "CharSequence".equals(typeString)) && ((JCastExpr) value).getOp() instanceof StringConstant;
         }
         return value instanceof StringConstant
                 || isToString(value)
@@ -558,6 +596,11 @@ public class TranslatorContext {
         return compileOption;
     }
 
+    public static String getMainClass() {
+        return mainClass;
+    }
+
+
     /**
      * check if the class is in need packages
      *
@@ -575,6 +618,18 @@ public class TranslatorContext {
             }
         }
 
+        return false;
+    }
+
+    public static boolean isInProcessFunction(String processFunction) {
+        if (processFunctions == null){
+            return true;
+        }
+        for (String function : processFunctions) {
+            if (function.equals(processFunction)) {
+                return true;
+            }
+        }
         return false;
     }
 

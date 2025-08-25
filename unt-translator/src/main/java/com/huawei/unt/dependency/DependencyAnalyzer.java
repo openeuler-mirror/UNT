@@ -9,12 +9,15 @@ import com.huawei.unt.loader.LoaderException;
 import com.huawei.unt.model.JavaClass;
 import com.huawei.unt.translator.TranslatorContext;
 import com.huawei.unt.translator.TranslatorException;
+import com.huawei.unt.translator.TranslatorUtils;
 import com.huawei.unt.type.NoneUDF;
 
 import sootup.core.jimple.basic.Immediate;
 import sootup.core.jimple.basic.Local;
+import sootup.core.jimple.common.constant.ClassConstant;
 import sootup.core.jimple.common.constant.MethodHandle;
 import sootup.core.jimple.common.expr.JDynamicInvokeExpr;
+import sootup.core.jimple.common.expr.JInstanceOfExpr;
 import sootup.core.jimple.common.expr.JStaticInvokeExpr;
 import sootup.core.jimple.common.ref.JStaticFieldRef;
 import sootup.core.jimple.common.stmt.JAssignStmt;
@@ -26,9 +29,7 @@ import sootup.core.model.Body;
 import sootup.core.types.ArrayType;
 import sootup.core.types.ClassType;
 import sootup.core.types.Type;
-import sootup.java.core.JavaIdentifierFactory;
-import sootup.java.core.JavaSootField;
-import sootup.java.core.JavaSootMethod;
+import sootup.java.core.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,6 +58,8 @@ public class DependencyAnalyzer {
 
     private final Map<ClassType, JavaClass> allClasses = new HashMap<>();
     private final Queue<JavaClass> classQueue = new ArrayDeque<>();
+
+    private final Set<String> allMethods = new HashSet<>();
 
     private final List<JavaClass> udfClasses = new ArrayList<>();
 
@@ -140,13 +143,16 @@ public class DependencyAnalyzer {
                     .collect(Collectors.toSet());
 
             for (ClassType classType : newJsonConstruct) {
+                if (classType.getFullyQualifiedName().equals(TranslatorContext.getMainClass())) {
+                    continue;
+                }
                 try {
                     JavaClass newJsonjavaClass = allClasses.get(classType);
                     addJsonConstructorMap.put(JavaIdentifierFactory.getInstance().getClassType(
                             newJsonjavaClass.getClassName()), newJsonjavaClass);
                     addJsonConstructorQueue.add(newJsonjavaClass);
                 } catch (Exception e) {
-                    LOGGER.error("fieldClassType {} not found in allNeedTransClasses ", classType.getClassName());
+                    LOGGER.error("fieldClassType {} not found in allNeedTransClasses ", classType.getFullyQualifiedName());
                 }
             }
 
@@ -166,6 +172,7 @@ public class DependencyAnalyzer {
      * @return all dependency classes
      */
     public Collection<JavaClass> getAllDependencyClasses() {
+        boolean ismissing = false;
         while (!classQueue.isEmpty()) {
             JavaClass javaClass = classQueue.poll();
             LOGGER.info("Start analyze class: {}", javaClass.getClassName());
@@ -178,6 +185,40 @@ public class DependencyAnalyzer {
             DependencyStmtVisitor stmtVisitor = new DependencyStmtVisitor();
 
             Set<ClassType> dependencies = new HashSet<>(javaClass.getSupperClasses());
+
+
+            for (AnnotationUsage classAnnotation : javaClass.getClassAnnotations()) {
+                Map<String, Object> values = classAnnotation.getValues();
+                for (Object value : values.values()) {
+                    if (value instanceof ClassConstant) {
+                        String className = ((ClassConstant) value).getValue();
+                        JavaSootClass javaSootClass = jarHandler.getJavaClass(TranslatorUtils.parseSignature(className));
+                        dependencies.add(javaSootClass.getType());
+                    }
+                }
+            }
+
+            for (AnnotationUsage fieldAnnotation : javaClass.getFieldAnnotations()) {
+                Map<String, Object> values = fieldAnnotation.getValues();
+                for (Object value : values.values()) {
+                    if (value instanceof ClassConstant) {
+                        String className = ((ClassConstant) value).getValue();
+                        JavaSootClass javaSootClass = jarHandler.getJavaClass(TranslatorUtils.parseSignature(className));
+                        dependencies.add(javaSootClass.getType());
+                    }
+                }
+            }
+
+            for (AnnotationUsage methodAnnotation : javaClass.getMethodAnnotations()) {
+                Map<String, Object> values = methodAnnotation.getValues();
+                for (Object value : values.values()) {
+                    if (value instanceof ClassConstant) {
+                        String className = ((ClassConstant) value).getValue();
+                        JavaSootClass javaSootClass = jarHandler.getJavaClass(TranslatorUtils.parseSignature(className));
+                        dependencies.add(javaSootClass.getType());
+                    }
+                }
+            }
 
             for (JavaSootField field : javaClass.getFields()) {
                 if (field.getType() instanceof ClassType) {
@@ -231,6 +272,110 @@ public class DependencyAnalyzer {
 
             Set<ClassType> includes = dependencies.stream()
                     .filter(c -> !TranslatorContext.getIgnoredClasses().contains(c.getFullyQualifiedName()))
+                    .filter(c -> !c.getFullyQualifiedName().equals(TranslatorContext.getMainClass()))
+                    .collect(Collectors.toSet());
+
+            javaClass.addIncludes(includes);
+
+            Set<ClassType> newDependencies = includes.stream()
+                    .filter(c -> !allClasses.containsKey(c))
+                    .filter(c -> !TranslatorContext.getStringMap().containsKey(c.getFullyQualifiedName()))
+                    .collect(Collectors.toSet());
+
+            for (ClassType classType : newDependencies) {
+                if (classType.getFullyQualifiedName().equals(TranslatorContext.getMainClass())) {
+                    continue;
+                }
+                JavaClass newClass;
+                try {
+                    newClass = jarHandler.getJavaClass(classType, NoneUDF.INSTANCE);
+                } catch (LoaderException e) {
+                    isMissingClass = true;
+                    missingClasses.add(classType);
+                    continue;
+                }
+                newFoundClasses.put(classType, newClass);
+            }
+
+            for (Map.Entry<ClassType, JavaClass> entry : newFoundClasses.entrySet()) {
+                allClasses.put(entry.getKey(), entry.getValue());
+                classQueue.add(entry.getValue());
+                LOGGER.info("Found new dependency class: {}", entry.getKey().getFullyQualifiedName());
+            }
+
+            if (isMissingClass) {
+                ismissing = true;
+                LOGGER.error("Analyze class {} failed, missing some dependency class: ", javaClass.getClassName());
+                for (ClassType missingClass : missingClasses) {
+                    LOGGER.error("Missing: {}", missingClass.getFullyQualifiedName());
+                }
+            }
+        }
+        if (ismissing){
+            throw new TranslatorException("missing basictype, exit");
+        }
+        this.addJsonConstructorFlag();
+        return allClasses.values();
+    }
+
+    public Collection<JavaClass> getAllDependencyClassesByMain() {
+        LOGGER.info("start find depend class from main");
+        while (!classQueue.isEmpty()) {
+            JavaClass javaClass = classQueue.poll();
+            LOGGER.info("Start analyze class: {}", javaClass.getClassName());
+            Map<ClassType, JavaClass> newFoundClasses = new HashMap<>();
+            Set<ClassType> missingClasses = new HashSet<>();
+
+            ClassType thisClassType = JavaIdentifierFactory.getInstance().getClassType(javaClass.getClassName());
+
+            DependencyStmtVisitor stmtVisitor = new DependencyStmtVisitor();
+
+            Set<ClassType> dependencies = new HashSet<>(javaClass.getSupperClasses());
+
+
+            for (JavaSootField field : javaClass.getFields()) {
+                if (field.getType() instanceof ClassType) {
+                    dependencies.add((ClassType) field.getType());
+                }
+            }
+
+            for (JavaSootMethod method : javaClass.getJavaSootClass().getMethods()) {
+                LOGGER.info("Start analyze method: {}", method);
+                if (TranslatorContext.getIgnoredMethods().contains(method.getSignature().toString())
+                        || !method.hasBody()) {
+                    // abstract method && ignored method analyze param
+                    for (Type paramType : method.getParameterTypes()) {
+                        if (paramType instanceof ClassType) {
+                            dependencies.add((ClassType) paramType);
+                        }
+                    }
+                    continue;
+                }
+
+                Body body = method.getBody();
+
+                for (Local local : body.getLocals()) {
+                    if (local.getType() instanceof ClassType) {
+                        dependencies.add((ClassType) local.getType());
+                    }
+                }
+
+                for (Stmt stmt : body.getStmts()) {
+                    stmt.accept(stmtVisitor);
+                }
+            }
+
+            dependencies.addAll(stmtVisitor.getClasses());
+            stmtVisitor.clear();
+
+            dependencies.remove(thisClassType);
+
+            if (javaClass.getRefMethod() != null) {
+                dependencies.add(javaClass.getRefMethod().getDeclClassType());
+            }
+
+            Set<ClassType> includes = dependencies.stream()
+                    .filter(c -> !TranslatorContext.getIgnoredClasses().contains(c.getFullyQualifiedName()))
                     .collect(Collectors.toSet());
 
             javaClass.addIncludes(includes);
@@ -245,19 +390,10 @@ public class DependencyAnalyzer {
                 try {
                     newClass = jarHandler.getJavaClass(classType, NoneUDF.INSTANCE);
                 } catch (LoaderException e) {
-                    isMissingClass = true;
                     missingClasses.add(classType);
                     continue;
                 }
                 newFoundClasses.put(classType, newClass);
-            }
-
-            if (isMissingClass) {
-                LOGGER.error("Analyze class {} failed, missing some dependency class: ", javaClass.getClassName());
-                for (ClassType missingClass : missingClasses) {
-                    LOGGER.error("Missing: {}", missingClass.getFullyQualifiedName());
-                }
-                continue;
             }
 
             for (Map.Entry<ClassType, JavaClass> entry : newFoundClasses.entrySet()) {
@@ -266,7 +402,6 @@ public class DependencyAnalyzer {
                 LOGGER.info("Found new dependency class: {}", entry.getKey().getFullyQualifiedName());
             }
         }
-        this.addJsonConstructorFlag();
         return allClasses.values();
     }
 
@@ -363,6 +498,13 @@ public class DependencyAnalyzer {
 
             if (MethodHandle.Kind.REF_INVOKE_STATIC.equals(invokeMethod.getKind())) {
                 classes.add(invokeMethod.getReferenceSignature().getDeclClassType());
+            }
+        }
+
+        @Override
+        public void caseInstanceOfExpr(@Nonnull JInstanceOfExpr expr) {
+            if (expr.getCheckType() instanceof ClassType){
+                classes.add((ClassType) expr.getCheckType());
             }
         }
     }

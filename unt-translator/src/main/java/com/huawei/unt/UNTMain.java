@@ -17,10 +17,12 @@ import com.huawei.unt.translator.TranslatorContext;
 import com.huawei.unt.translator.TranslatorException;
 import com.huawei.unt.translator.TranslatorUtils;
 import com.huawei.unt.type.EngineType;
+import com.huawei.unt.type.NoneUDF;
 import com.huawei.unt.type.UDFType;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sootup.java.core.JavaSootClass;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -32,6 +34,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Main Class for unt translator
@@ -63,7 +66,15 @@ public class UNTMain {
 
         JarUdfLoader jarUdfLoader = new JarUdfLoader(jarHandler, engine);
 
-        jarUdfLoader.loadUdfClasses();
+        JavaSootClass mainJavaClass = jarHandler.getJavaClass(TranslatorContext.getMainClass());
+        ArrayList<JavaClass> javaClasses = new ArrayList<>();
+        javaClasses.add(new JavaClass(mainJavaClass, NoneUDF.INSTANCE));
+        DependencyAnalyzer mainDependencyAnalyzer = new DependencyAnalyzer(jarHandler, javaClasses);
+        Collection<JavaClass> allDependencyClassesByMain = mainDependencyAnalyzer.getAllDependencyClassesByMain();
+        List<JavaSootClass> allNeetClassByMain = allDependencyClassesByMain.stream().map(javaClass -> javaClass.getJavaSootClass()).collect(Collectors.toList());
+        jarUdfLoader.loadUdfClassesByCollect(allNeetClassByMain);
+
+//        jarUdfLoader.loadUdfClasses();
 
         Map<UDFType, List<JavaClass>> classesUdfMap = jarUdfLoader.getClassUdfMap();
 

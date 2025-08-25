@@ -17,6 +17,7 @@ import com.huawei.unt.type.UDFType;
 import sootup.core.jimple.basic.Immediate;
 import sootup.core.jimple.basic.LValue;
 import sootup.core.jimple.basic.Local;
+import sootup.core.jimple.common.constant.StringConstant;
 import sootup.core.jimple.common.expr.JSpecialInvokeExpr;
 import sootup.core.jimple.common.stmt.JAssignStmt;
 import sootup.core.jimple.common.stmt.JInvokeStmt;
@@ -59,7 +60,6 @@ public class JavaMethodTranslator {
         boolean isStaticInit = methodContext.isStaticInit();
         boolean isInit = methodContext.isInit();
         boolean isIgnore = methodContext.isIgnore();
-
         if (isIgnore) {
             bodyBuilder.append(printIgnoredBody(method));
         } else {
@@ -98,7 +98,11 @@ public class JavaMethodTranslator {
                 // deal with retStmts
                 if (methodContext.hasRet(i)) {
                     methodContext.getRetValue(i).accept(valueVisitor);
-                    bodyBuilder.append(String.format(TranslatorContext.RET_ASSIGN, valueVisitor.toCode()));
+                    if (methodContext.getRetValue(i) instanceof StringConstant){
+                        bodyBuilder.append(String.format(TranslatorContext.RET_ASSIGN, "new String(" + valueVisitor.toCode() + ")"));
+                    }else {
+                        bodyBuilder.append(String.format(TranslatorContext.RET_ASSIGN, valueVisitor.toCode()));
+                    }
                     valueVisitor.clear();
                 }
 
