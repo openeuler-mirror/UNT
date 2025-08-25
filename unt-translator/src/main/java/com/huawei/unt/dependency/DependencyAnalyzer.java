@@ -121,7 +121,8 @@ public class DependencyAnalyzer {
         }
     }
 
-    private void getJsonConstructMap(Queue<JavaClass> addJsonConstructorQueue, Map<ClassType, JavaClass> addJsonConstructorMap) {
+    private void getJsonConstructMap(Queue<JavaClass> addJsonConstructorQueue,
+                                     Map<ClassType, JavaClass> addJsonConstructorMap) {
         while (!addJsonConstructorQueue.isEmpty()) {
             JavaClass javaClass = addJsonConstructorQueue.poll();
             boolean hasObjectField = false;
@@ -132,19 +133,7 @@ public class DependencyAnalyzer {
 
             needToJsonConstruct.addAll(supperClasses);
             Set<JavaSootField> fields = javaClass.getFields();
-            for (JavaSootField field : fields) {
-                Type fieldType = field.getType();
-                if (fieldType instanceof ClassType) {
-                    ClassType fieldClassType = (ClassType) fieldType;
-                    if ("java.lang.Object".equals(fieldClassType.getFullyQualifiedName())) {
-                        hasObjectField = true;
-                    }
-                    if (TranslatorContext.getStringMap().containsKey(fieldClassType.getFullyQualifiedName())) {
-                        continue;
-                    }
-                    needToJsonConstruct.add(fieldClassType);
-                }
-            }
+            getJsonConstructByField(fields, hasObjectField, needToJsonConstruct);
             Set<ClassType> newJsonConstruct = needToJsonConstruct.stream()
                     .filter(c -> !addJsonConstructorMap.containsKey(c))
                     .collect(Collectors.toSet());
@@ -164,6 +153,22 @@ public class DependencyAnalyzer {
             }
             if (hasObjectField) {
                 javaClass.setHasObjectField();
+            }
+        }
+    }
+
+    private void getJsonConstructByField(Set<JavaSootField> fields, boolean hasObjectField, HashSet<ClassType> needToJsonConstruct) {
+        for (JavaSootField field : fields) {
+            Type fieldType = field.getType();
+            if (fieldType instanceof ClassType) {
+                ClassType fieldClassType = (ClassType) fieldType;
+                if ("java.lang.Object".equals(fieldClassType.getFullyQualifiedName())) {
+                    hasObjectField = true;
+                }
+                if (TranslatorContext.getStringMap().containsKey(fieldClassType.getFullyQualifiedName())) {
+                    continue;
+                }
+                needToJsonConstruct.add(fieldClassType);
             }
         }
     }
@@ -331,45 +336,16 @@ public class DependencyAnalyzer {
             JavaClass javaClass = classQueue.poll();
             LOGGER.info("Start analyze class: {}", javaClass.getClassName());
             DependencyStmtVisitor stmtVisitor = new DependencyStmtVisitor();
-
             Set<ClassType> dependencies = new HashSet<>(javaClass.getSupperClasses());
-
             for (JavaSootField field : javaClass.getFields()) {
                 if (field.getType() instanceof ClassType) {
                     dependencies.add((ClassType) field.getType());
                 }
             }
-
-            for (JavaSootMethod method : javaClass.getJavaSootClass().getMethods()) {
-                LOGGER.info("Start analyze method: {}", method);
-                if (TranslatorContext.getIgnoredMethods().contains(method.getSignature().toString())
-                        || !method.hasBody()) {
-                    // abstract method && ignored method analyze param
-                    for (Type paramType : method.getParameterTypes()) {
-                        if (paramType instanceof ClassType) {
-                            dependencies.add((ClassType) paramType);
-                        }
-                    }
-                    continue;
-                }
-
-                Body body = method.getBody();
-
-                for (Local local : body.getLocals()) {
-                    if (local.getType() instanceof ClassType) {
-                        dependencies.add((ClassType) local.getType());
-                    }
-                }
-
-                for (Stmt stmt : body.getStmts()) {
-                    stmt.accept(stmtVisitor);
-                }
-            }
-
+            getDependEnciesInMethod(javaClass, dependencies, stmtVisitor);
             dependencies.addAll(stmtVisitor.getClasses());
             stmtVisitor.clear();
-            ClassType thisClassType = JavaIdentifierFactory
-                    .getInstance()
+            ClassType thisClassType = JavaIdentifierFactory.getInstance()
                     .getClassType(javaClass.getClassName());
             dependencies.remove(thisClassType);
 
@@ -382,12 +358,9 @@ public class DependencyAnalyzer {
                     .collect(Collectors.toSet());
 
             javaClass.addIncludes(includes);
-
-            Set<ClassType> newDependencies = includes.stream()
-                    .filter(c -> !allClasses.containsKey(c))
+            Set<ClassType> newDependencies = includes.stream().filter(c -> !allClasses.containsKey(c))
                     .filter(c -> !TranslatorContext.getStringMap().containsKey(c.getFullyQualifiedName()))
                     .collect(Collectors.toSet());
-
             Map<ClassType, JavaClass> newFoundClasses = new HashMap<>();
             for (ClassType classType : newDependencies) {
                 JavaClass newClass;
@@ -398,7 +371,6 @@ public class DependencyAnalyzer {
                 }
                 newFoundClasses.put(classType, newClass);
             }
-
             for (Map.Entry<ClassType, JavaClass> entry : newFoundClasses.entrySet()) {
                 allClasses.put(entry.getKey(), entry.getValue());
                 classQueue.add(entry.getValue());
@@ -406,6 +378,34 @@ public class DependencyAnalyzer {
             }
         }
         return allClasses.values();
+    }
+
+    private static void getDependEnciesInMethod(JavaClass javaClass, Set<ClassType> dependencies, DependencyStmtVisitor stmtVisitor) {
+        for (JavaSootMethod method : javaClass.getJavaSootClass().getMethods()) {
+            LOGGER.info("Start analyze method: {}", method);
+            if (TranslatorContext.getIgnoredMethods().contains(method.getSignature().toString())
+                    || !method.hasBody()) {
+                // abstract method && ignored method analyze param
+                for (Type paramType : method.getParameterTypes()) {
+                    if (paramType instanceof ClassType) {
+                        dependencies.add((ClassType) paramType);
+                    }
+                }
+                continue;
+            }
+
+            Body body = method.getBody();
+
+            for (Local local : body.getLocals()) {
+                if (local.getType() instanceof ClassType) {
+                    dependencies.add((ClassType) local.getType());
+                }
+            }
+
+            for (Stmt stmt : body.getStmts()) {
+                stmt.accept(stmtVisitor);
+            }
+        }
     }
 
     private static class DependencyStmtVisitor extends AbstractStmtVisitor {

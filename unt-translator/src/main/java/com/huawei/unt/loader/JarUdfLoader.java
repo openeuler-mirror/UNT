@@ -130,20 +130,7 @@ public class JarUdfLoader {
             } catch (Exception e) {
                 LOGGER.warn("Load lambda classes from class {} failed, {}", javaClass.getName(), e.getMessage());
             }
-
-            if (lambdaClasses != null && !lambdaClasses.isEmpty()) {
-                for (JavaClass lambdaClass : lambdaClasses) {
-                    if (requiredUdf.contains(lambdaClass.getType().getBaseClass().getName())) {
-                        if (lambdaClass.getType() instanceof FlinkProcessFunction
-                                && !TranslatorContext.isInProcessFunction(lambdaClass.getClassName())) {
-                            continue;
-                        }
-                        List<JavaClass> udfClasses = classUdfMap.getOrDefault(lambdaClass.getType(), new ArrayList<>());
-                        udfClasses.add(lambdaClass);
-                        classUdfMap.put(lambdaClass.getType(), udfClasses);
-                    }
-                }
-            }
+            tryLoadLambdaClassUDF(lambdaClasses);
         }
 
         for (UDFType type : classUdfMap.keySet()) {
@@ -197,26 +184,29 @@ public class JarUdfLoader {
             } catch (Exception e) {
                 LOGGER.warn("Load lambda classes from class {} failed, {}", javaClass.getName(), e.getMessage());
             }
-
-            if (lambdaClasses != null && !lambdaClasses.isEmpty()) {
-                for (JavaClass lambdaClass : lambdaClasses) {
-                    if (requiredUdf.contains(lambdaClass.getType().getBaseClass().getName())) {
-                        if (lambdaClass.getType() instanceof FlinkProcessFunction
-                                && !TranslatorContext.isInProcessFunction(lambdaClass.getClassName())) {
-                            continue;
-                        }
-                        List<JavaClass> udfClasses = classUdfMap.getOrDefault(lambdaClass.getType(), new ArrayList<>());
-                        udfClasses.add(lambdaClass);
-                        classUdfMap.put(lambdaClass.getType(), udfClasses);
-                    }
-                }
-            }
+            tryLoadLambdaClassUDF(lambdaClasses);
         }
 
         for (UDFType type : classUdfMap.keySet()) {
             LOGGER.info("Load class {} count : {}", type.getBaseClass().getSimpleName(), classUdfMap.get(type).size());
             for (JavaClass javaClass : classUdfMap.get(type)) {
                 LOGGER.info(javaClass.getClassName());
+            }
+        }
+    }
+
+    private void tryLoadLambdaClassUDF(List<JavaClass> lambdaClasses) {
+        if (lambdaClasses != null && !lambdaClasses.isEmpty()) {
+            for (JavaClass lambdaClass : lambdaClasses) {
+                if (requiredUdf.contains(lambdaClass.getType().getBaseClass().getName())) {
+                    if (lambdaClass.getType() instanceof FlinkProcessFunction
+                            && !TranslatorContext.isInProcessFunction(lambdaClass.getClassName())) {
+                        continue;
+                    }
+                    List<JavaClass> udfClasses = classUdfMap.getOrDefault(lambdaClass.getType(), new ArrayList<>());
+                    udfClasses.add(lambdaClass);
+                    classUdfMap.put(lambdaClass.getType(), udfClasses);
+                }
             }
         }
     }
