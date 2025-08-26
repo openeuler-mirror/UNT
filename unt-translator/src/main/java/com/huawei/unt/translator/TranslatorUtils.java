@@ -27,6 +27,7 @@ import sootup.core.types.VoidType;
 import sootup.java.core.JavaIdentifierFactory;
 import sootup.java.core.JavaSootField;
 import sootup.java.core.JavaSootMethod;
+import sootup.java.core.types.JavaClassType;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -102,6 +103,11 @@ public class TranslatorUtils {
         List<Type> params = javaMethod.getParameterTypes();
         int i = 0;
         for (Type type : params) {
+            if (type instanceof JavaClassType
+                    && ((JavaClassType) type).getFullyQualifiedName()
+                            .equals(TranslatorContext.getMainClass())) {
+                continue;
+            }
             joiner.add(formatParamType(type) + "param" + i++);
         }
 
@@ -121,6 +127,12 @@ public class TranslatorUtils {
         for (int i = 0; i < params.size(); i++) {
             Local local = params.get(i);
             methodContext.removeLocal(local);
+            if (local.getType() instanceof JavaClassType
+                    && ((JavaClassType) local.getType())
+                    .getFullyQualifiedName()
+                    .equals(TranslatorContext.getMainClass())) {
+                continue;
+            }
             joiner.add(formatParamType(methodContext.getJavaMethod().getParameterType(i)) + formatLocalName(local));
         }
 
@@ -186,7 +198,7 @@ public class TranslatorUtils {
      * Get Lambda Udf Class Name
      *
      * @param methodSignature MethodSignature
-     * @param udfType UDFType
+     * @param udfType         UDFType
      * @return lambda udf class name
      */
     public static String formatLambdaUdfClassName(MethodSignature methodSignature, UDFType udfType) {
@@ -385,6 +397,11 @@ public class TranslatorUtils {
                     .append("\"")
                     .append(NEW_LINE);
         }
+
+        includeBuilder.append("#include \"")
+                .append("kacc_gson_shell/com_google_gson_Gson.h")
+                .append("\"")
+                .append(NEW_LINE);
 
         return includeBuilder.toString();
     }

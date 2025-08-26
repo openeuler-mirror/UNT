@@ -16,15 +16,18 @@ import com.huawei.unt.type.UDFType;
 
 import com.google.common.collect.ImmutableList;
 
+import sootup.core.jimple.common.constant.ClassConstant;
 import sootup.core.model.FieldModifier;
 import sootup.core.signatures.MethodSignature;
 import sootup.core.types.ClassType;
 import sootup.core.types.PrimitiveType;
 import sootup.core.types.VoidType;
+import sootup.java.core.AnnotationUsage;
 import sootup.java.core.JavaSootClass;
-import sootup.java.core.JavaSootClassSource;
 import sootup.java.core.JavaSootField;
 import sootup.java.core.JavaSootMethod;
+import sootup.java.core.types.JavaClassType;
+import sootup.java.core.JavaSootClassSource;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,6 +36,7 @@ import org.objectweb.asm.tree.FieldNode;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -156,6 +160,98 @@ public class JavaClassTranslator {
 
             headBuilder.append("public:").append(NEW_LINE);
 
+            Set<ClassType> superClassesJson = superClasses.stream()
+                    .filter(m -> !TranslatorContext.getJsonSerializeSet().contains(m.getFullyQualifiedName()))
+                    .collect(Collectors.toSet());
+
+            if (superClassesJson.size() > 0) {
+                for (ClassType classType : superClassesJson) {
+                    headBuilder.append(TAB).append("KACC_DEFINE_ZHUJIE_DERIVED_TYPE_INTRUSIVE_BASE_CLASS(")
+                            .append(TranslatorUtils.formatClassName(javaClass.getClassName())).append(",")
+                            .append(TranslatorUtils.formatType(classType))
+                            .append(")").append(NEW_LINE);
+                }
+
+                headBuilder.append(TAB).append("KACC_DEFINE_ZHUJIE_DERIVED_TYPE_INTRUSIVE_MEMBER(")
+                        .append(TranslatorUtils.formatClassName(javaClass.getClassName()));
+                for (JavaSootField field : fields) {
+                    boolean isIgnore = false;
+                    String serializerName = "Not_Exist_Serializer";
+                    for (AnnotationUsage annotation : field.getAnnotations()) {
+                        if ("JsonIgnore".equals(annotation.getAnnotation().getClassName())) {
+                            isIgnore = true;
+                            break;
+                        } else if ("JsonSerialize".equals(annotation.getAnnotation().getClassName())) {
+                            Map<String, Object> values = annotation.getValues();
+                            for (Map.Entry<String, Object> stringObjectEntry : values.entrySet()) {
+                                String key = stringObjectEntry.getKey();
+                                if ("using".equals(key)) {
+                                    Object value = stringObjectEntry.getValue();
+                                    String className = null;
+                                    if (value instanceof ClassConstant) {
+                                        className = ((ClassConstant) value).getValue();
+                                    }
+                                    if (className == null) {
+                                        throw new TranslatorException("value convert ClassConstant failed");
+                                    }
+                                    serializerName = TranslatorUtils.formatClassName(
+                                            TranslatorUtils.parseSignature(className));
+                                }
+                            }
+                        } else {
+                            throw new TranslatorException("no support annotation");
+                        }
+                    }
+                    if (!isIgnore && !field.isStatic()
+                            && !FieldModifier.isTransient(field.getModifiers())
+                            && !"this$0".equals(field.getName())) {
+                        headBuilder.append(",")
+                                .append(TranslatorUtils.formatFieldName(field.getName()))
+                                .append(",")
+                                .append(serializerName);
+                    }
+                }
+                headBuilder.append(")").append(NEW_LINE);
+            } else {
+                headBuilder.append(TAB).append("KACC_DEFINE_ZHUJIE_SERILARIED_INTRUSIVE(")
+                        .append(TranslatorUtils.formatClassName(javaClass.getClassName()));
+                for (JavaSootField field : fields) {
+                    boolean isIgnore = false;
+                    String serializerName = "Not_Exist_Serializer";
+                    for (AnnotationUsage annotation : field.getAnnotations()) {
+                        if ("JsonIgnore".equals(annotation.getAnnotation().getClassName())) {
+                            isIgnore = true;
+                            break;
+                        } else if ("JsonSerialize".equals(annotation.getAnnotation().getClassName())) {
+                            Map<String, Object> values = annotation.getValues();
+                            for (Map.Entry<String, Object> stringObjectEntry : values.entrySet()) {
+                                String key = stringObjectEntry.getKey();
+                                if ("using".equals(key)) {
+                                    Object value = stringObjectEntry.getValue();
+                                    String className = null;
+                                    if (value instanceof ClassConstant) {
+                                        className = ((ClassConstant) value).getValue();
+                                    }
+                                    if (className == null) {
+                                        throw new TranslatorException("value convert ClassConstant failed");
+                                    }
+                                    serializerName = TranslatorUtils.formatClassName(
+                                            TranslatorUtils.parseSignature(className));
+                                }
+                            }
+                        } else {
+                            throw new TranslatorException("no support annotation");
+                        }
+                    }
+                    if (!field.isStatic()
+                            && !FieldModifier.isTransient(field.getModifiers())
+                            && !"this$0".equals(field.getName()) && !isIgnore) {
+                        headBuilder.append(",").append(TranslatorUtils.formatFieldName(field.getName()))
+                                .append(",").append(serializerName);
+                    }
+                }
+                headBuilder.append(")").append(NEW_LINE);
+            }
             staticInitMethod.ifPresent(sootMethod ->
                     headBuilder.append(printStaticInitMethod(sootMethod)).append(NEW_LINE));
 
@@ -194,12 +290,27 @@ public class JavaClassTranslator {
 
             if (!fields.isEmpty()) {
                 for (JavaSootField field : fields) {
+                    if (field.getType() instanceof PrimitiveType
+                            && field.isStatic() && field.isFinal()) {
+                        continue;
+                    }
+                    Iterable<AnnotationUsage> annotations = field.getAnnotations();
+                    if (annotations.iterator().hasNext()) {
+                        LOGGER.info(annotations.iterator().next().toString());
+                    }
+                    if (field.getType() instanceof JavaClassType
+                            && ((JavaClassType) field.getType())
+                            .getFullyQualifiedName()
+                            .equals(TranslatorContext.getMainClass())) {
+                        continue;
+                    }
                     headBuilder.append(printField(field));
                 }
                 headBuilder.append(NEW_LINE);
             }
 
             if (!javaClass.isAbstract() && NoneUDF.INSTANCE.equals(javaClass.getType())) {
+                headBuilder.append(TAB).append("Class * getObjectClass() override{return clazz_;};").append(NEW_LINE);
                 headBuilder.append(TAB).append("static Class* getClass();").append(NEW_LINE)
                         .append(TAB).append("static Class* clazz_;").append(NEW_LINE);
             }
@@ -286,6 +397,12 @@ public class JavaClassTranslator {
                 LOGGER.error("can not get classNode");
             }
 
+            cppBuilder.append(TAB).append("DEFINE_REFLECT_PARENT_CLASS(")
+                    .append(TranslatorUtils.formatClassName(
+                                    javaSootClass.getSuperclass()
+                                            .get().getFullyQualifiedName()))
+                    .append(");").append(NEW_LINE);
+
             for (JavaSootField javaSootField : fields) {
                 FieldNode fieldNode = null;
                 for (FieldNode field : fieldNodes) {
@@ -309,6 +426,10 @@ public class JavaClassTranslator {
                                     .replace('.', '_').replace('$', '_')).append("\"")
                             .append(")");
                 } else if (javaSootField.getType() instanceof PrimitiveType) {
+                    if (javaSootField.isStatic() && javaSootField.isFinal()) {
+                        cppBuilder.append(NEW_LINE);
+                        continue;
+                    }
                     if (!TranslatorContext.getPrimitiveTypeStringMap().containsKey(javaSootField.getType())) {
                         throw new TranslatorException("no support "
                                 + ((PrimitiveType) javaSootField.getType()).getName()
@@ -477,18 +598,12 @@ public class JavaClassTranslator {
 
     private static String printConstructorFromJson(StringBuilder methodBuilder, JavaClass javaClass) {
         String className = TranslatorUtils.formatClassName(javaClass.getClassName());
-
-        methodBuilder.append(className)
-                .append("::")
-                .append(className)
+        methodBuilder.append(className).append("::").append(className)
                 .append("(nlohmann::json jsonObj)");
-
-        // deal with father class......should deal with extends class
         Set<ClassType> superClassForJson = javaClass.getSupperClasses().stream()
                 .filter(c -> !TranslatorContext.getIgnoredClasses().contains(c.getFullyQualifiedName()))
                 .filter(c -> !TranslatorContext.getStringMap().containsKey(c.getFullyQualifiedName()))
                 .collect(Collectors.toSet());
-
         if (!superClassForJson.isEmpty()) {
             methodBuilder.append(" : ");
         }
@@ -497,42 +612,37 @@ public class JavaClassTranslator {
             String fatherName = TranslatorUtils.formatClassName(classType.getFullyQualifiedName());
             joiner.add(fatherName + "(jsonObj)");
         }
-
         methodBuilder.append(joiner).append(NEW_LINE).append(" {").append(NEW_LINE);
-
-        // fill fields
         for (JavaSootField field : javaClass.getFields()) {
+            if (field.getType() instanceof ClassType
+                    && ((ClassType) field.getType())
+                    .getFullyQualifiedName()
+                    .equals(TranslatorContext.getMainClass())) {
+                continue;
+            }
             if (!field.isStatic() && !FieldModifier.isTransient(field.getModifiers())) {
-                methodBuilder.append(TAB)
-                        .append("if(!jsonObj[\"")
+                methodBuilder.append(TAB).append("if(!jsonObj[\"")
                         .append(TranslatorUtils.formatFieldName(field.getName()))
-                        .append("\"].empty()) {")
-                        .append(NEW_LINE);
+                        .append("\"].empty()) {").append(NEW_LINE);
                 if (field.getType() instanceof PrimitiveType) {
-                    methodBuilder.append(TAB).append(TAB)
-                            .append("this->")
+                    methodBuilder.append(TAB).append(TAB).append("this->")
                             .append(TranslatorUtils.formatFieldName(field.getName()))
                             .append(" = jsonObj[\"")
                             .append(TranslatorUtils.formatFieldName(field.getName()))
-                            .append("\"];")
-                            .append(NEW_LINE);
+                            .append("\"];").append(NEW_LINE);
                 } else {
-                    methodBuilder.append(TAB).append(TAB)
-                            .append("this->")
+                    methodBuilder.append(TAB).append(TAB).append("this->")
                             .append(TranslatorUtils.formatFieldName(field.getName()))
                             .append(" = new ")
                             .append(TranslatorUtils.formatType(field.getType()))
                             .append("(jsonObj[\"")
                             .append(TranslatorUtils.formatFieldName(field.getName()))
-                            .append("\"]);")
-                            .append(NEW_LINE);
+                            .append("\"]);").append(NEW_LINE);
                 }
                 methodBuilder.append(TAB).append("}").append(NEW_LINE);
             }
         }
-
         methodBuilder.append("}").append(NEW_LINE).append(NEW_LINE);
-
         return methodBuilder.toString();
     }
 

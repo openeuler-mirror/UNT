@@ -6,12 +6,14 @@ package com.huawei.unt.loader;
 
 import static com.huawei.unt.model.JavaClass.Kind.INSTANCE_METHOD_REF;
 import static com.huawei.unt.model.JavaClass.Kind.STATIC_METHOD_REF;
+
 import com.huawei.unt.model.JavaClass;
 import com.huawei.unt.translator.TranslatorContext;
 import com.huawei.unt.translator.TranslatorException;
 import com.huawei.unt.translator.TranslatorUtils;
 import com.huawei.unt.type.EngineType;
 import com.huawei.unt.type.UDFType;
+import com.huawei.unt.type.flink.FlinkProcessFunction;
 
 import com.google.common.collect.ImmutableList;
 
@@ -93,21 +95,25 @@ public class JarUdfLoader {
     public void loadUdfClasses() {
         for (JavaSootClass javaClass : jarHandler.getAllJavaClasses()) {
             // skip ignored class
-            boolean skip = false;
+            boolean isSkip = false;
 
             for (String skipPackage : TranslatorContext.getFilterPackages()) {
                 if (javaClass.getName().startsWith(skipPackage)) {
-                    skip = true;
+                    isSkip = true;
                     break;
                 }
             }
 
-            if (skip) {
+            if (isSkip) {
                 continue;
             }
 
             Optional<UDFType> udfType = getUDFType(javaClass, engineType);
             if (udfType.isPresent() && requiredUdf.contains(udfType.get().getBaseClass().getName())) {
+                if (udfType.get() instanceof FlinkProcessFunction
+                        && !TranslatorContext.isInProcessFunction(javaClass.getName())) {
+                    continue;
+                }
                 JavaClass udfClz = new JavaClass(javaClass, udfType.get());
                 udfClz.addIncludes(udfType.get().getRequiredIncludes());
 
@@ -124,15 +130,8 @@ public class JarUdfLoader {
             } catch (Exception e) {
                 LOGGER.warn("Load lambda classes from class {} failed, {}", javaClass.getName(), e.getMessage());
             }
-
             if (lambdaClasses != null && !lambdaClasses.isEmpty()) {
-                for (JavaClass lambdaClass : lambdaClasses) {
-                    if (requiredUdf.contains(lambdaClass.getType().getBaseClass().getName())) {
-                        List<JavaClass> udfClasses = classUdfMap.getOrDefault(lambdaClass.getType(), new ArrayList<>());
-                        udfClasses.add(lambdaClass);
-                        classUdfMap.put(lambdaClass.getType(), udfClasses);
-                    }
-                }
+                tryLoadLambdaClassUDF(lambdaClasses);
             }
         }
 
@@ -144,8 +143,78 @@ public class JarUdfLoader {
         }
     }
 
+    /**
+     * load udf classes by collect from jar
+     *
+     * @param collect collect
+     */
+    public void loadUdfClassesByCollect(List<JavaSootClass> collect) {
+        for (JavaSootClass javaClass : collect) {
+            // skip ignored class
+            boolean isSkip = false;
+
+            for (String skipPackage : TranslatorContext.getFilterPackages()) {
+                if (javaClass.getName().startsWith(skipPackage)) {
+                    isSkip = true;
+                    break;
+                }
+            }
+
+            if (isSkip) {
+                continue;
+            }
+
+            Optional<UDFType> udfType = getUDFType(javaClass, engineType);
+            if (udfType.isPresent() && requiredUdf.contains(udfType.get().getBaseClass().getName())) {
+                if (udfType.get() instanceof FlinkProcessFunction
+                        && !TranslatorContext.isInProcessFunction(javaClass.getName())) {
+                    continue;
+                }
+                JavaClass udfClz = new JavaClass(javaClass, udfType.get());
+                udfClz.addIncludes(udfType.get().getRequiredIncludes());
+
+                if (!classUdfMap.containsKey(udfType.get())) {
+                    classUdfMap.put(udfType.get(), new ArrayList<>());
+                }
+                classUdfMap.get(udfType.get()).add(udfClz);
+            }
+
+            List<JavaClass> lambdaClasses = null;
+
+            try {
+                lambdaClasses = loadLambdaUdfFunction(javaClass, engineType, jarHandler);
+            } catch (Exception e) {
+                LOGGER.warn("Load lambda classes from class {} failed, {}", javaClass.getName(), e.getMessage());
+            }
+            if (lambdaClasses != null && !lambdaClasses.isEmpty()) {
+                tryLoadLambdaClassUDF(lambdaClasses);
+            }
+        }
+
+        for (UDFType type : classUdfMap.keySet()) {
+            LOGGER.info("Load class {} count : {}", type.getBaseClass().getSimpleName(), classUdfMap.get(type).size());
+            for (JavaClass javaClass : classUdfMap.get(type)) {
+                LOGGER.info(javaClass.getClassName());
+            }
+        }
+    }
+
+    private void tryLoadLambdaClassUDF(List<JavaClass> lambdaClasses) {
+        for (JavaClass lambdaClass : lambdaClasses) {
+            if (requiredUdf.contains(lambdaClass.getType().getBaseClass().getName())) {
+                if (lambdaClass.getType() instanceof FlinkProcessFunction
+                        && !TranslatorContext.isInProcessFunction(lambdaClass.getClassName())) {
+                    continue;
+                }
+                List<JavaClass> udfClasses = classUdfMap.getOrDefault(lambdaClass.getType(), new ArrayList<>());
+                udfClasses.add(lambdaClass);
+                classUdfMap.put(lambdaClass.getType(), udfClasses);
+            }
+        }
+    }
+
     private List<JavaClass> loadLambdaUdfFunction(JavaSootClass javaClass,
-            EngineType engineType, JarHandler jarHandler) {
+                                                  EngineType engineType, JarHandler jarHandler) {
         List<JavaClass> lambdaUdfFunctions = new ArrayList<>();
 
         // scan all methods in class find lambda function
@@ -158,7 +227,7 @@ public class JarUdfLoader {
     }
 
     private Set<JavaClass> loadLambdaFunctionsFromBody(JarHandler jarHandler,
-            EngineType engineType, String className, Body body) {
+                                                       EngineType engineType, String className, Body body) {
         Map<Local, UDFType> udfTypeMap = new HashMap<>();
 
         for (Local local : body.getLocals()) {
@@ -194,9 +263,16 @@ public class JarUdfLoader {
             methodHandle = (MethodHandle) invokeExpr.getBootstrapArg(1);
         }
 
-        if (methodHandle != null && methodHandle.getReferenceSignature() instanceof MethodSignature
+        if (methodHandle != null
+                && methodHandle.isMethodRef()
                 && invokeExpr.getArgs().isEmpty()) {
-            MethodSignature methodSignature = (MethodSignature) methodHandle.getReferenceSignature();
+            MethodSignature methodSignature = null;
+            if (methodHandle.getReferenceSignature() instanceof MethodSignature) {
+                methodSignature = (MethodSignature) methodHandle.getReferenceSignature();
+            }
+            if (methodSignature == null) {
+                throw new TranslatorException("convert MethodSignature failed");
+            }
             if (methodHandle.getKind().equals(REF_INVOKE_STATIC)) {
                 lambdaClass = methodSignature.getDeclClassType().getFullyQualifiedName().equals(className)
                         ? getSimpleLambdaClass(methodSignature, udfType)

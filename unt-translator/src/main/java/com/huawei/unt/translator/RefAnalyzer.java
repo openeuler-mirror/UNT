@@ -115,7 +115,15 @@ public class RefAnalyzer {
     }
 
     private static boolean isNullBody(List<Stmt> stmts) {
+        boolean isOnlyReturnNull = true;
+        for (Stmt stmt : stmts) {
+            if (stmt instanceof JReturnStmt) {
+                if (!(((JReturnStmt) stmt).getOp() instanceof NullConstant)) {
+                    isOnlyReturnNull = false;
+                }
+            }
+        }
         Stmt stmt = stmts.get(stmts.size() - 1);
-        return stmt instanceof JReturnStmt && ((JReturnStmt) stmt).getOp() instanceof NullConstant;
+        return stmt instanceof JReturnStmt && isOnlyReturnNull;
     }
 }
