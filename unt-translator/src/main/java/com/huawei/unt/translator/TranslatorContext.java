@@ -203,6 +203,8 @@ public class TranslatorContext {
     private static boolean isMemTune;
     private static boolean isHwAccTune;
     private static boolean isRegexAcc;
+    private static boolean isJsonSerialize;
+    private static boolean isParentReflect;
     private static String compileOption;
     private static Set<String> udfPackages;
     private static Set<String> processFunctions;
@@ -309,6 +311,24 @@ public class TranslatorContext {
         } else {
             mainClass = getUdfMap().get("main_class");
             LOGGER.info("use main_class: {}", getMainClass());
+        }
+
+        if (!getUdfMap().containsKey("json_serialize")
+                || !"true".equals(getUdfMap().get("json_serialize"))) {
+            isJsonSerialize = false;
+            LOGGER.info("json_serialize is false");
+        } else {
+            isJsonSerialize = true;
+            LOGGER.info("json_serialize is true");
+        }
+
+        if (!getUdfMap().containsKey("parent_reflect")
+                || !"true".equals(getUdfMap().get("parent_reflect"))) {
+            isJsonSerialize = false;
+            LOGGER.info("parent_reflect is false");
+        } else {
+            isJsonSerialize = true;
+            LOGGER.info("parent_reflect is true");
         }
 
         String basicDir = getUdfMap().get("basic_lib_path").endsWith(File.separator)
@@ -592,6 +612,14 @@ public class TranslatorContext {
 
     public static boolean isIsRegexAcc() {
         return isRegexAcc;
+    }
+
+    public static boolean isJsonSerialize() {
+        return isJsonSerialize;
+    }
+
+    public static boolean isParentReflect() {
+        return isParentReflect;
     }
 
     public static String getCompileOption() {
