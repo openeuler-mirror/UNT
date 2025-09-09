@@ -54,6 +54,7 @@ public class DynamicInvokeHandle implements Optimizer {
     private TranslatorValueVisitor valueVisitor;
     private CallerKind callerKind;
     private MethodSignature implementedInterfaceSignature;
+    private String caller;
 
     @Override
     public boolean fetch(MethodContext methodContext) {
@@ -117,13 +118,6 @@ public class DynamicInvokeHandle implements Optimizer {
 
     private String getMethodBody(MethodHandle methodHandle, List<Immediate> args,
                                  MethodType methodType) {
-        StringJoiner params = new StringJoiner(", ");
-
-        for (Immediate arg : args) {
-            arg.accept(valueVisitor);
-            params.add(valueVisitor.toCode());
-            valueVisitor.clear();
-        }
 
         MethodSignature signature;
         if (methodHandle.getReferenceSignature() instanceof MethodSignature) {
@@ -133,7 +127,14 @@ public class DynamicInvokeHandle implements Optimizer {
         }
 
         StringBuilder stmts = new StringBuilder();
-        String caller = getCaller(methodHandle, args, methodType, stmts);
+        getCaller(methodHandle, args, methodType, stmts);
+        StringJoiner params = new StringJoiner(", ");
+
+        for (Immediate arg : args) {
+            arg.accept(valueVisitor);
+            params.add(valueVisitor.toCode());
+            valueVisitor.clear();
+        }
         dealwith(methodType, args, signature, params, stmts);
 
         stmts.append(TAB_INLINE);
@@ -202,9 +203,9 @@ public class DynamicInvokeHandle implements Optimizer {
         }
     }
 
-    private String getCaller(MethodHandle methodHandle, List<Immediate> args, MethodType methodType,
+    private void getCaller(MethodHandle methodHandle, List<Immediate> args, MethodType methodType,
                              StringBuilder stmts) {
-        String caller = "";
+        caller = "";
         if (methodHandle.getKind().equals(REF_INVOKE_STATIC)) {
             ClassType callerClassType = methodHandle.getReferenceSignature().getDeclClassType();
             caller = declClassType.equals(callerClassType)
@@ -229,7 +230,6 @@ public class DynamicInvokeHandle implements Optimizer {
             valueVisitor.clear();
             callerKind = CallerKind.OBJ;
         }
-        return caller;
     }
 
     private String getInputParams(List<Type> parameterTypes) {
