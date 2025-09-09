@@ -1,0 +1,91 @@
+[#ifndef COM_CUTIEDENG_POJODIRECTEXECUTOR_H
+#define COM_CUTIEDENG_POJODIRECTEXECUTOR_H
+
+#include "basictypes/Arrays.h"
+#include "basictypes/ClassRegistry.h"
+#include "basictypes/StringConstant.h"
+#include "nlohmann/json.hpp"
+
+#include "java_lang_Class.h"
+#include "java_lang_Object.h"
+#include "java_lang_String.h"
+#include "java_lang_reflect_Field.h"
+#include "org_apache_flink_api_common_functions_MapFunction.h"
+
+class com_cutiedeng_PojoDirectExecutor : public org_apache_flink_api_common_functions_MapFunction, public java_lang_Object {
+public:
+    com_cutiedeng_PojoDirectExecutor();
+
+    com_cutiedeng_PojoDirectExecutor(nlohmann::json jsonObj);
+    ~com_cutiedeng_PojoDirectExecutor();
+
+    java_lang_String *map(java_lang_String *param0);
+
+    java_lang_String *pojoFieldName = nullptr;
+
+    static Class* getClass();
+    static Class* clazz_;
+};
+
+#endif
+, #include "com_cutiedeng_PojoDirectExecutor.h"
+#include "basictypes/ClassRegistry.h"
+#include "basictypes/ReflectMacros.h"
+
+
+com_cutiedeng_PojoDirectExecutor::com_cutiedeng_PojoDirectExecutor()
+{
+
+    return;
+}
+
+com_cutiedeng_PojoDirectExecutor::~com_cutiedeng_PojoDirectExecutor() {
+    if (pojoFieldName) {
+        pojoFieldName->putRefCount();
+    }
+}
+
+com_cutiedeng_PojoDirectExecutor::com_cutiedeng_PojoDirectExecutor(nlohmann::json jsonObj) : org_apache_flink_api_common_functions_MapFunction(jsonObj), java_lang_Object(jsonObj)
+ {
+    if(!jsonObj["pojoFieldName"].empty()) {
+        this->pojoFieldName = new java_lang_String(jsonObj["pojoFieldName"]);
+    }
+}
+
+
+java_lang_String *com_cutiedeng_PojoDirectExecutor::map(java_lang_String *l1)
+{
+    int32_t stack6;
+    int32_t stack7;
+    int32_t stack8;
+    java_lang_Class *l3 = nullptr;
+    Array *stack5 = nullptr;
+    Array *l2 = nullptr;
+    java_lang_Object *l4 = nullptr;
+    java_lang_String *stack11 = nullptr;
+    java_lang_String *stack9 = nullptr;
+    java_lang_reflect_Field *stack10 = nullptr;
+
+    stack5 = new Array();
+    $stack5->append(ClassRegistry::instance().getClass("com_cutiedeng_PojoThunk"));
+    $stack5->append(ClassRegistry::instance().getClass("com_cutiedeng_PojoComplex"));
+    l2 = stack5;
+    stack6 = l1->length();
+    stack7 = stack5->size();
+    stack8 = stack6 % stack7;
+    l3 = reinterpret_cast<java_lang_Class *>(stack5->get(stack8));
+    l4 = l3->newInstance();
+    stack9 = this->pojoFieldName;
+    stack10 = l3->getField(stack9);
+    stack10->setLong(l4, 16L);
+    stack11 = new String(l4->toString());
+    if (stack5 != nullptr) {
+        stack5->putRefCount();
+    }
+
+    return stack11;
+}
+DEFINE_REFLECT_CLASS_BEGIN(com_cutiedeng_PojoDirectExecutor)
+    REGISTER_PTR_FIELD(com_cutiedeng_PojoDirectExecutor, pojoFieldName, java_lang_String *, "java_lang_String")
+DEFINE_REFLECT_CLASS_END(com_cutiedeng_PojoDirectExecutor)
+]

@@ -11,11 +11,13 @@ import com.huawei.unt.model.MethodContext;
 import com.huawei.unt.optimizer.stmts.OptimizedDirectStmt;
 import com.huawei.unt.optimizer.stmts.OptimizedJAssignStmt;
 import com.huawei.unt.optimizer.stmts.OptimizedLinesStmt;
+import com.huawei.unt.translator.TranslatorContext;
 import com.huawei.unt.translator.TranslatorException;
 
 import sootup.core.jimple.basic.Local;
 import sootup.core.jimple.common.constant.IntConstant;
 import sootup.core.jimple.common.ref.JCaughtExceptionRef;
+import sootup.core.jimple.common.ref.JInstanceFieldRef;
 import sootup.core.jimple.common.ref.JParameterRef;
 import sootup.core.jimple.common.ref.JThisRef;
 import sootup.core.jimple.common.stmt.JAssignStmt;
@@ -31,6 +33,8 @@ import sootup.core.jimple.javabytecode.stmt.JEnterMonitorStmt;
 import sootup.core.jimple.javabytecode.stmt.JExitMonitorStmt;
 import sootup.core.jimple.javabytecode.stmt.JSwitchStmt;
 import sootup.core.jimple.visitor.AbstractStmtVisitor;
+import sootup.core.types.Type;
+import sootup.java.core.types.JavaClassType;
 
 import java.util.List;
 
@@ -88,6 +92,16 @@ public class TranslatorStmtVisitor extends AbstractStmtVisitor {
         printTab();
 
         TranslatorValueVisitor valueVisitor = new TranslatorValueVisitor(methodContext);
+        if (stmt.getLeftOp() instanceof JInstanceFieldRef) {
+            Type subSignatureType = ((JInstanceFieldRef) stmt.getLeftOp())
+                    .getFieldSignature().getSubSignature().getType();
+            if (subSignatureType instanceof JavaClassType
+                    && ((JavaClassType) subSignatureType)
+                    .getFullyQualifiedName()
+                    .equals(TranslatorContext.getMainClass())) {
+                return;
+            }
+        }
         stmt.getLeftOp().accept(valueVisitor);
         String leftValue = valueVisitor.toCode();
         valueVisitor.clear();

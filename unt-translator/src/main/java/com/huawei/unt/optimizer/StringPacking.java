@@ -42,7 +42,9 @@ public class StringPacking implements Optimizer {
         TranslatorValueVisitor valueVisitor = new TranslatorValueVisitor(methodContext);
         for (int i = 0; i < stmts.size(); i++) {
             Stmt stmt = stmts.get(i);
-            if (stmt instanceof JReturnStmt && ((JReturnStmt) stmt).getOp() instanceof StringConstant) {
+            if (stmt instanceof JReturnStmt
+                    && methodContext.getStmts().get(i) instanceof JReturnStmt
+                    && ((JReturnStmt) stmt).getOp() instanceof StringConstant) {
                 String res = "new String(" + ((JReturnStmt) stmt).getOp().toString() + ")";
                 OptimizedDirectStmt optimizedDirectStmt = new OptimizedDirectStmt("return " + res, stmt);
                 methodContext.getStmts().set(i, optimizedDirectStmt);

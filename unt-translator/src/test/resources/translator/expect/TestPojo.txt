@@ -1,0 +1,119 @@
+[#ifndef COM_CUTIEDENG_POJOSIMPLEUSE_H
+#define COM_CUTIEDENG_POJOSIMPLEUSE_H
+
+#include "basictypes/ClassRegistry.h"
+#include "basictypes/StringConstant.h"
+#include "nlohmann/json.hpp"
+
+#include "com_cutiedeng_PojoComplex.h"
+#include "com_cutiedeng_PojoThunk.h"
+#include "com_cutiedeng_PojoThunkComplex.h"
+#include "java_lang_Object.h"
+#include "java_lang_String.h"
+#include "java_lang_StringBuilder.h"
+#include "org_apache_flink_api_common_functions_MapFunction.h"
+
+class com_cutiedeng_PojoSimpleUse : public org_apache_flink_api_common_functions_MapFunction, public java_lang_Object {
+public:
+    com_cutiedeng_PojoSimpleUse();
+
+    com_cutiedeng_PojoSimpleUse(nlohmann::json jsonObj);
+    ~com_cutiedeng_PojoSimpleUse();
+
+    java_lang_String *map(java_lang_String *param0);
+
+    com_cutiedeng_PojoComplex *c = nullptr;
+    com_cutiedeng_PojoThunk *t = nullptr;
+
+    static Class* getClass();
+    static Class* clazz_;
+};
+
+#endif
+, #include "com_cutiedeng_PojoSimpleUse.h"
+#include "basictypes/ClassRegistry.h"
+#include "basictypes/ReflectMacros.h"
+
+
+com_cutiedeng_PojoSimpleUse::com_cutiedeng_PojoSimpleUse()
+{
+    com_cutiedeng_PojoComplex *stack1 = nullptr;
+    com_cutiedeng_PojoThunk *stack2 = nullptr;
+
+    stack1 = new com_cutiedeng_PojoComplex();
+    this->c = stack1;
+    stack2 = new com_cutiedeng_PojoThunk();
+    this->t = stack2;
+
+    return;
+}
+
+com_cutiedeng_PojoSimpleUse::~com_cutiedeng_PojoSimpleUse() {
+    if (c) {
+        c->putRefCount();
+    }
+    if (t) {
+        t->putRefCount();
+    }
+}
+
+com_cutiedeng_PojoSimpleUse::com_cutiedeng_PojoSimpleUse(nlohmann::json jsonObj) : org_apache_flink_api_common_functions_MapFunction(jsonObj), java_lang_Object(jsonObj)
+ {
+    if(!jsonObj["c"].empty()) {
+        this->c = new com_cutiedeng_PojoComplex(jsonObj["c"]);
+    }
+    if(!jsonObj["t"].empty()) {
+        this->t = new com_cutiedeng_PojoThunk(jsonObj["t"]);
+    }
+}
+
+
+java_lang_String *com_cutiedeng_PojoSimpleUse::map(java_lang_String *l1)
+{
+    com_cutiedeng_PojoComplex *stack4 = nullptr;
+    com_cutiedeng_PojoComplex *stack6 = nullptr;
+    com_cutiedeng_PojoThunk *stack8 = nullptr;
+    com_cutiedeng_PojoThunkComplex *stack3 = nullptr;
+    com_cutiedeng_PojoThunkComplex *l2 = nullptr;
+    int32_t stack9;
+    java_lang_String *stack11 = nullptr;
+    java_lang_String *stack14 = nullptr;
+    java_lang_StringBuilder *stack10 = nullptr;
+    java_lang_StringBuilder *stack12 = nullptr;
+    java_lang_StringBuilder *stack13 = nullptr;
+    int64_t stack5;
+    int64_t stack7;
+
+    stack3 = new com_cutiedeng_PojoThunkComplex();
+    l2 = stack3;
+    stack4 = this->c;
+    stack5 = stack4->getImg();
+    stack3->setImg(stack5);
+    stack6 = this->c;
+    stack7 = stack6->getReal();
+    stack3->setReal(stack7);
+    stack8 = this->t;
+    stack9 = stack8->getThunkId();
+    stack3->setThunkId(stack9);
+    stack10 = new java_lang_StringBuilder();
+    stack11 = new String(stack3->toString());
+    stack12 = stack10->append(stack11);
+    stack13 = stack12->append(l1);
+    stack14 = new String(stack13->toString());
+    if (stack3 != nullptr) {
+        stack3->putRefCount();
+    }
+    if (stack11 != nullptr) {
+        stack11->putRefCount();
+    }
+    if (stack10 != nullptr) {
+        stack10->putRefCount();
+    }
+
+    return stack14;
+}
+DEFINE_REFLECT_CLASS_BEGIN(com_cutiedeng_PojoSimpleUse)
+    REGISTER_PTR_FIELD(com_cutiedeng_PojoSimpleUse, c, com_cutiedeng_PojoComplex *, "com_cutiedeng_PojoComplex")
+    REGISTER_PTR_FIELD(com_cutiedeng_PojoSimpleUse, t, com_cutiedeng_PojoThunk *, "com_cutiedeng_PojoThunk")
+DEFINE_REFLECT_CLASS_END(com_cutiedeng_PojoSimpleUse)
+]

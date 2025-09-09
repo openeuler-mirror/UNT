@@ -65,6 +65,7 @@ import sootup.core.jimple.common.ref.JStaticFieldRef;
 import sootup.core.jimple.common.ref.JThisRef;
 import sootup.core.jimple.common.ref.Ref;
 import sootup.core.jimple.visitor.AbstractValueVisitor;
+import sootup.core.types.ClassType;
 import sootup.core.types.PrimitiveType;
 import sootup.core.types.Type;
 
@@ -428,9 +429,13 @@ public class TranslatorValueVisitor extends AbstractValueVisitor {
         String typeString = TranslatorTypeVisitor.getTypeString(expr.getType());
 
         if (expr.getType() instanceof PrimitiveType) {
-            valueBuilder.append("(").append(typeString).append(") ").append(valueVisitor.toCode());
-        } else if (typeString.equals("String") && expr.getOp() instanceof StringConstant) {
-            valueBuilder.append("new String(").append(valueVisitor.toCode()).append(")");
+            valueBuilder.append("(")
+                    .append(typeString).append(") ")
+                    .append(valueVisitor.toCode());
+        } else if (("String".equals(typeString) || "CharSequence".equals(typeString))
+                && expr.getOp() instanceof StringConstant) {
+            valueBuilder.append("new String(")
+                    .append(valueVisitor.toCode()).append(")");
         } else if (isMatchedParam(expr)) {
             valueBuilder.append(valueVisitor.toCode());
         } else {
@@ -462,8 +467,15 @@ public class TranslatorValueVisitor extends AbstractValueVisitor {
     public void caseInstanceOfExpr(@Nonnull JInstanceOfExpr expr) {
         TranslatorValueVisitor valueVisitor = new TranslatorValueVisitor(methodContext);
         expr.getOp().accept(valueVisitor);
+        String className = null;
+        if (expr.getCheckType() instanceof ClassType) {
+            className = TranslatorUtils.formatClassName(((ClassType) expr.getCheckType()).getFullyQualifiedName());
+        }
+        if (className == null) {
+            throw new TranslatorException("expr.getCheckType convert ClassType failed");
+        }
         valueBuilder.append("dynamic_cast<")
-                .append(TranslatorUtils.formatType(expr.getType()))
+                .append(className)
                 .append("*>(")
                 .append(valueVisitor.toCode())
                 .append(") != nullptr");
@@ -508,12 +520,13 @@ public class TranslatorValueVisitor extends AbstractValueVisitor {
 
     @Override
     public void caseSpecialInvokeExpr(@Nonnull JSpecialInvokeExpr expr) {
-        String base = expr.getBase().equals(methodContext.getThisLocal()) ? "this"
-                : TranslatorUtils.formatLocalName(expr.getBase());
-
-        valueBuilder.append(base).append("->");
-        valueBuilder.append(expr.getMethodSignature().getName())
-                .append(TranslatorUtils.paramsToString(expr.getMethodSignature(), expr.getArgs(), methodContext));
+        valueBuilder.append(TranslatorUtils.formatClassName(
+                expr.getMethodSignature()
+                        .getDeclClassType()
+                        .getFullyQualifiedName())).append("::")
+                .append(expr.getMethodSignature().getName())
+                .append(TranslatorUtils.paramsToString(
+                        expr.getMethodSignature(), expr.getArgs(), methodContext));
     }
 
     @Override
@@ -524,7 +537,8 @@ public class TranslatorValueVisitor extends AbstractValueVisitor {
         valueVisitor.clear();
         valueBuilder.append("->");
         valueBuilder.append(expr.getMethodSignature().getName())
-                .append(TranslatorUtils.paramsToString(expr.getMethodSignature(), expr.getArgs(), methodContext));
+                .append(TranslatorUtils.paramsToString(
+                        expr.getMethodSignature(), expr.getArgs(), methodContext));
     }
 
     @Override

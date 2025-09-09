@@ -18,10 +18,14 @@ public:
 
     java_lang_String *map(java_lang_String *param0);
 
+    static Class* getClass();
+    static Class* clazz_;
 };
 
 #endif
 , #include "TestInheritance.h"
+#include "basictypes/ClassRegistry.h"
+#include "basictypes/ReflectMacros.h"
 
 
 TestInheritance::TestInheritance()
@@ -49,4 +53,6 @@ java_lang_String *TestInheritance::map(java_lang_String *l1)
 
     return stack2;
 }
+DEFINE_REFLECT_CLASS_BEGIN(TestInheritance)
+DEFINE_REFLECT_CLASS_END(TestInheritance)
 ]

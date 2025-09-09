@@ -1,0 +1,61 @@
+[#ifndef COM_CUTIEDENG_CHARTREE_H
+#define COM_CUTIEDENG_CHARTREE_H
+
+#include "basictypes/ClassRegistry.h"
+#include "basictypes/StringConstant.h"
+#include "nlohmann/json.hpp"
+
+#include "com_cutiedeng_PojoChar.h"
+#include "java_lang_Object.h"
+#include "java_util_Map.h"
+
+class com_cutiedeng_CharTree : public java_lang_Object {
+public:
+    com_cutiedeng_CharTree();
+
+    com_cutiedeng_CharTree(nlohmann::json jsonObj);
+    ~com_cutiedeng_CharTree();
+
+    java_util_Map *child = nullptr;
+    com_cutiedeng_PojoChar *value = nullptr;
+
+    static Class* getClass();
+    static Class* clazz_;
+};
+
+#endif
+, #include "com_cutiedeng_CharTree.h"
+#include "basictypes/ClassRegistry.h"
+#include "basictypes/ReflectMacros.h"
+
+
+com_cutiedeng_CharTree::com_cutiedeng_CharTree()
+{
+
+    return;
+}
+
+com_cutiedeng_CharTree::~com_cutiedeng_CharTree() {
+    if (child) {
+        child->putRefCount();
+    }
+    if (value) {
+        value->putRefCount();
+    }
+}
+
+com_cutiedeng_CharTree::com_cutiedeng_CharTree(nlohmann::json jsonObj) : java_lang_Object(jsonObj)
+ {
+    if(!jsonObj["child"].empty()) {
+        this->child = new java_util_Map(jsonObj["child"]);
+    }
+    if(!jsonObj["value"].empty()) {
+        this->value = new com_cutiedeng_PojoChar(jsonObj["value"]);
+    }
+}
+
+DEFINE_REFLECT_CLASS_BEGIN(com_cutiedeng_CharTree)
+    REGISTER_PTR_FIELD(com_cutiedeng_CharTree, child, java_util_Map *, "java_util_Map<java_lang_Character,com_cutiedeng_CharTree>")
+    REGISTER_PTR_FIELD(com_cutiedeng_CharTree, value, com_cutiedeng_PojoChar *, "com_cutiedeng_PojoChar")
+DEFINE_REFLECT_CLASS_END(com_cutiedeng_CharTree)
+]

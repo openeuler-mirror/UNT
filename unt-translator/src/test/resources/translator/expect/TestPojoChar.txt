@@ -1,0 +1,68 @@
+[#ifndef COM_CUTIEDENG_POJOCHAR_H
+#define COM_CUTIEDENG_POJOCHAR_H
+
+#include "basictypes/ClassRegistry.h"
+#include "basictypes/StringConstant.h"
+#include "nlohmann/json.hpp"
+
+#include "java_lang_Object.h"
+#include "basictypes/Character.h"
+
+class com_cutiedeng_PojoChar : public java_lang_Object {
+public:
+    com_cutiedeng_PojoChar();
+
+    com_cutiedeng_PojoChar(nlohmann::json jsonObj);
+    ~com_cutiedeng_PojoChar();
+
+    void setC(char param0);
+    char getC();
+
+    char c;
+
+    static Class* getClass();
+    static Class* clazz_;
+};
+
+#endif
+, #include "com_cutiedeng_PojoChar.h"
+#include "basictypes/ClassRegistry.h"
+#include "basictypes/ReflectMacros.h"
+
+
+com_cutiedeng_PojoChar::com_cutiedeng_PojoChar()
+{
+
+    return;
+}
+
+com_cutiedeng_PojoChar::~com_cutiedeng_PojoChar() {
+}
+
+com_cutiedeng_PojoChar::com_cutiedeng_PojoChar(nlohmann::json jsonObj) : java_lang_Object(jsonObj)
+ {
+    if(!jsonObj["c"].empty()) {
+        this->c = jsonObj["c"];
+    }
+}
+
+
+void com_cutiedeng_PojoChar::setC(char l1)
+{
+    this->c = l1;
+
+    return;
+}
+
+char com_cutiedeng_PojoChar::getC()
+{
+    char stack1;
+
+    stack1 = this->c;
+
+    return stack1;
+}
+DEFINE_REFLECT_CLASS_BEGIN(com_cutiedeng_PojoChar)
+    REGISTER_PRIMITIVE_FIELD(com_cutiedeng_PojoChar, c, Character, "char")
+DEFINE_REFLECT_CLASS_END(com_cutiedeng_PojoChar)
+]
