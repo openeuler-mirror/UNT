@@ -118,7 +118,6 @@ public class DynamicInvokeHandle implements Optimizer {
 
     private String getMethodBody(MethodHandle methodHandle, List<Immediate> args,
                                  MethodType methodType) {
-
         MethodSignature signature;
         if (methodHandle.getReferenceSignature() instanceof MethodSignature) {
             signature = (MethodSignature) methodHandle.getReferenceSignature();
